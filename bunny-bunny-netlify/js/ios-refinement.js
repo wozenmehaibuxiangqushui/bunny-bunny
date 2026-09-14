@@ -41,7 +41,7 @@ function bunnyData(kind){return "data:image/svg+xml,"+encodeURIComponent(bunnySv
 export function setupIosRefinement({store,navigate}){
  let mediaContext=null;
  const root=document.querySelector("#phone-root"),screen=document.querySelector("#app-screen");
- if(store.getState().appearance.dynamicIsland===undefined)store.update(s=>s.appearance.dynamicIsland=true);
+ if(store.getState().appearance.dynamicIsland===undefined||store.getState().appearance.deviceProfile!=="iphone-pro")store.update(s=>{if(s.appearance.dynamicIsland===undefined)s.appearance.dynamicIsland=true;s.appearance.deviceProfile="iphone-pro"});
  applySystem();
 
  function applySystem(){
