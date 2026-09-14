@@ -1,0 +1,71 @@
+/* iOS-style refinement: full-screen shell, fixed home pages, polished icons and media sheets */
+:root{--font-body:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Helvetica Neue",Arial,sans-serif}
+html,body,.stage{width:100%;height:100%;min-height:100dvh;overflow:hidden}
+body{background:var(--phone-bg)}
+.stage{display:block;padding:0}
+.project-note,.privacy-note{display:none!important}
+.phone,.phone[data-device]{width:100vw!important;height:100dvh!important;min-height:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+.screen{height:100dvh}
+.dynamic-island{top:max(.7rem,var(--safe-top));box-shadow:0 2px 10px rgba(0,0,0,.16)}
+.phone.island-off .dynamic-island{display:none}
+.phone.island-off .app-header{padding-top:calc(var(--safe-top) + 1rem)}
+.app-header{min-height:6.4rem;padding:calc(var(--safe-top) + 2.75rem) 1.15rem .65rem;grid-template-columns:2.35rem 1fr 2.35rem}
+.app-header h2{font-size:1.75rem;font-weight:650;letter-spacing:-.055em;font-variant-numeric:tabular-nums}
+#quick-settings{visibility:hidden;pointer-events:none}
+#quick-settings.desktop-edit-action{visibility:visible;pointer-events:auto;width:auto;min-width:3.2rem;padding:0 .8rem;border-radius:1rem;font-size:.78rem;font-weight:650}
+.icon-button{border:0;background:rgba(255,255,255,.66);box-shadow:0 1px 0 rgba(0,0,0,.05);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.screen[data-app="desktop"] .app-view{overflow:hidden!important;padding-bottom:0;touch-action:pan-x}
+.screen[data-app="desktop"] .app-header{border:0;background:transparent}
+.screen[data-app="desktop"] #back-button{visibility:hidden}
+.screen[data-app="desktop"] .desktop-greeting{height:3.25rem;padding:.1rem .15rem .55rem;border:0}
+.screen[data-app="desktop"] .desktop-greeting .date{display:none}
+.screen[data-app="desktop"] .desktop-greeting p{font-size:.74rem;font-weight:520;color:var(--muted)}
+.device-chip{display:none!important}
+.desktop-pages{width:calc(100% + 2.3rem);height:calc(100% - 5.2rem);min-height:0;margin-left:-1.15rem;overflow:hidden;touch-action:pan-x}
+.desktop-track,.desktop-page{height:100%}
+.desktop-page{display:flex;flex-direction:column;padding:0 1.15rem}
+.desktop-widgets{flex:0 0 auto;display:flex;gap:.55rem;margin:.1rem 0 .7rem;overflow:hidden}
+.home-widget{flex:1;min-width:0;min-height:5.3rem!important;height:5.3rem;padding:.72rem;border-radius:1.25rem}
+.home-widget.wide{grid-column:auto}
+.home-widget strong{font-size:.9rem}.home-widget small{font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.desktop-page .app-grid{flex:1;min-height:0!important;display:grid;grid-template-columns:repeat(4,1fr)!important;grid-template-rows:repeat(5,minmax(0,1fr))!important;gap:.25rem .42rem;padding:.05rem 0 .25rem;align-content:stretch}
+.app-tile{align-content:center;gap:.28rem}
+.app-icon{width:clamp(2.85rem,13.5vw,3.65rem);max-width:3.65rem;border:0;border-radius:1.05rem;background:rgba(255,255,255,.82)!important;color:#111!important;box-shadow:0 5px 16px rgba(20,20,20,.08),inset 0 0 0 .5px rgba(0,0,0,.06)}
+.app-icon svg{width:100%;height:100%;display:block}
+.app-tile>span:last-child{font-size:clamp(.59rem,2.7vw,.7rem);font-weight:500;text-shadow:0 1px 2px rgba(255,255,255,.72)}
+.folder-icon{padding:.5rem;background:rgba(244,244,242,.76)!important;backdrop-filter:blur(14px)}
+.page-dots{height:1.4rem;margin:0;align-items:center}
+.page-dots button{width:.38rem;height:.38rem;background:rgba(60,60,60,.3)}
+.page-dots button.active{width:.38rem;background:#111}
+.desktop-hint,.edit-tip{display:none}
+.home-indicator-wrap{height:calc(1.25rem + var(--safe-bottom));padding-bottom:var(--safe-bottom);background:transparent}
+.home-indicator{height:.28rem;background:rgba(17,17,17,.88)}
+/* iMessage-inspired conversation */
+.chat-layout{height:100%;min-height:0;grid-template-rows:auto minmax(0,1fr) auto}
+.chat-person{padding:.25rem 0 .65rem;text-align:center}
+.chat-stream{gap:.42rem;padding:.75rem .08rem 1rem;overflow-y:auto;scrollbar-width:none}
+.chat-stream::-webkit-scrollbar{display:none}
+.message{column-gap:.5rem;max-width:86%;align-items:end}
+.message-avatar{width:1.8rem;height:1.8rem}
+.bubble{position:relative;border:0!important;border-radius:1.15rem!important;border-bottom-left-radius:.35rem!important;background:rgba(255,255,255,.9);padding:.62rem .82rem;box-shadow:0 1px 1px rgba(0,0,0,.06);font-size:.9rem;line-height:1.42}
+.message.user .bubble{border-radius:1.15rem!important;border-bottom-right-radius:.35rem!important;background:#111;color:#fff}
+.message.continuation{margin-top:-.18rem}
+.message time{padding:0 .2rem;font-size:.58rem;opacity:.7}
+.composer{padding:.5rem 0 calc(.35rem + var(--safe-bottom));background:linear-gradient(transparent,var(--phone-bg) 18%)}
+.composer textarea{min-height:2.55rem;border:0;background:rgba(255,255,255,.88);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.composer .send{width:2.55rem;height:2.55rem}
+.chat-tabs{padding-bottom:calc(.55rem + var(--safe-bottom))}
+/* Unified media picker */
+.media-picker-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.55rem;padding:.4rem 0 .8rem}
+.media-picker-option{min-width:0;display:grid;place-items:center;gap:.45rem;border:0;border-radius:1.15rem;background:var(--surface-soft);padding:.8rem .25rem .65rem;font-size:.65rem}
+.media-picker-option svg{width:1.45rem;height:1.45rem;fill:none;stroke:currentColor;stroke-width:1.6}
+.media-upload-trigger{width:100%;display:flex;align-items:center;gap:.75rem;border:1px solid var(--line);border-radius:1rem;background:var(--surface);padding:.75rem;text-align:left}
+.media-upload-trigger .upload-glyph{width:2.35rem;height:2.35rem;display:grid;place-items:center;border-radius:.8rem;background:#111;color:#fff;font-size:1rem}
+.media-upload-trigger small{display:block;color:var(--muted);margin-top:.12rem}
+.upload-controls-hidden{display:none!important}
+.bunny-choice{min-height:5.3rem;border-radius:1.15rem}
+.bunny-choice strong{height:2.8rem;display:grid!important;place-items:center}
+.bunny-choice svg{width:2.7rem;height:2.7rem}
+.bunny-choice.selected{outline:2px solid #111;outline-offset:2px}
+.avatar-edit .avatar svg{width:100%;height:100%}
+@media(max-height:700px){.app-header{min-height:5.5rem;padding-top:calc(var(--safe-top) + 2.15rem)}.home-widget{height:4.4rem!important;min-height:4.4rem!important}.screen[data-app="desktop"] .desktop-greeting{height:2.4rem}.desktop-pages{height:calc(100% - 4.2rem)}}
