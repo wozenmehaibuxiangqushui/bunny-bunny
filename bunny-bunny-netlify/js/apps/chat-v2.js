@@ -64,7 +64,7 @@ export function createChatRenderers({ store, navigate }) {
       if (!sendAi) return;
       const current = store.getState(); const modelProfile = current.modelProfiles.find(item => item.id === current.activeModelProfileId);
       updateIsland(`${person.name} 正在通过 AI 回复…`, true);
-      try { const reply = await sendToModel(modelProfile, current.messages[conv.id]); store.update(s => s.messages[conv.id].push({ id: crypto.randomUUID(), role: "char", text: reply, time: timeNow() })); conversation(container, params); }
+      try { const preset=current.presets.find(x=>x.id===profile.presetId)||current.presets.find(x=>x.name===profile.preset); const books=current.worldbooks.filter(x=>(profile.worldbookIds||[]).includes(x.id)||x.name===profile.worldbook); const systemPrompt=[preset?.prompt,...books.map(x=>x.prompt)].filter(Boolean).join("\n\n"); const reply = await sendToModel(modelProfile, current.messages[conv.id], systemPrompt); store.update(s => s.messages[conv.id].push({ id: crypto.randomUUID(), role: "char", text: reply, time: timeNow() })); conversation(container, params); }
       catch (error) { showToast(error.message); }
       finally { updateIsland("bunny 正在陪你", false); }
     }
