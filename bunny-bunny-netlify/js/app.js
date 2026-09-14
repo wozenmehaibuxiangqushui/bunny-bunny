@@ -1,10 +1,12 @@
 import { createStore } from "./core/store.js";
 import { registerRoute, navigate } from "./core/router.js";
-import { createDesktopRenderer } from "./apps/desktop.js";
-import { createChatRenderers } from "./apps/chat.js";
+import { createDesktopRenderer } from "./apps/desktop-v2.js";
+import { createChatRenderers } from "./apps/chat-v2.js";
 import { createContactsRenderer } from "./apps/contacts.js";
-import { createPhoneSettingsRenderer } from "./apps/phone-settings.js";
-import { createChatSettingsRenderer } from "./apps/chat-settings.js";
+import { createPhoneSettingsRenderer } from "./apps/phone-settings-v2.js";
+import { createChatSettingsRenderer, applyChatAppearance } from "./apps/chat-settings-v2.js";
+import { createDataSettingsRenderer } from "./apps/data-settings.js";
+import { createWorldbookRenderer, createPresetsRenderer } from "./apps/prompt-library.js";
 import { createApiSettingsRenderer } from "./apps/api-settings.js";
 import { createPlaceholderRenderer, placeholderRoutes } from "./apps/placeholders.js";
 import { createTogetherRenderer, createFocusRenderer, createWorldRenderer } from "./apps/companions.js";
@@ -28,6 +30,9 @@ registerRoute("contacts", createContactsRenderer(context));
 registerRoute("phone-settings", createPhoneSettingsRenderer(context));
 registerRoute("chat-settings", createChatSettingsRenderer(context));
 registerRoute("api", createApiSettingsRenderer(context));
+registerRoute("data-settings", createDataSettingsRenderer(context));
+registerRoute("worldbook", createWorldbookRenderer(context));
+registerRoute("presets", createPresetsRenderer(context));
 registerRoute("moments", chats.moments);
 registerRoute("chat-me", chats.me);
 registerRoute("bridge", createBridgeRenderer(context));
@@ -43,5 +48,8 @@ document.querySelector("#app-view").addEventListener("scroll", event => document
 
 const initialHash = location.hash.slice(1);
 setPhoneAppearance(store.getState().appearance);
-navigate(["chat", "contacts", "phone-settings", "chat-settings", "api", "moments", "chat-me", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
+document.querySelector("#phone-root").dataset.device = store.getState().appearance.deviceProfile || "iphone-pro";
+document.title = store.getState().appearance.appName || "bunny bunny";
+applyChatAppearance(store.getState().chatAppearance);
+navigate(["chat", "contacts", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
 if (registerBunnyTools(context)) showToast("已启用页面级 MCP 工具");
