@@ -5,10 +5,10 @@ export const seedState = {
   currentUserId: "user-me",
   worlds: [{ id: "world-seoul", name: "首尔 · 平行日常", timezone: "Asia/Seoul" }],
   people: [
-    { id: "user-me", type: "user", name: "林小满", chatName: "manni", initials: "ME", note: "慢热，喜欢旧电影与雨天", accounts: [{ id: "acc-main", name: "manni", primary: true }] },
-    { id: "char-jun", type: "char", name: "韩叙俊", initials: "HJ", note: "在唱片店整理新到的黑胶", signature: "雨停之前，都算借来的时间。", online: true },
-    { id: "char-rin", type: "char", name: "尹夏凛", initials: "YR", note: "刚下课，晚点回复", signature: "今天也要把话留一半。", online: false },
-    { id: "npc-soo", type: "npc", name: "朴秀安", initials: "PS", note: "你和叙俊的共同好友", signature: "周末只接收好消息。", online: true }
+    { id: "user-me", type: "user", name: "林小满", chatName: "manni", initials: "ME", note: "慢热，喜欢旧电影与雨天", city: "上海", cityPrototype: "Shanghai", accounts: [{ id: "acc-main", name: "manni", primary: true }] },
+    { id: "char-jun", type: "char", name: "韩叙俊", initials: "HJ", note: "在唱片店整理新到的黑胶", signature: "雨停之前，都算借来的时间。", city: "首尔", cityPrototype: "Seoul", groupId: "group-seoul", online: true },
+    { id: "char-rin", type: "char", name: "尹夏凛", initials: "YR", note: "刚下课，晚点回复", signature: "今天也要把话留一半。", city: "釜山", cityPrototype: "Busan", groupId: "group-seoul", online: false },
+    { id: "npc-soo", type: "npc", name: "朴秀安", initials: "PS", note: "你和叙俊的共同好友", signature: "周末只接收好消息。", city: "东京", cityPrototype: "Tokyo", groupId: "group-tokyo", online: true }
   ],
   conversations: [
     { id: "conv-jun", personId: "char-jun", unread: 2, preview: "等你忙完，我们一起看那个视频。", time: "21:08" },
@@ -28,14 +28,14 @@ export const seedState = {
   chatProfiles: {
     "char-jun": {
       avatarUrl: "", remark: "叙俊", voiceProvider: "浏览器语音", voiceName: "默认男声", voiceSpeed: 1,
-      autoPlayVoice: false, stickerSteal: true, stickerPack: "日常 · 黑白", replyStyle: "自然短句",
+      autoPlayVoice: false, voiceId: "voice_kr_01", llmTone: true, language: "自动", emotion: "自动", visionEnabled: true, stickerSteal: true, stickerPack: "日常 · 黑白", replyStyle: "自然短句",
       memoryDepth: 24, proactive: true, quietHours: "23:00—08:00"
       , relationship: "暧昧中的朋友", userCity: "上海", charCity: "首尔", cityPrototype: "现实首尔", weather: "小雨 · 17°C", longDistance: true,
       autoAvatar: true, memoryMode: "分层长期记忆", imageProfile: "电影感写实", videoPortrait: "静态立绘 + 口型", worldbook: "首尔日常", chainOfThought: "仅保存文学化心声", preset: "自然聊天 v1", patText: "拍了拍叙俊的唱片袋", voiceCallMode: "实时 ASR + TTS", stickerScope: "角色独立 + 通用库"
     },
     "char-rin": {
       avatarUrl: "", remark: "夏凛", voiceProvider: "浏览器语音", voiceName: "默认女声", voiceSpeed: 1,
-      autoPlayVoice: false, stickerSteal: false, stickerPack: "轻松日常", replyStyle: "克制留白",
+      autoPlayVoice: false, voiceId: "voice_kr_02", llmTone: false, language: "自动", emotion: "自动", visionEnabled: true, stickerSteal: false, stickerPack: "轻松日常", replyStyle: "克制留白",
       memoryDepth: 16, proactive: true, quietHours: "23:00—08:00"
       , relationship: "多年好友", userCity: "上海", charCity: "釜山", cityPrototype: "现实釜山", weather: "晴 · 20°C", longDistance: true,
       autoAvatar: false, memoryMode: "分层长期记忆", imageProfile: "清透胶片", videoPortrait: "静态立绘", worldbook: "首尔日常", chainOfThought: "关闭", preset: "克制短句", patText: "拍了拍夏凛的肩", voiceCallMode: "按键说话", stickerScope: "角色独立"
@@ -43,7 +43,22 @@ export const seedState = {
   },
   mcp: { name: "", endpoint: "", transport: "HTTP / SSE", connected: false, enabledTools: ["share_context", "open_companion"] },
   bridge: { camera: false, microphone: false, screen: false, location: false, notifications: false, companionMode: true },
-  appearance: { theme: "mono", wallpaperType: "gradient", wallpaper: "" },
+  appearance: { theme: "mono", wallpaperType: "gradient", wallpaper: "", appName: "bunny bunny", appIcon: "", bunnyIcon: "line", deviceProfile: "iphone-pro" },
+  desktopFolders: [],
+  chatGroups: [
+    { id: "group-seoul", name: "首尔日常", worldId: "world-seoul", personIds: ["char-jun", "char-rin"] },
+    { id: "group-tokyo", name: "东京支线", worldId: "world-tokyo", personIds: ["npc-soo"] }
+  ],
+  worldbooks: [
+    { id: "wb-seoul", name: "首尔日常", prompt: "故事发生在当代首尔。角色共享同一时间线与公共事件。", enabled: true },
+    { id: "wb-record", name: "唱片店资料", prompt: "唱片店位于延南洞，营业时间 11:00—22:00。", enabled: true }
+  ],
+  presets: [
+    { id: "preset-natural", name: "自然聊天", prompt: "保持自然、简洁、有生活感的对话。" },
+    { id: "preset-story", name: "沉浸叙事", prompt: "使用细腻但克制的沉浸式表达。" }
+  ],
+  chatAppearance: { interfaceCss: "", interfacePresets: [], bubblePreset: "imessage", bubbleCss: "", bubbleColor: "#111111", bubbleScale: 1, fontSize: 14, fontUrl: "", fontPresets: [], background: "", backgroundHistory: [], hideUserAvatar: false },
+  dataSettings: { autoBackup: false, cloudType: "", cloudEndpoint: "", lastBackup: "", imageQuality: 0.78 },
   desktopOrder: ["chat", "contacts", "moments", "forum", "delivery", "shop", "flea", "sms", "phone", "worldbook", "presets", "games", "memos", "calendar", "wallet", "focus", "together", "api", "bridge", "mcp", "phone-settings"],
   desktopWidgets: [
     { id: "widget-char", type: "character", size: "wide", title: "CHAR STATUS", content: "我把唱片留好了。你来之前，它会一直在这里。", style: { background: "#111111", color: "#ffffff" } }
@@ -69,6 +84,8 @@ function mergeState(base, saved) {
   return {
     ...base, ...saved,
     appearance: { ...base.appearance, ...(saved.appearance || {}) },
+    chatAppearance: { ...base.chatAppearance, ...(saved.chatAppearance || {}) },
+    dataSettings: { ...base.dataSettings, ...(saved.dataSettings || {}) },
     stickerLibraries: { global: saved.stickerLibraries?.global || base.stickerLibraries.global, characters: { ...base.stickerLibraries.characters, ...(saved.stickerLibraries?.characters || {}) } },
     mediaApis: { minimax: { ...base.mediaApis.minimax, ...(saved.mediaApis?.minimax || {}) }, image: { ...base.mediaApis.image, ...(saved.mediaApis?.image || {}) } },
     chatProfiles: Object.fromEntries(Object.entries(base.chatProfiles).map(([id, profile]) => [id, { ...profile, ...(saved.chatProfiles?.[id] || {}) }]))
