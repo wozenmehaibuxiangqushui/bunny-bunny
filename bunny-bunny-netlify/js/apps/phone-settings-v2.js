@@ -5,6 +5,9 @@ const bunnyIcons=[
   ["lop","垂耳兔","♧"],["minimal","极简兔","○"],["ink","黑曜兔","●"],["cloud","云朵兔","☁"]
 ];
 
+export function applyAppIdentity(a){document.title=a.appName||"bunny bunny";const mark=a.appIcon||makeIcon(a.bunnyIcon||"line");let icon=document.querySelector('link[rel="icon"]');if(icon)icon.href=mark;const manifest={name:a.appName||"bunny bunny",short_name:a.appName||"bunny",start_url:"./",display:"standalone",background_color:"#f4f4f2",theme_color:"#f4f4f2",icons:a.appIcon?[{src:a.appIcon,sizes:"any",type:"image/png"}]:[]};let link=document.querySelector('link[rel="manifest"]');if(link){if(link.dataset.dynamic)URL.revokeObjectURL(link.href);link.href=URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:"application/manifest+json"}));link.dataset.dynamic="1"}}
+function makeIcon(kind){const marks={line:"兔",glass:"◇",moon:"☾",pixel:"▦",lop:"♧",minimal:"○",ink:"●",cloud:"☁"},svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" rx="30" fill="${kind==="glass"?"#dfe6e7":"#111"}"/><text x="64" y="80" text-anchor="middle" font-size="54" fill="${kind==="glass"?"#111":"#fff"}">${marks[kind]||"兔"}</text></svg>`;return"data:image/svg+xml,"+encodeURIComponent(svg)}
+
 export function createPhoneSettingsRenderer({store,navigate}){
   return container=>{
     const state=store.getState(),a=state.appearance;
@@ -39,11 +42,11 @@ export function createPhoneSettingsRenderer({store,navigate}){
       </section>
       <div class="section-title"><h3>恢复</h3><span>仅恢复外观</span></div>
       <section class="card"><div class="setting-row"><div><span class="label">恢复默认外观</span><small>不会清空聊天、人物、小组件与 API 数据</small></div><button class="button secondary" data-reset>恢复</button></div></section>`;
-    container.querySelector("[data-app-name]").onchange=e=>{store.update(s=>s.appearance.appName=e.target.value.trim()||"bunny bunny");document.title=store.getState().appearance.appName;showToast("应用名称已保存")};
+    container.querySelector("[data-app-name]").onchange=e=>{store.update(s=>s.appearance.appName=e.target.value.trim()||"bunny bunny");applyAppIdentity(store.getState().appearance);showToast("应用名称已保存")};
     container.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{store.update(s=>s.appearance.theme=b.dataset.theme);setPhoneAppearance(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container)});
-    container.querySelectorAll("[data-bunny]").forEach(b=>b.onclick=()=>{store.update(s=>{s.appearance.bunnyIcon=b.dataset.bunny;s.appearance.appIcon=""});createPhoneSettingsRenderer({store,navigate})(container);showToast("兔子图标已应用到主屏幕")});
+    container.querySelectorAll("[data-bunny]").forEach(b=>b.onclick=()=>{store.update(s=>{s.appearance.bunnyIcon=b.dataset.bunny;s.appearance.appIcon=""});applyAppIdentity(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container);showToast("兔子图标已应用到主屏幕")});
     container.querySelectorAll("[data-jump]").forEach(b=>b.onclick=()=>navigate(b.dataset.jump,b.dataset.jump==="chat-settings"?{personId:"char-jun"}:{}));
-    container.querySelector("[data-use-icon-url]").onclick=()=>{const url=container.querySelector("[data-icon-url]").value.trim();if(!validUrl(url))return showToast("请输入有效的 HTTP(S) 图片地址");store.update(s=>s.appearance.appIcon=url);createPhoneSettingsRenderer({store,navigate})(container)};
+    container.querySelector("[data-use-icon-url]").onclick=()=>{const url=container.querySelector("[data-icon-url]").value.trim();if(!validUrl(url))return showToast("请输入有效的 HTTP(S) 图片地址");store.update(s=>s.appearance.appIcon=url);applyAppIdentity(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container)};
     container.querySelector("[data-use-wallpaper-url]").onclick=()=>{const url=container.querySelector("[data-wallpaper-url]").value.trim();if(!validUrl(url))return showToast("请输入有效的 HTTP(S) 图片地址");store.update(s=>s.appearance.wallpaper=url);setPhoneAppearance(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container)};
     bindImage(container.querySelector("[data-icon-file]"),value=>store.update(s=>s.appearance.appIcon=value),()=>createPhoneSettingsRenderer({store,navigate})(container));
     bindImage(container.querySelector("[data-icon-camera]"),value=>store.update(s=>s.appearance.appIcon=value),()=>createPhoneSettingsRenderer({store,navigate})(container));
@@ -55,4 +58,4 @@ export function createPhoneSettingsRenderer({store,navigate}){
 }
 function setting(label,small,route){return`<div class="setting-row"><div><span class="label">${label}</span><small>${small}</small></div><button class="button secondary" data-jump="${route}">管理</button></div>`}
 function validUrl(value){return/^https?:\/\//i.test(value)}
-function bindImage(input,save,done){input.onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.size>3*1024*1024)return showToast("请选择 3MB 以内的图片");const reader=new FileReader();reader.onload=()=>{save(reader.result);done();showToast("图片已保存")};reader.readAsDataURL(file)}}
+function bindImage(input,save,done){input.onchange=e=>{const file=e.target.files[0];if(!file)return;if(file.size>3*1024*1024)return showToast("请选择 3MB 以内的图片");const reader=new FileReader();reader.onload=()=>{save(reader.result);applyAppIdentity(JSON.parse(localStorage.getItem("bunny-bunny:m0")||"{}").appearance||{});done();showToast("图片已保存")};reader.readAsDataURL(file)}}
