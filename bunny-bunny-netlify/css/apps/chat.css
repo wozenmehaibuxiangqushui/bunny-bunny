@@ -1,0 +1,36 @@
+.conversation { padding: .85rem 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.avatar-button { border: 0; padding: 0; border-radius: 50%; background: transparent; cursor: pointer; }
+.unread { min-width: 1.2rem; height: 1.2rem; display: grid; place-items: center; border-radius: 99rem; background: #111; color: #fff; font-size: .66rem; }
+.chat-layout { min-height: 100%; display: grid; grid-template-rows: auto minmax(18rem, 1fr) auto; }
+.chat-person { padding: .6rem 0 .9rem; }
+.chat-stream { display: flex; flex-direction: column; gap: .75rem; padding: .8rem 0 1rem; }
+.message { max-width: 79%; display: flex; flex-direction: column; gap: .25rem; align-self: flex-start; }
+.message.user { align-self: flex-end; align-items: flex-end; }
+.bubble { padding: .72rem .9rem; border: 1px solid var(--line); border-radius: var(--radius-bubble); border-bottom-left-radius: .35rem; background: var(--bubble-char-bg); color: var(--bubble-char-text); line-height: 1.5; font-size: .92rem; white-space: pre-wrap; }
+.message.user .bubble { border-color: #111; border-bottom-left-radius: var(--radius-bubble); border-bottom-right-radius: .35rem; background: var(--bubble-user-bg); color: var(--bubble-user-text); }
+.message time { color: var(--muted); font-size: .65rem; }
+.typing { color: var(--muted); font-size: .75rem; padding: .35rem .2rem; }
+.composer { position: sticky; bottom: 0; display: grid; grid-template-columns: auto minmax(0,1fr) auto auto; gap: .4rem; align-items: end; padding: .65rem 0 .4rem; background: linear-gradient(transparent, var(--phone-bg) 22%); }
+.composer textarea { max-height: 7rem; min-height: 2.7rem; resize: none; border: 1px solid var(--line); border-radius: 1.35rem; outline: 0; padding: .7rem .85rem; background: var(--surface); line-height: 1.3; }
+.composer .send { width: 2.7rem; height: 2.7rem; border: 0; border-radius: 50%; background: #111; color: #fff; cursor: pointer; }
+.composer .secondary-send { border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 1.1rem; }
+.composer .ai-send { font-size: .68rem; font-weight: 800; }
+.plus-tray { display: grid; grid-template-columns: repeat(4,1fr); gap: .55rem; padding: .75rem 0; }
+.plus-tray button { min-height: 4.4rem; display: grid; place-items: center; align-content: center; gap: .25rem; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface); font-size: .66rem; }
+.plus-tray button span { font-size: 1.1rem; }
+.system-message { align-self: center; color: var(--muted); font-size: .72rem; text-align: center; }
+.message-reaction { align-self: flex-start; margin-top: -.55rem; border: 1px solid var(--line); border-radius: 99rem; background: var(--surface); padding: .12rem .4rem; font-size: .75rem; }
+.message.user .message-reaction { align-self: flex-end; }
+.chat-tabs { position: sticky; bottom: -.05rem; z-index: 4; display: grid; grid-template-columns: repeat(3,1fr); margin-top: 1rem; padding: .35rem; border: 1px solid var(--line); border-radius: 1.2rem; background: rgba(255,255,255,.78); backdrop-filter: blur(18px); }
+.chat-tabs button { min-height: 2.5rem; border: 0; border-radius: .85rem; background: transparent; color: var(--muted); }
+.chat-tabs button.active { background: #111; color: #fff; }
+.profile-card { display: flex; align-items: center; gap: 1rem; padding: .5rem 0 1rem; }
+.profile-card h3 { margin: .2rem 0; font-size: 1.4rem; }
+.profile-card p { margin: 0; color: var(--muted); }
+.signature { margin: 0 0 1rem; padding: 1rem; border-radius: 1rem; background: var(--surface-soft); line-height: 1.55; }
+.chat-actions { display: flex; gap: .4rem; overflow-x: auto; scrollbar-width: none; padding-bottom: .2rem; }
+.chat-actions button { white-space: nowrap; }
+.shared-video { position: relative; min-height: 20rem; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; background: #151515; color: #fff; }
+.shared-video::before { content: ""; position: absolute; inset: 12% 14% 38%; border: 1px solid rgba(255,255,255,.25); border-radius: 50%; box-shadow: 2rem 2rem 0 rgba(255,255,255,.04), -3rem 4rem 0 rgba(255,255,255,.06); }
+.shared-video > * { position: relative; }
+.shared-video p { color: #c9c9c9; }

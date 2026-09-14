@@ -1,0 +1,20 @@
+.settings-nav { position: sticky; top: 0; z-index: 3; padding: .3rem 0 .7rem; background: var(--phone-bg); }
+.status-chip { display: inline-flex; align-items: center; gap: .4rem; color: var(--muted); font-size: .72rem; }
+.status-chip::before { content: ""; width: .45rem; height: .45rem; border-radius: 50%; background: #aaa; }
+.status-chip.ready::before { background: #111; }
+.range-line { display: grid; grid-template-columns: 1fr 2.5rem; align-items: center; gap: .75rem; }
+.range-line input { accent-color: #111; }
+.permission-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
+.permission-card { min-height: 5.6rem; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--line); border-radius: 1rem; background: var(--surface-soft); padding: .75rem; }
+.permission-card strong { font-size: .86rem; }
+.permission-card span { color: var(--muted); font-size: .7rem; }
+.permission-card.granted { background: #111; color: #fff; }
+.permission-card.granted span { color: #bbb; }
+.tool-list { display: grid; gap: .45rem; }
+.tool-item { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .65rem; padding: .65rem 0; border-bottom: 1px solid var(--line); }
+.tool-item:last-child { border-bottom: 0; }
+.tool-code { width: 2rem; height: 2rem; display: grid; place-items: center; border-radius: .7rem; background: #111; color: #fff; font-size: .7rem; }
+.tool-item strong { font-size: .82rem; display: block; }
+.tool-item small { color: var(--muted); font-size: .7rem; }
+.callout { border-left: 2px solid #111; padding: .2rem 0 .2rem .75rem; color: var(--muted); font-size: .78rem; line-height: 1.55; }
+.file-button { display:inline-flex;align-items:center;justify-content:center; }

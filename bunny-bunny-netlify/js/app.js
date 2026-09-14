@@ -1,0 +1,47 @@
+import { createStore } from "./core/store.js";
+import { registerRoute, navigate } from "./core/router.js";
+import { createDesktopRenderer } from "./apps/desktop.js";
+import { createChatRenderers } from "./apps/chat.js";
+import { createContactsRenderer } from "./apps/contacts.js";
+import { createPhoneSettingsRenderer } from "./apps/phone-settings.js";
+import { createChatSettingsRenderer } from "./apps/chat-settings.js";
+import { createApiSettingsRenderer } from "./apps/api-settings.js";
+import { createPlaceholderRenderer, placeholderRoutes } from "./apps/placeholders.js";
+import { createTogetherRenderer, createFocusRenderer, createWorldRenderer } from "./apps/companions.js";
+import { createBridgeRenderer } from "./integrations/reality-bridge.js";
+import { createMcpRenderer } from "./integrations/mcp-client.js";
+import { registerBunnyTools } from "./webmcp.js";
+import { showToast, setPhoneAppearance } from "./core/ui.js";
+import { playLaunchAnimation } from "./splash.js";
+import { registerPwa } from "./pwa.js";
+
+const store = createStore();
+playLaunchAnimation();
+registerPwa();
+const context = { store, navigate };
+const chats = createChatRenderers(context);
+
+registerRoute("desktop", createDesktopRenderer(context));
+registerRoute("chat", chats.list);
+registerRoute("conversation", chats.conversation);
+registerRoute("contacts", createContactsRenderer(context));
+registerRoute("phone-settings", createPhoneSettingsRenderer(context));
+registerRoute("chat-settings", createChatSettingsRenderer(context));
+registerRoute("api", createApiSettingsRenderer(context));
+registerRoute("moments", chats.moments);
+registerRoute("chat-me", chats.me);
+registerRoute("bridge", createBridgeRenderer(context));
+registerRoute("mcp", createMcpRenderer(context));
+registerRoute("together", createTogetherRenderer(context));
+registerRoute("focus", createFocusRenderer(context));
+registerRoute("world", createWorldRenderer(context));
+placeholderRoutes.forEach(route => registerRoute(route, createPlaceholderRenderer(route)));
+registerRoute("placeholder", container => { container.innerHTML = `<div class="empty"><strong>这个模块还在路上</strong><span>当前版本不会伪装成已经接入。</span></div>`; });
+
+document.querySelector("#home-button").addEventListener("click", () => navigate("desktop"));
+document.querySelector("#app-view").addEventListener("scroll", event => document.querySelector("#app-header").classList.toggle("scrolled", event.target.scrollTop > 8));
+
+const initialHash = location.hash.slice(1);
+setPhoneAppearance(store.getState().appearance);
+navigate(["chat", "contacts", "phone-settings", "chat-settings", "api", "moments", "chat-me", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
+if (registerBunnyTools(context)) showToast("已启用页面级 MCP 工具");

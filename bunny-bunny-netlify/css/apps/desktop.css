@@ -1,0 +1,32 @@
+.desktop-greeting { display: grid; grid-template-columns: 1fr auto; align-items: end; padding: .7rem .2rem 1.15rem; border-bottom: 1px solid var(--line); }
+.desktop-greeting .date { font-size: 2.4rem; font-weight: 520; letter-spacing: -.08em; }
+.desktop-greeting p { margin: .25rem 0 0; color: var(--muted); font-size: .84rem; }
+.desktop-greeting .bunny-mark { font-size: 2.8rem; line-height: 1; }
+.app-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem .55rem; padding: 1.1rem 0; touch-action: pan-y; }
+.app-tile { min-width: 0; display: grid; justify-items: center; gap: .48rem; border: 0; background: transparent; cursor: pointer; }
+.app-icon { width: 3.45rem; aspect-ratio: 1; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 1.15rem; background: var(--surface); font-size: 1.25rem; box-shadow: 0 5px 16px rgba(0,0,0,.04); transition: transform .15s ease; }
+.app-tile:nth-child(3n+1) .app-icon { background: #111; color: #fff; }
+.app-tile span { width: 100%; overflow: hidden; text-overflow: ellipsis; color: #333; font-size: .72rem; white-space: nowrap; }
+.app-tile { position: relative; user-select: none; }
+.app-grid.editing .app-tile { animation: icon-wiggle .18s ease-in-out infinite alternate; touch-action: none; }
+.app-grid.editing .app-tile:nth-child(2n) { animation-direction: alternate-reverse; }
+.app-grid.editing .app-tile.dragging { opacity: .68; scale: 1.08; }
+.delete-badge, .widget-remove { position: absolute; z-index: 2; top: -.35rem; left: .2rem; width: 1.25rem !important; height: 1.25rem; display: grid; place-items: center; border: 0; border-radius: 50%; background: #111; color: #fff !important; font-size: .9rem !important; }
+.desktop-widgets { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; margin-top: .8rem; }
+.home-widget { position: relative; min-height: 6.5rem; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,.55); border-radius: 1.45rem; background: var(--widget-bg); color: var(--widget-color); padding: .9rem; box-shadow: 0 8px 25px rgba(0,0,0,.07); overflow: hidden; }
+.home-widget.wide { grid-column: 1 / -1; min-height: 7.6rem; }
+.home-widget span { font-size: .68rem; letter-spacing: .12em; opacity: .62; }
+.home-widget strong { font-size: 1.05rem; line-height: 1.35; }
+.home-widget small { opacity: .62; font-size: .7rem; }
+.widget-remove { left: auto; right: .45rem; top: .45rem; }
+.widget-picker { display: grid; grid-template-columns: 1fr 1fr; gap: .55rem; }
+.widget-option { min-height: 6.4rem; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--line); border-radius: 1.2rem; background: var(--surface); padding: .8rem; text-align: left; }
+.widget-option span { color: var(--muted); font-size: .7rem; }
+.widget-option strong { font-size: .85rem; }
+.desktop-hint, .edit-tip { margin: .25rem 0 .8rem; color: var(--muted); font-size: .7rem; text-align: center; }
+.page-dots { color: var(--muted); font-size: .58rem; letter-spacing: .12em; }
+@keyframes icon-wiggle { from { rotate: -1.5deg; translate: -1px 0; } to { rotate: 1.5deg; translate: 1px 0; } }
+.widget { min-height: 7.8rem; display: flex; flex-direction: column; justify-content: space-between; background: #111; color: #fff; }
+.widget .eyebrow { color: #aaa; }
+.widget blockquote { margin: 1rem 0 0; font-size: 1rem; line-height: 1.5; letter-spacing: -.02em; }
+.widget-footer { display: flex; justify-content: space-between; align-items: center; color: #bbb; font-size: .72rem; }

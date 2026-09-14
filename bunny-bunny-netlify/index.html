@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+  <meta name="theme-color" content="#f4f4f2">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="bunny机">
+  <meta name="description" content="bunny bunny：黑白简约韩系风格的 AI 虚拟小手机。">
+  <title>bunny bunny</title>
+  <link rel="icon" type="image/svg+xml" href="./icons/icon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="stylesheet" href="./css/splash.css">
+  <link rel="stylesheet" href="./css/tokens.css">
+  <link rel="stylesheet" href="./css/shell.css">
+  <link rel="stylesheet" href="./css/components.css">
+  <link rel="stylesheet" href="./css/apps/desktop.css">
+  <link rel="stylesheet" href="./css/apps/chat.css">
+  <link rel="stylesheet" href="./css/apps/settings.css">
+  <link rel="stylesheet" href="./css/apps/social.css">
+  <link rel="stylesheet" href="./css/responsive.css">
+</head>
+<body>
+  <div class="launch-screen" id="launch-screen" role="status" aria-label="bunny bunny 正在启动">
+    <div class="launch-content">
+      <div class="launch-icon-wrap"><img class="launch-icon" src="./icons/icon.svg" alt=""></div>
+      <div class="launch-title">BUNNY BUNNY</div>
+      <div class="launch-subtitle">ENTERING YOUR LITTLE WORLD</div>
+      <div class="launch-progress" aria-hidden="true"></div>
+    </div>
+  </div>
+  <main class="stage">
+    <aside class="project-note" aria-label="项目说明">
+      <span class="eyebrow">BUNNY OS · M0</span>
+      <h1>bunny<br>bunny</h1>
+      <p>一个装得下角色生活的虚拟小手机。</p>
+      <div class="note-card"><span>当前世界</span><strong>首尔 · 平行日常</strong></div>
+      <div class="note-card"><span>运行状态</span><strong>本地演示模式</strong></div>
+    </aside>
+
+    <section class="phone" id="phone-root" aria-label="bunny bunny 虚拟手机">
+      <div class="dynamic-island" id="dynamic-island" role="status" aria-live="polite">
+        <span class="island-dot"></span><span id="island-copy">bunny 正在陪你</span>
+      </div>
+
+      <div class="screen" id="app-screen" data-app="desktop">
+        <header class="app-header" id="app-header">
+          <button class="icon-button hidden" id="back-button" aria-label="返回">‹</button>
+          <div>
+            <span class="eyebrow" id="header-kicker">BUNNY OS</span>
+            <h2 id="header-title">我的小手机</h2>
+          </div>
+          <button class="icon-button" id="quick-settings" aria-label="打开设置">⌁</button>
+        </header>
+        <div class="app-view" id="app-view" tabindex="-1"></div>
+        <nav class="home-indicator-wrap" aria-label="系统导航">
+          <button class="home-indicator" id="home-button" aria-label="返回桌面"></button>
+        </nav>
+      </div>
+      <div class="modal-root" id="modal-root" aria-live="polite"></div>
+    </section>
+
+    <aside class="privacy-note" aria-label="隐私提示">
+      <span>REALITY BRIDGE</span>
+      <p>现实能力仅在你主动授权后使用。虚拟角色默认无法读取真实手机内容。</p>
+    </aside>
+  </main>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

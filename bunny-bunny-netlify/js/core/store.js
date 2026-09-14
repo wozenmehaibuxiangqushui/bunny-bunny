@@ -1,0 +1,99 @@
+const STORAGE_KEY = "bunny-bunny:m0";
+
+export const seedState = {
+  currentWorldId: "world-seoul",
+  currentUserId: "user-me",
+  worlds: [{ id: "world-seoul", name: "首尔 · 平行日常", timezone: "Asia/Seoul" }],
+  people: [
+    { id: "user-me", type: "user", name: "林小满", chatName: "manni", initials: "ME", note: "慢热，喜欢旧电影与雨天", accounts: [{ id: "acc-main", name: "manni", primary: true }] },
+    { id: "char-jun", type: "char", name: "韩叙俊", initials: "HJ", note: "在唱片店整理新到的黑胶", signature: "雨停之前，都算借来的时间。", online: true },
+    { id: "char-rin", type: "char", name: "尹夏凛", initials: "YR", note: "刚下课，晚点回复", signature: "今天也要把话留一半。", online: false },
+    { id: "npc-soo", type: "npc", name: "朴秀安", initials: "PS", note: "你和叙俊的共同好友", signature: "周末只接收好消息。", online: true }
+  ],
+  conversations: [
+    { id: "conv-jun", personId: "char-jun", unread: 2, preview: "等你忙完，我们一起看那个视频。", time: "21:08" },
+    { id: "conv-rin", personId: "char-rin", unread: 0, preview: "照片收到了，光很好看。", time: "18:42" }
+  ],
+  messages: {
+    "conv-jun": [
+      { id: "m1", role: "char", text: "店里今天放了你上次提到的那张专辑。", time: "20:54" },
+      { id: "m2", role: "user", text: "真的？给我留到周末。", time: "20:57" },
+      { id: "m3", role: "char", text: "已经放在柜台下面了。等你忙完，我们一起看那个视频。", time: "21:08" }
+    ],
+    "conv-rin": [
+      { id: "m4", role: "user", text: "今天的天空像旧电影。", time: "18:40" },
+      { id: "m5", role: "char", text: "照片收到了，光很好看。", time: "18:42" }
+    ]
+  },
+  chatProfiles: {
+    "char-jun": {
+      avatarUrl: "", remark: "叙俊", voiceProvider: "浏览器语音", voiceName: "默认男声", voiceSpeed: 1,
+      autoPlayVoice: false, stickerSteal: true, stickerPack: "日常 · 黑白", replyStyle: "自然短句",
+      memoryDepth: 24, proactive: true, quietHours: "23:00—08:00"
+      , relationship: "暧昧中的朋友", userCity: "上海", charCity: "首尔", cityPrototype: "现实首尔", weather: "小雨 · 17°C", longDistance: true,
+      autoAvatar: true, memoryMode: "分层长期记忆", imageProfile: "电影感写实", videoPortrait: "静态立绘 + 口型", worldbook: "首尔日常", chainOfThought: "仅保存文学化心声", preset: "自然聊天 v1", patText: "拍了拍叙俊的唱片袋", voiceCallMode: "实时 ASR + TTS", stickerScope: "角色独立 + 通用库"
+    },
+    "char-rin": {
+      avatarUrl: "", remark: "夏凛", voiceProvider: "浏览器语音", voiceName: "默认女声", voiceSpeed: 1,
+      autoPlayVoice: false, stickerSteal: false, stickerPack: "轻松日常", replyStyle: "克制留白",
+      memoryDepth: 16, proactive: true, quietHours: "23:00—08:00"
+      , relationship: "多年好友", userCity: "上海", charCity: "釜山", cityPrototype: "现实釜山", weather: "晴 · 20°C", longDistance: true,
+      autoAvatar: false, memoryMode: "分层长期记忆", imageProfile: "清透胶片", videoPortrait: "静态立绘", worldbook: "首尔日常", chainOfThought: "关闭", preset: "克制短句", patText: "拍了拍夏凛的肩", voiceCallMode: "按键说话", stickerScope: "角色独立"
+    }
+  },
+  mcp: { name: "", endpoint: "", transport: "HTTP / SSE", connected: false, enabledTools: ["share_context", "open_companion"] },
+  bridge: { camera: false, microphone: false, screen: false, location: false, notifications: false, companionMode: true },
+  appearance: { theme: "mono", wallpaperType: "gradient", wallpaper: "" },
+  desktopOrder: ["chat", "contacts", "moments", "forum", "delivery", "shop", "flea", "sms", "phone", "worldbook", "presets", "games", "memos", "calendar", "wallet", "focus", "together", "api", "bridge", "mcp", "phone-settings"],
+  desktopWidgets: [
+    { id: "widget-char", type: "character", size: "wide", title: "CHAR STATUS", content: "我把唱片留好了。你来之前，它会一直在这里。", style: { background: "#111111", color: "#ffffff" } }
+  ],
+  modelProfiles: [],
+  activeModelProfileId: "",
+  apiDraft: { provider: "OpenAI", name: "OpenAI 默认", baseUrl: "https://api.openai.com/v1", apiKey: "", persistKey: true, model: "", models: [] },
+  mediaApis: {
+    minimax: { baseUrl: "https://api.minimax.io/v1", apiKey: "", groupId: "", model: "speech-02-hd", voiceId: "" },
+    image: { provider: "OpenAI Images", baseUrl: "https://api.openai.com/v1", apiKey: "", model: "gpt-image-1", size: "1024x1024" }
+  },
+  moments: [
+    { id: "p1", personId: "char-jun", text: "闭店前最后一张唱片。窗外刚好开始下雨。", time: "20分钟前", likes: ["尹夏凛", "朴秀安"], comments: [{ name: "朴秀安", text: "又在等某个人吧。" }] },
+    { id: "p2", personId: "npc-soo", text: "周末空出来了，谁负责想吃什么？", time: "1小时前", likes: ["韩叙俊"], comments: [{ name: "尹夏凛", text: "先排除上次那家。" }] }
+  ],
+  stickerLibraries: { global: [], characters: { "char-jun": [], "char-rin": [] } }
+};
+
+function deepCopy(value) { return JSON.parse(JSON.stringify(value)); }
+
+function mergeState(base, saved) {
+  if (!saved || !saved.worlds || !saved.people) return base;
+  return {
+    ...base, ...saved,
+    appearance: { ...base.appearance, ...(saved.appearance || {}) },
+    stickerLibraries: { global: saved.stickerLibraries?.global || base.stickerLibraries.global, characters: { ...base.stickerLibraries.characters, ...(saved.stickerLibraries?.characters || {}) } },
+    mediaApis: { minimax: { ...base.mediaApis.minimax, ...(saved.mediaApis?.minimax || {}) }, image: { ...base.mediaApis.image, ...(saved.mediaApis?.image || {}) } },
+    chatProfiles: Object.fromEntries(Object.entries(base.chatProfiles).map(([id, profile]) => [id, { ...profile, ...(saved.chatProfiles?.[id] || {}) }]))
+  };
+}
+
+export function createStore() {
+  let state = deepCopy(seedState);
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    state = mergeState(state, saved);
+  } catch (error) { console.warn("Bunny state recovery failed", error); }
+
+  const listeners = new Set();
+  const save = () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    listeners.forEach(listener => listener(state));
+  };
+  return {
+    getState: () => state,
+    update(mutator) { mutator(state); save(); },
+    reset() { state = deepCopy(seedState); save(); },
+    subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); }
+  };
+}
+
+export function personById(state, id) { return state.people.find(person => person.id === id); }
+export function conversationById(state, id) { return state.conversations.find(item => item.id === id); }

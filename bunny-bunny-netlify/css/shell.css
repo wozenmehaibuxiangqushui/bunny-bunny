@@ -1,0 +1,26 @@
+body { overflow: hidden; }
+.stage { min-height: 100dvh; display: grid; grid-template-columns: minmax(13rem, 1fr) auto minmax(13rem, 1fr); align-items: center; gap: clamp(2rem, 5vw, 6rem); padding: 2rem; }
+.project-note, .privacy-note { max-width: 17rem; }
+.project-note { justify-self: end; }
+.project-note h1 { margin: .55rem 0 1rem; font-size: clamp(3.4rem, 7vw, 6.5rem); font-weight: 500; line-height: .78; letter-spacing: -.1em; }
+.project-note > p, .privacy-note p { color: #4e4e4b; line-height: 1.65; }
+.note-card { border-top: 1px solid rgba(0,0,0,.28); display: grid; gap: .4rem; margin-top: 2rem; padding-top: .8rem; }
+.note-card span, .privacy-note span { color: #656561; font-size: .75rem; letter-spacing: .12em; }
+.note-card strong { font-size: .92rem; font-weight: 620; }
+.privacy-note { align-self: end; margin-bottom: 3rem; }
+.phone { position: relative; width: min(25rem, calc(100vw - 2rem)); height: min(52rem, calc(100dvh - 2rem)); min-height: 38rem; border: 8px solid #111; border-radius: var(--radius-phone); background: var(--phone-bg); box-shadow: var(--shadow-phone); overflow: hidden; }
+.screen { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; background: var(--phone-bg); background-image: linear-gradient(rgba(244,244,242,.42), rgba(244,244,242,.42)), var(--wallpaper-image); background-size: cover; background-position: center; overflow: hidden; transition: background .25s ease; }
+.phone.has-wallpaper .app-view { background: rgba(244,244,242,.18); }
+.dynamic-island { position: absolute; z-index: 20; top: .8rem; left: 50%; translate: -50% 0; min-width: 8.5rem; height: 2.1rem; display: flex; align-items: center; justify-content: center; gap: .45rem; padding: 0 .8rem; border-radius: 99rem; background: #111; color: #fff; font-size: .68rem; letter-spacing: .03em; transition: min-width .25s ease, height .25s ease; }
+.dynamic-island.active { min-width: 13rem; height: 2.6rem; }
+.island-dot { width: .38rem; height: .38rem; border: 1px solid #fff; border-radius: 50%; }
+.app-header { min-height: 6.8rem; padding: 3.45rem 1.25rem .8rem; display: grid; grid-template-columns: 2.2rem 1fr 2.2rem; align-items: end; gap: .5rem; border-bottom: 1px solid transparent; }
+.app-header.scrolled { background: rgba(244,244,242,.9); border-color: var(--line); backdrop-filter: blur(16px); }
+.app-header h2 { margin: .14rem 0 0; font-size: 1.45rem; line-height: 1; letter-spacing: -.04em; }
+.icon-button { width: 2.2rem; height: 2.2rem; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: rgba(255,255,255,.76); font-size: 1.45rem; cursor: pointer; }
+.app-view { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; padding: 0 1.15rem 1rem; }
+.app-view::-webkit-scrollbar { display: none; }
+.home-indicator-wrap { z-index: 12; display: grid; place-items: center; height: 1.5rem; padding-bottom: .35rem; background: linear-gradient(transparent, var(--phone-bg) 45%); }
+.home-indicator { width: 7.5rem; height: .3rem; padding: 0; border: 0; border-radius: 99rem; background: #111; cursor: pointer; }
+.toast { position: fixed; z-index: 99; left: 50%; bottom: 1.5rem; translate: -50% 1rem; opacity: 0; pointer-events: none; padding: .75rem 1rem; border-radius: 99rem; background: #111; color: #fff; font-size: .85rem; transition: .2s ease; }
+.toast.show { opacity: 1; translate: -50% 0; }

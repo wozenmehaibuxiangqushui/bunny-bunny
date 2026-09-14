@@ -1,0 +1,21 @@
+@media (max-width: 880px) {
+  body { background: var(--phone-bg); }
+  .stage { display: block; min-height: 100dvh; padding: 0; }
+  .project-note, .privacy-note { display: none; }
+  .phone { width: 100vw; height: 100dvh; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+  .dynamic-island { top: var(--safe-top); }
+  .app-header { padding-top: calc(var(--safe-top) + 2.45rem); }
+  .home-indicator-wrap { height: calc(1.3rem + var(--safe-bottom)); padding-bottom: var(--safe-bottom); }
+  .toast { bottom: calc(1.1rem + var(--safe-bottom)); }
+}
+
+@media (max-height: 690px) and (min-width: 881px) {
+  .phone { min-height: 0; height: calc(100dvh - 1rem); }
+  .stage { padding: .5rem; }
+}
+
+@media (orientation: landscape) and (max-width: 880px) {
+  .app-header { min-height: 4.7rem; padding-top: calc(var(--safe-top) + 1.9rem); }
+  .dynamic-island { height: 1.7rem; top: .35rem; }
+  .app-grid { grid-template-columns: repeat(6, 1fr); }
+}
