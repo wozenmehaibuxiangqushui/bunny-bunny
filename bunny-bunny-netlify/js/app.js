@@ -3,7 +3,7 @@ import { registerRoute, navigate } from "./core/router.js";
 import { createDesktopRenderer } from "./apps/desktop-v2.js";
 import { createChatRenderers } from "./apps/chat-v2.js";
 import { createContactsRenderer } from "./apps/contacts.js";
-import { createPhoneSettingsRenderer } from "./apps/phone-settings-v2.js";
+import { createPhoneSettingsRenderer, applyAppIdentity } from "./apps/phone-settings-v2.js";
 import { createChatSettingsRenderer, applyChatAppearance } from "./apps/chat-settings-v2.js";
 import { createDataSettingsRenderer } from "./apps/data-settings.js";
 import { createWorldbookRenderer, createPresetsRenderer } from "./apps/prompt-library.js";
@@ -49,7 +49,7 @@ document.querySelector("#app-view").addEventListener("scroll", event => document
 const initialHash = location.hash.slice(1);
 setPhoneAppearance(store.getState().appearance);
 document.querySelector("#phone-root").dataset.device = store.getState().appearance.deviceProfile || "iphone-pro";
-document.title = store.getState().appearance.appName || "bunny bunny";
+applyAppIdentity(store.getState().appearance);
 applyChatAppearance(store.getState().chatAppearance);
 navigate(["chat", "contacts", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
 if (registerBunnyTools(context)) showToast("已启用页面级 MCP 工具");
