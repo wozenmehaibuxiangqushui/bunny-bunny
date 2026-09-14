@@ -6,6 +6,7 @@ import { applyChatAppearance } from "./chat-settings-v2.js";
 export function createChatRenderers({ store, navigate }) {
   let activeGroup = "all";
   function list(container) {
+    container.className = "app-view chat-list-with-tabs";
     const state = store.getState();
     container.innerHTML = `
       <div class="row between"><span class="pill"><span class="dot"></span> Bunny Chat</span><button class="icon-button" data-list-plus aria-label="聊天功能">＋</button></div>
@@ -17,7 +18,7 @@ export function createChatRenderers({ store, navigate }) {
         return `<article class="conversation row" data-conversation="${item.id}"><button class="avatar-button" data-open-conversation="${item.id}">${initialsAvatar(person, profile)}</button><div class="meta"><strong>${escapeHtml(profile.remark || person.name)}</strong><span>${escapeHtml(item.preview)}</span></div><div class="stack" style="justify-items:end;gap:.35rem"><span class="eyebrow">${item.time}</span>${item.unread ? `<span class="unread">${item.unread}</span>` : ""}</div></article>`;
       }).join("")}</section>
       ${chatTabs("chats")}`;
-    container.classList.add("chat-list-with-tabs");
+
     container.querySelectorAll("[data-open-conversation]").forEach(button => button.addEventListener("click", () => navigate("conversation", { id: button.dataset.openConversation })));
     container.querySelectorAll("[data-conversation]").forEach(row => row.addEventListener("click", event => { if (!event.target.closest(".avatar-button")) navigate("conversation", { id: row.dataset.conversation }); }));
     container.querySelector("[data-list-plus]").addEventListener("click", () => openChatMenu(container));
@@ -27,6 +28,7 @@ export function createChatRenderers({ store, navigate }) {
   }
 
   function conversation(container, params) {
+    container.className = "app-view";
     const state = store.getState(); const conv = conversationById(state, params.id || "conv-jun"); const person = personById(state, conv.personId); const profile = state.chatProfiles[person.id]; const user=personById(state,state.currentUserId); const chatAppearance=state.chatAppearance;
     conv.unread = 0; applyChatAppearance(chatAppearance);
     container.innerHTML = `<section class="chat-layout" style="${chatAppearance.background?`background-image:linear-gradient(rgba(244,244,242,.72),rgba(244,244,242,.72)),url(${escapeHtml(chatAppearance.background)});background-size:cover;background-position:center`:""}">
@@ -37,7 +39,7 @@ export function createChatRenderers({ store, navigate }) {
     </section>`;
     const form = container.querySelector("form");
     container.querySelector("[data-plus]").addEventListener("click", () => container.querySelector("[data-plus-tray]").classList.toggle("hidden"));
-    container.querySelectorAll("[data-extra]").forEach(button => button.addEventListener("click", () => showToast(`${button.dataset.extra}功能已预留业务入口`)));
+    container.querySelectorAll("[data-extra]").forEach(button => button.addEventListener("click", () => handleExtra(button.dataset.extra)));
     container.querySelector("[data-send-only]").addEventListener("click", () => submitMessage(false));
     form.addEventListener("submit", event => { event.preventDefault(); submitMessage(true); });
     container.querySelector("[data-chat-settings]").addEventListener("click", () => navigate("chat-settings", { personId: person.id }));
@@ -45,6 +47,16 @@ export function createChatRenderers({ store, navigate }) {
     let clickTimer; avatar.addEventListener("click", () => { clearTimeout(clickTimer); clickTimer = setTimeout(() => showProfileCard(person, profile), 250); });
     avatar.addEventListener("dblclick", () => { clearTimeout(clickTimer); addSystemMessage(profile.patText || `拍了拍${person.name}`); showToast(profile.patText || "拍一拍"); });
     bindMessageMenus(container, conv, person);
+
+    function handleExtra(type){
+      const add=text=>{store.update(s=>s.messages[conv.id].push({id:crypto.randomUUID(),role:"user",text,time:timeNow()}));conversation(container,params)};
+      if(type==="图片"||type==="拍摄"||type==="文件"){const input=document.createElement("input");input.type="file";input.accept=type==="文件"?"*/*":"image/*";if(type==="拍摄")input.setAttribute("capture","environment");input.onchange=e=>{const file=e.target.files[0];if(file)add(`[${type}] ${file.name}`)};input.click();return}
+      if(type==="位置"){if(!navigator.geolocation)return showToast("当前浏览器不支持定位");navigator.geolocation.getCurrentPosition(pos=>add(`[位置] ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`),()=>showToast("未获得定位权限"));return}
+      if(type==="语音"){navigator.mediaDevices?.getUserMedia({audio:true}).then(stream=>{stream.getTracks().forEach(t=>t.stop());add("[语音] 00:03")}).catch(()=>showToast("未获得麦克风权限"));return}
+      if(type==="红包"||type==="转账"){const amount=prompt(`${type}金额`,"52.00");if(amount)add(`[${type}] ¥${amount}`);return}
+      if(type==="一起刷"){navigate("together");return}
+      if(type==="表情包"){openSheet(`<div class="sheet-handle"></div><div class="sheet-title"><h3>表情包</h3><button class="button ghost" data-sheet-close>关闭</button></div><div class="action-grid">${store.getState().stickerLibraries.characters[person.id].map((x,i)=>`<button class="action-card" data-sticker-index="${i}">${escapeHtml(x.name)}</button>`).join("")||'<p class="callout">请先在聊天设置上传角色表情包。</p>'}</div>`,{onReady(sheet){sheet.querySelectorAll("[data-sticker-index]").forEach(b=>b.onclick=()=>{const x=store.getState().stickerLibraries.characters[person.id][Number(b.dataset.stickerIndex)];closeSheet();add(`[表情] ${x.name}`)})}})}
+    }
 
     async function submitMessage(sendAi) {
       const input = form.elements.message; const text = input.value.trim(); if (!text) return;
