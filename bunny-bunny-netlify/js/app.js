@@ -40,7 +40,7 @@ registerRoute("mcp", createMcpRenderer(context));
 registerRoute("together", createTogetherRenderer(context));
 registerRoute("focus", createFocusRenderer(context));
 registerRoute("world", createWorldRenderer(context));
-placeholderRoutes.forEach(route => registerRoute(route, createPlaceholderRenderer(route)));
+placeholderRoutes.filter(route => !["worldbook","presets"].includes(route)).forEach(route => registerRoute(route, createPlaceholderRenderer(route)));
 registerRoute("placeholder", container => { container.innerHTML = `<div class="empty"><strong>这个模块还在路上</strong><span>当前版本不会伪装成已经接入。</span></div>`; });
 
 document.querySelector("#home-button").addEventListener("click", () => navigate("desktop"));
