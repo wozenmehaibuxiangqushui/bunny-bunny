@@ -25,6 +25,7 @@ const widgetCatalog=[
 export function createDesktopRenderer({store,navigate}){
   let editMode=false,currentPage=0,dragId="",edgeTimer=null;
   function render(container){
+    container.className="app-view";
     const state=store.getState(),profile=profiles[state.appearance.deviceProfile]||profiles["iphone-pro"],cap=profile.cols*profile.rows;
     const jun=personById(state,"char-jun"),items=[
       ...state.desktopOrder.filter(id=>appRegistry[id]).map(id=>({kind:"app",id})),
