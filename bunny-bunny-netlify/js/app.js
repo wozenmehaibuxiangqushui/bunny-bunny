@@ -16,6 +16,7 @@ import { registerBunnyTools } from "./webmcp.js";
 import { showToast, setPhoneAppearance } from "./core/ui.js";
 import { playLaunchAnimation } from "./splash.js";
 import { registerPwa } from "./pwa.js";
+import { setupIosRefinement } from "./ios-refinement.js";
 
 const store = createStore();
 playLaunchAnimation();
@@ -48,8 +49,8 @@ document.querySelector("#app-view").addEventListener("scroll", event => document
 
 const initialHash = location.hash.slice(1);
 setPhoneAppearance(store.getState().appearance);
-document.querySelector("#phone-root").dataset.device = store.getState().appearance.deviceProfile || "iphone-pro";
 applyAppIdentity(store.getState().appearance);
 applyChatAppearance(store.getState().chatAppearance);
 navigate(["chat", "contacts", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
+setupIosRefinement(context);
 if (registerBunnyTools(context)) showToast("已启用页面级 MCP 工具");
