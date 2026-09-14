@@ -1,0 +1,38 @@
+.phone{transition:width .25s ease,height .25s ease,border-radius .25s ease}
+.phone[data-device="iphone-classic"]{width:min(23.45rem,calc(100vw - 2rem));height:min(50.75rem,calc(100dvh - 2rem))}
+.phone[data-device="iphone-pro"]{width:min(25.1rem,calc(100vw - 2rem));height:min(54.6rem,calc(100dvh - 2rem))}
+.phone[data-device="iphone-max"]{width:min(27.5rem,calc(100vw - 2rem));height:min(58.1rem,calc(100dvh - 2rem))}
+.phone[data-device="android-pro"]{width:min(26.9rem,calc(100vw - 2rem));height:min(56.25rem,calc(100dvh - 2rem));border-radius:2.5rem}
+.device-chip{max-width:9.5rem;border:1px solid var(--line);border-radius:99rem;background:var(--surface);padding:.45rem .65rem;color:var(--muted);font-size:.62rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.desktop-pages{width:calc(100% + 2.3rem);min-height:25rem;margin-left:-1.15rem;overflow:hidden;touch-action:pan-y}
+.desktop-track{display:flex;align-items:flex-start;transition:transform .32s cubic-bezier(.22,.78,.18,1)}
+.desktop-page{flex:0 0 100%;width:100%;padding:0 1.15rem}
+.desktop-page .app-grid{grid-template-columns:repeat(var(--desktop-cols,4),1fr);grid-template-rows:repeat(var(--desktop-rows,5),5rem);min-height:calc(var(--desktop-rows,5)*5rem);align-content:start}
+.page-dots{display:flex;justify-content:center;gap:.35rem;margin:.15rem 0}
+.page-dots button{width:.35rem;height:.35rem;padding:0;border:0;border-radius:99rem;background:#b5b5b0;transition:.2s}
+.page-dots button.active{width:1rem;background:#111}
+.folder-icon{display:grid;grid-template-columns:repeat(2,1fr);gap:.2rem;padding:.7rem}
+.folder-icon i{display:grid;place-items:center;aspect-ratio:1;border-radius:.3rem;background:rgba(127,127,127,.14);font-size:.55rem;font-style:normal}
+.folder-apps{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;padding:1rem 0}
+.folder-name-input{width:100%;border:0;border-bottom:1px solid var(--line);background:transparent;padding:.6rem;text-align:center;font-size:1.1rem;font-weight:650;outline:0}
+.device-profile-list{display:grid;gap:.5rem}
+.device-profile{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:1rem;background:var(--surface);padding:.85rem;text-align:left}
+.device-profile strong{font-size:.82rem}.device-profile span{color:var(--muted);font-size:.65rem}.device-profile.selected{background:#111;color:#fff}.device-profile.selected span{color:#bbb}
+.chat-tabs{position:absolute;bottom:0;left:0;right:0;height:4.35rem;margin:0;border-width:1px 0 0;border-radius:0;background:rgba(244,244,242,.9);padding:.35rem .6rem .7rem;z-index:12}
+.chat-tabs button{display:grid;place-items:center;align-content:center;gap:.15rem;font-size:.58rem}.chat-tabs button.active{background:transparent;color:#111}.chat-tabs svg{width:1.25rem;height:1.25rem;fill:none;stroke:currentColor;stroke-width:1.8}
+.chat-list-with-tabs,.chat-me-with-tabs,.moments-with-tabs{padding-bottom:4.8rem}
+.chat-group-strip{display:flex;gap:.4rem;overflow-x:auto;padding:.65rem 0;scrollbar-width:none}
+.chat-group-chip{white-space:nowrap;border:1px solid var(--line);border-radius:99rem;background:var(--surface);padding:.45rem .7rem;font-size:.66rem}
+.chat-group-chip.active{background:#111;color:#fff}.world-rule{margin:.35rem 0 .7rem;padding:.7rem;border-left:2px solid #111;background:var(--surface-soft);font-size:.67rem;color:var(--muted)}
+.message{display:grid;grid-template-columns:2rem minmax(0,1fr);column-gap:.45rem;max-width:88%;align-items:end}.message.user{grid-template-columns:minmax(0,1fr) 2rem;margin-left:auto}.message-avatar{grid-row:1 / span 3;width:1.9rem;height:1.9rem}.message.user .message-avatar{grid-column:2}.message.user .bubble,.message.user time,.message.user .message-reaction{grid-column:1}.message.continuation .message-avatar{visibility:hidden}.message.continuation{margin-top:-.5rem}.message.hide-user-avatar{grid-template-columns:minmax(0,1fr)}
+.chat-stream{padding-bottom:1rem}.chat-layout{padding-bottom:0}.chat-layout>div:last-child{position:sticky;bottom:0;z-index:8}.composer{position:relative}
+.avatar-edit{position:relative;border:0;background:transparent;padding:0}.avatar-edit::after{content:"✎";position:absolute;right:-.2rem;bottom:-.1rem;width:1.25rem;height:1.25rem;display:grid;place-items:center;border-radius:50%;background:#111;color:#fff;font-size:.6rem}
+.group-manager{display:grid;gap:.55rem}.group-card{border:1px solid var(--line);border-radius:1rem;background:var(--surface);padding:.8rem}.group-members{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.55rem}
+.editor-tabs{display:flex;gap:.35rem;overflow-x:auto}.editor-tab{white-space:nowrap;border:1px solid var(--line);border-radius:99rem;background:var(--surface);padding:.45rem .65rem;font-size:.64rem}.editor-tab.active{background:#111;color:#fff}
+.bubble-presets,.bunny-icon-grid,.background-history{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.bubble-choice,.bunny-choice,.background-tile{min-height:4.5rem;border:1px solid var(--line);border-radius:1rem;background:var(--surface);padding:.55rem;font-size:.67rem}.bubble-choice.selected,.bunny-choice.selected{outline:2px solid #111;outline-offset:2px}.bunny-choice strong{display:block;font-size:1.4rem}.background-tile{position:relative;background-size:cover;background-position:center}.background-tile button{position:absolute;right:.25rem;top:.25rem;width:1.25rem;height:1.25rem;border:0;border-radius:50%;background:#111;color:#fff}
+.css-editor{min-height:10rem!important;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.7rem;tab-size:2}
+.color-row{display:grid;grid-template-columns:1fr auto;gap:.75rem;align-items:center}.color-row input[type="color"]{width:3.5rem;height:2.6rem;padding:.2rem}
+.data-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}.data-stat{text-align:center;border-radius:1rem;background:var(--surface-soft);padding:.8rem .3rem}.data-stat strong{display:block;font-size:1.05rem}.data-stat span{color:var(--muted);font-size:.6rem}
+.danger-zone{border-color:rgba(180,30,30,.22)}.danger-button{color:#9b2929;border-color:rgba(180,30,30,.22)!important}
+@media(max-width:760px){.phone[data-device]{width:100vw;height:100dvh;border-radius:0}.desktop-page .app-grid{grid-template-rows:repeat(var(--desktop-rows,5),4.8rem)}}
