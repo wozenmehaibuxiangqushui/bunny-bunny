@@ -5,6 +5,7 @@ import { applyChatAppearance } from "./chat-settings-v2.js";
 
 export function createChatRenderers({ store, navigate }) {
   let activeGroup = "all";
+  let groupEditing = false;
   function list(container) {
     ensureDefaultGroup();
     container.className = "app-view chat-list-with-tabs";
@@ -12,7 +13,7 @@ export function createChatRenderers({ store, navigate }) {
     const pending=(state.friendRequests||[]).filter(x=>x.status==="pending").length;
     container.innerHTML = `
       <div class="row between"><span class="pill"><span class="dot"></span> Bunny Chat</span><div class="chat-head-actions"><button class="icon-button notification-button" data-friend-requests aria-label="好友申请">${bellIcon()}${pending?`<i>${pending}</i>`:""}</button><button class="icon-button" data-list-plus aria-label="聊天功能">＋</button></div></div>
-      <div class="chat-group-strip"><button class="chat-group-chip ${activeGroup==="all"?"active":""}" data-group="all">全部</button>${state.chatGroups.map(group=>`<span class="chat-group-item"><button class="chat-group-chip ${activeGroup===group.id?"active":""}" data-group="${group.id}">${escapeHtml(group.name)} · ${group.personIds.length}</button><button class="group-delete-dot" data-delete-group="${group.id}" aria-label="删除${escapeHtml(group.name)}分组" ${group.id==="group-default"?"disabled":""}>−</button></span>`).join("")}<button class="chat-group-add" data-add-group aria-label="添加世界观">＋</button></div>
+      <div class="chat-group-strip ${groupEditing?"group-editing":""}"><button class="chat-group-chip ${activeGroup==="all"?"active":""}" data-group="all">全部</button>${state.chatGroups.map(group=>`<span class="chat-group-item"><button class="chat-group-chip ${activeGroup===group.id?"active":""}" data-group="${group.id}">${escapeHtml(group.name)} · ${group.personIds.length}</button><button class="group-delete-dot" data-delete-group="${group.id}" aria-label="删除${escapeHtml(group.name)}分组" ${group.id==="group-default"?"disabled":""}>−</button></span>`).join("")}<button class="chat-group-add" data-add-group aria-label="添加世界观">＋</button>${groupEditing?'<button class="chat-group-done" data-group-done aria-label="完成分组编辑">✓</button>':""}</div>
       <div class="world-rule">同一分组共享世界观并默认互相认识；不同分组彼此独立、互不认识。</div>
       <div class="section-title"><h3>联系人与会话</h3><span>${state.conversations.length} 个</span></div>
       <section>${state.conversations.filter(item=>activeGroup==="all"||personById(state,item.personId)?.groupId===activeGroup).map(item => {
@@ -25,9 +26,10 @@ export function createChatRenderers({ store, navigate }) {
     container.querySelectorAll("[data-conversation]").forEach(row => row.addEventListener("click", event => { if (!event.target.closest(".avatar-button")) navigate("conversation", { id: row.dataset.conversation }); }));
     container.querySelector("[data-list-plus]").addEventListener("click", () => openChatMenu(container));
     container.querySelector("[data-friend-requests]").onclick=()=>navigate("friend-requests");
-    container.querySelectorAll("[data-group]").forEach(button=>{button.onclick=()=>{if(button.dataset.longPressed){button.dataset.longPressed="";return}activeGroup=button.dataset.group;list(container)};if(button.dataset.group!=="all")bindGroupLongPress(button,()=>editGroupName(button.dataset.group,container))});
+    container.querySelectorAll("[data-group]").forEach(button=>{button.onclick=()=>{if(button.dataset.longPressed){button.dataset.longPressed="";return}if(groupEditing&&button.dataset.group!=="all")return editGroupName(button.dataset.group,container);activeGroup=button.dataset.group;list(container)};if(button.dataset.group!=="all")bindGroupLongPress(button,()=>{groupEditing=true;list(container)})});
     container.querySelectorAll("[data-delete-group]").forEach(button=>button.onclick=e=>{e.stopPropagation();if(!button.disabled)deleteGroup(button.dataset.deleteGroup,container)});
     container.querySelector("[data-add-group]").onclick=()=>addGroup(container);
+    container.querySelector("[data-group-done]")?.addEventListener("click",()=>{groupEditing=false;list(container);showToast("世界观分组已保存")});
     bindChatTabs(container, navigate);
   }
 
