@@ -38,18 +38,21 @@ export async function sendToModel(profile, messages, systemPrompt = "") {
   if (!profile?.apiKey || !profile.model) throw new Error("请先在“模型与 API”中选择一个可用预设");
   const base = profile.baseUrl.replace(/\/$/, "");
   const recent = messages.slice(-24);
-  const messageText = message => [message.type && message.type !== "text" ? `[消息类型：${message.type}]` : "", message.text || "", message.description || ""].filter(Boolean).join("\n");
+  const messageText = message => [message.recalled?`[${message.role==="char"?"CHAR":"USER"} 撤回了一条消息，撤回前内容：${message.recalledText||message.text||""}]`:"",!message.recalled&&message.type&&message.type!=="text"?`[消息类型：${message.type}]`:"",!message.recalled&&(message.text||""),!message.recalled&&(message.description||""),message.reaction?`[${message.reactionBy==="char"?"CHAR":"USER"} 对这条消息做出 reaction：${message.reaction}]`:""].filter(Boolean).join("\n");
   const clean = recent.map(message => ({ role: message.role === "char" ? "assistant" : "user", content: messageText(message) }));
-  const openAiClean = recent.map(message => ({ role: message.role === "char" ? "assistant" : "user", content: message.src ? [{ type: "text", text: messageText(message) }, { type: "image_url", image_url: { url: message.src } }] : messageText(message) }));
+  const openAiClean = recent.map(message => ({ role: message.role === "char" ? "assistant" : "user", content: message.src&&!message.recalled ? [{ type: "text", text: messageText(message) }, { type: "image_url", image_url: { url: message.src } }] : messageText(message) }));
   const openAiMessages = systemPrompt ? [{ role: "system", content: systemPrompt }, ...openAiClean] : openAiClean;
   if (profile.provider === "Google") {
-    const response = await fetch(`${base}/models/${encodeURIComponent(profile.model)}:generateContent?key=${encodeURIComponent(profile.apiKey)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ contents: clean.map((message,index) => ({ role: message.role === "assistant" ? "model" : "user", parts: [{ text: index === 0 && systemPrompt ? `${systemPrompt}\n\n${message.content}` : message.content }] })) }) });
-    if (!response.ok) throw new Error(`Google 返回 ${response.status}`); const data = await response.json(); return data.candidates?.[0]?.content?.parts?.map(part => part.text).join("") || "模型没有返回文字。";
+    const response = await fetchWithTimeout(`${base}/models/${encodeURIComponent(profile.model)}:generateContent?key=${encodeURIComponent(profile.apiKey)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ contents: clean.map((message,index) => ({ role: message.role === "assistant" ? "model" : "user", parts: [{ text: index === 0 && systemPrompt ? `${systemPrompt}\n\n${message.content}` : message.content }] })) }) });
+    if (!response.ok) throw new Error(await responseError(response,"Google")); const data = await response.json(); return data.candidates?.[0]?.content?.parts?.map(part => part.text).join("") || "模型没有返回文字。";
   }
   if (profile.provider === "Claude") {
-    const response = await fetch(`${base}/messages`, { method: "POST", headers: headers(profile), body: JSON.stringify({ model: profile.model, max_tokens: 1024, system: systemPrompt || undefined, messages: clean }) });
-    if (!response.ok) throw new Error(`Claude 返回 ${response.status}`); const data = await response.json(); return data.content?.map(part => part.text || "").join("") || "模型没有返回文字。";
+    const response = await fetchWithTimeout(`${base}/messages`, { method: "POST", headers: headers(profile), body: JSON.stringify({ model: profile.model, max_tokens: 1024, system: systemPrompt || undefined, messages: clean }) });
+    if (!response.ok) throw new Error(await responseError(response,"Claude")); const data = await response.json(); return data.content?.map(part => part.text || "").join("") || "模型没有返回文字。";
   }
-  const response = await fetch(`${base}/chat/completions`, { method: "POST", headers: headers(profile), body: JSON.stringify({ model: profile.model, messages: openAiMessages, temperature: .85 }) });
-  if (!response.ok) throw new Error(`接口返回 ${response.status}`); const data = await response.json(); return data.choices?.[0]?.message?.content || "模型没有返回文字。";
+  const response = await fetchWithTimeout(`${base}/chat/completions`, { method: "POST", headers: headers(profile), body: JSON.stringify({ model: profile.model, messages: openAiMessages, temperature: .85 }) });
+  if (!response.ok) throw new Error(await responseError(response,profile.provider||"接口")); const data = await response.json(); return data.choices?.[0]?.message?.content || "模型没有返回文字。";
 }
+
+async function fetchWithTimeout(url,options){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),60000);try{return await fetch(url,{...options,signal:controller.signal})}catch(error){if(error.name==="AbortError")throw Error("模型请求超过 60 秒，请检查接口或稍后重试");throw error}finally{clearTimeout(timer)}}
+async function responseError(response,label){let detail="";try{const data=await response.clone().json();detail=data.error?.message||data.message||data.detail||""}catch{try{detail=(await response.text()).slice(0,180)}catch{}}return`${label} 返回 ${response.status}${detail?`：${detail}`:""}`}
