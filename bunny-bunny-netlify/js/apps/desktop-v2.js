@@ -35,7 +35,7 @@ export function createDesktopRenderer({store,navigate}){
     currentPage=Math.min(currentPage,pages.length-1);
     configureHeader(container);
     container.innerHTML=`
-      <section class="desktop-greeting"><div><div class="date">${String(new Date().getDate()).padStart(2,"0")}</div><p>${new Intl.DateTimeFormat("zh-CN",{month:"long",day:"numeric",weekday:"short"}).format(new Date())} · ${escapeHtml(state.worlds[0].name)}</p></div><button class="device-chip" data-device>${escapeHtml(profile.label)} · ${profile.cols}×${profile.rows}</button></section>
+      <section class="desktop-greeting"><div><div class="date">${String(new Date().getDate()).padStart(2,"0")}</div><p>${new Intl.DateTimeFormat("zh-CN",{month:"long",day:"numeric",weekday:"short"}).format(new Date())} · ${escapeHtml(state.worlds[0].name)}</p></div><span class="device-chip" aria-label="已自动适配屏幕">${escapeHtml(profile.label)}</span></section>
       <div class="desktop-pages" data-pages><div class="desktop-track" style="transform:translateX(-${currentPage*100}%)">
         ${pages.map((page,index)=>`<section class="desktop-page" data-page="${index}">
           ${index===0?`<section class="desktop-widgets">${state.desktopWidgets.map(widget=>widgetCard(widget,jun)).join("")}</section>`:""}
@@ -48,8 +48,8 @@ export function createDesktopRenderer({store,navigate}){
   }
   function configureHeader(container){
     const left=document.querySelector("#back-button"),right=document.querySelector("#quick-settings");
-    if(editMode){left.classList.remove("hidden");left.textContent="＋";left.setAttribute("aria-label","添加小组件");left.onclick=()=>openWidgetManager(container);right.textContent="完成";right.onclick=()=>{editMode=false;showToast("主屏幕布局已保存");render(container)}}
-    else{left.classList.add("hidden");left.textContent="‹";left.onclick=null;right.textContent="⌁";right.onclick=()=>navigate("phone-settings")}
+    if(editMode){left.classList.remove("hidden");left.textContent="＋";left.setAttribute("aria-label","添加小组件");left.onclick=()=>openWidgetManager(container);right.classList.remove("hidden");right.textContent="完成";right.onclick=()=>{editMode=false;showToast("主屏幕布局已保存");render(container)}}
+    else{left.classList.add("hidden");left.textContent="‹";left.onclick=null;right.classList.add("hidden");right.textContent="";right.onclick=null}
   }
   function tile(item,state){
     if(item.kind==="folder"){const f=state.desktopFolders.find(x=>x.id===item.id);if(!f)return"";return`<button class="app-tile folder-tile" data-kind="folder" data-app-id="${f.id}" draggable="${editMode}">${editMode?'<span class="delete-badge">−</span>':""}<span class="app-icon folder-icon">${f.items.slice(0,4).map(id=>`<i>${appRegistry[id]?.[1]||"·"}</i>`).join("")}</span><span>${escapeHtml(f.name)}</span></button>`}
@@ -57,7 +57,6 @@ export function createDesktopRenderer({store,navigate}){
   }
   function widgetCard(widget,person){const content=widget.type==="date"?new Intl.DateTimeFormat("zh-CN",{month:"long",day:"numeric"}).format(new Date()):widget.content;return`<article class="home-widget ${widget.size}" data-widget-id="${escapeHtml(widget.id)}" style="--widget-bg:${escapeHtml(widget.style?.background||"#fff")};--widget-color:${escapeHtml(widget.style?.color||"#111")}"><span>${escapeHtml(widget.title)}</span><strong>${escapeHtml(content)}</strong>${widget.type==="character"?`<small>${escapeHtml(person.note)}</small>`:""}${editMode?'<button class="widget-remove" aria-label="移除小组件">−</button>':""}</article>`}
   function bind(container,pages,cap){
-    container.querySelector("[data-device]").onclick=()=>openDevicePicker(container);
     container.querySelectorAll("[data-page-dot]").forEach(dot=>dot.onclick=()=>{currentPage=Number(dot.dataset.pageDot);render(container)});
     let startX=0;const viewport=container.querySelector("[data-pages]");
     viewport.onpointerdown=e=>{startX=e.clientX};
