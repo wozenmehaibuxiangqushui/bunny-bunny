@@ -97,11 +97,13 @@ export function createConversationV3Renderer({ store, navigate }) {
     try{
       const p=current.presets.find(x=>x.id===profile.presetId)||current.presets.find(x=>x.name===profile.preset);
       const books=current.worldbooks.filter(x=>(profile.worldbookIds||[]).includes(x.id)||x.name===profile.worldbook);
-      const prompt=[p?.prompt,...books.map(x=>x.prompt),ensureCallPrompts(current).chatActions].filter(Boolean).join("\n\n");
+      const charStickers=current.stickerLibraries?.characters?.[person.id]||[];
+      const stickerGuide=charStickers.length?`当前 CHAR 可用表情包：\n${charStickers.map((x,i)=>`${i+1}. ${x.name||"表情"}｜${x.description||(x.tags||[]).join("、")||"无描述"}`).join("\n")}`:"当前 CHAR 没有可用表情包，不要输出 STICKER 标记。";
+      const prompt=[p?.prompt,...books.map(x=>x.prompt),ensureCallPrompts(current).chatActions,stickerGuide].filter(Boolean).join("\n\n");
       const modelMessages=current.messages[conv.id].map(m=>profile.visionEnabled?m:{...m,src:""});
       const raw=await sendToModel(model,modelMessages,prompt),parsed=extractChatActions(raw);
       store.update(s=>{if(parsed.clean)s.messages[conv.id].push({id:id(),role:"char",type:"text",text:parsed.clean,time:timeNow()})});
-      for(const action of parsed.actions){const kind=action.kind==="redpacket"&&action.amount>520?"transfer":action.kind,messageId=id();store.update(s=>s.messages[conv.id].push({id:messageId,role:"char",type:kind,text:action.note||(kind==="redpacket"?"大吉大利":"转账给你"),amount:action.amount,time:timeNow()}));walletCredit(store,{amount:action.amount,kind,title:`收到 ${person.name} 的${kind==="redpacket"?"红包":"转账"}`,conversationId:conv.id,messageId,note:action.note})}
+      for(const action of parsed.actions){if(action.kind==="sticker"){const query=action.query.toLowerCase(),item=charStickers.find(x=>[x.name,x.description,...(x.tags||[])].filter(Boolean).some(v=>String(v).toLowerCase().includes(query)||query.includes(String(v).toLowerCase())))||charStickers[0];if(item)store.update(s=>s.messages[conv.id].push({id:id(),role:"char",type:"sticker",text:item.name||"表情包",src:item.url,description:item.description||(item.tags||[]).join("、")||"CHAR 发送的表情包",time:timeNow()}));continue}const kind=action.kind==="redpacket"&&action.amount>520?"transfer":action.kind,messageId=id();store.update(s=>s.messages[conv.id].push({id:messageId,role:"char",type:kind,text:action.note||(kind==="redpacket"?"大吉大利":"转账给你"),amount:action.amount,time:timeNow()}));walletCredit(store,{amount:action.amount,kind,title:`收到 ${person.name} 的${kind==="redpacket"?"红包":"转账"}`,conversationId:conv.id,messageId,note:action.note})}
       activeRender(container,params);
     }catch(error){showToast(error.message)}finally{updateIsland("bunny 正在陪你",false)}
   }
