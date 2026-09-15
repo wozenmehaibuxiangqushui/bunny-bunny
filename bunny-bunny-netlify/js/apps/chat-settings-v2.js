@@ -1,6 +1,6 @@
 import { personById } from "../core/store.js";
 import { escapeHtml, initialsAvatar, showToast, openSheet, closeSheet } from "../core/ui.js";
-const langs=["自动","中文","粤语","English","日本語","Français","한국어","Deutsch","Español"];
+import { ttsLanguageOptions } from "../tts-providers.js";
 const moods=["自动","平静","开心","温柔","害羞","悲伤","生气","激动","疲惫","低语"];
 const bubbleThemes={
 imessage:".message .bubble{border-radius:1.15rem}.message.user .bubble{background:#111;color:#fff}",
@@ -14,7 +14,7 @@ const bubbleSample=".message .bubble {\n  border-radius: 18px;\n  padding: 10px 
 
 export function createChatSettingsRenderer({store,navigate}){
 return (container,params={})=>{
- const personId=params.personId||"char-jun",state=store.getState(),person=personById(state,personId),user=personById(state,state.currentUserId),p=state.chatProfiles[personId],a=state.chatAppearance;
+ const personId=params.personId||"char-jun",state=store.getState(),person=personById(state,personId),user=personById(state,state.currentUserId),p=state.chatProfiles[personId],a=state.chatAppearance,langs=ttsLanguageOptions(state);
  container.innerHTML=`<form class="stack" data-form>
  <section class="card">
   ${avatarRow("char",person,p.avatarUrl)}
