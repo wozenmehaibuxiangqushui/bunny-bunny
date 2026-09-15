@@ -4,6 +4,7 @@ import { sendToModel } from "./integrations/ai-client.js";
 import { walletDebit, walletCredit, ensureWallet, insufficientSheet } from "./wallet-v2.js";
 import { ensureTtsState, resolveTtsConfig, synthesizeSpeech } from "./tts-providers.js";
 import { buildInternalChatPrompt, parseChatResponse } from "./chat-protocol.js";
+import { goBack } from "./core/router.js";
 
 const DEFAULT_REACTIONS = ["❤️", "👍", "👎", "😂", "‼️", "❓"];
 const EMOJI_GROUPS = {
@@ -56,7 +57,7 @@ export function createConversationV3Renderer({ store, navigate }) {
       back.classList.toggle("selection-cancel",ui.selectMode);
       back.textContent=ui.selectMode ? "取消" : "‹";
       back.setAttribute("aria-label",ui.selectMode ? "取消多选" : "返回聊天列表");
-      back.onclick=()=>{if(ui.selectMode){ui.selectMode=false;ui.selected.clear();conversation(container,params)}else navigate("chat")};
+      back.onclick=()=>{if(ui.selectMode){ui.selectMode=false;ui.selected.clear();conversation(container,params)}else goBack()};
     }
   };
 
