@@ -126,7 +126,16 @@ export function createConversationV3Renderer({ store, navigate }) {
   function confirmDialog(title,text,action,done){openSheet(`<div class="confirm-dialog"><div class="confirm-symbol">!</div><h3>${title}</h3><p>${text}</p><div class="row"><button class="button secondary" data-sheet-close>取消</button><button class="button danger-button" data-confirm>${action}</button></div></div>`,{onReady(sheet){sheet.querySelector("[data-confirm]").onclick=()=>{closeSheet();done()}}})}
   function pat(person,profile,conv,container,params){const text=profile.patText||`你拍了拍${person.name}`;store.update(s=>s.messages[conv.id].push({id:id(),role:"system",type:"pat",text,time:timeNow()}));navigator.vibrate?.(18);showToast(text);activeRender(container,params)}
   function showProfile(person,profile){openSheet(`<div class="sheet-handle"></div><section class="profile-card">${initialsAvatar(person,profile)}<div><span class="eyebrow">BUNNY CHAT CARD</span><h3>${escapeHtml(person.name)}</h3><p>${escapeHtml(person.signature||person.note)}</p></div></section><button class="button" data-sheet-close>完成</button>`)}
-  function openAttachmentMenu(conv,container,params){openSheet(`<div class="attachment-grid">${[["image","▧","图片"],["voice","◖","语音"],["location","⌖","位置"],["redpacket","礼","红包"],["transfer","¥","转账"],["text","□","文件"]].map(x=>`<button data-attachment="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join("")}</div>`,{onReady(sheet){sheet.querySelectorAll("[data-attachment]").forEach(b=>b.onclick=()=>{const type=b.dataset.attachment,label=TYPE_META[type]?.[0]||"文件";let text=`[${label}]`;if(type==="transfer"||type==="redpacket")text=`[${label}] ¥52.00`;store.update(s=>s.messages[conv.id].push({id:id(),role:"user",type,text,time:timeNow()}));closeSheet();activeRender(container,params)}}})}
+  function openAttachmentMenu(conv,container,params){
+    openSheet(`<div class="attachment-grid">${[["image","▧","图片"],["camera","◉","拍摄"],["voice","◖","语音"],["location","⌖","位置"],["redpacket","礼","红包"],["transfer","¥","转账"],["file","□","文件"]].map(x=>`<button data-attachment="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join("")}</div>`,{onReady(sheet){sheet.querySelectorAll("[data-attachment]").forEach(b=>b.onclick=()=>handleAttachment(b.dataset.attachment))}});
+    const add=(type,text)=>{store.update(s=>s.messages[conv.id].push({id:id(),role:"user",type,text,time:timeNow()}));closeSheet();activeRender(container,params)};
+    function handleAttachment(type){
+      if(["image","camera","file"].includes(type)){const input=document.createElement("input");input.type="file";input.accept=type==="file"?"*/*":"image/*";if(type==="camera")input.capture="environment";input.onchange=()=>{const file=input.files?.[0];if(file)add(type==="file"?"text":"image",`[${type==="file"?"文件":"图片"}] ${file.name}`)};input.click();return}
+      if(type==="voice"){navigator.mediaDevices?.getUserMedia({audio:true}).then(stream=>{stream.getTracks().forEach(t=>t.stop());add("voice","[语音] 00:03")}).catch(()=>showToast("未获得麦克风权限"));return}
+      if(type==="location"){if(!navigator.geolocation)return showToast("当前浏览器不支持定位");navigator.geolocation.getCurrentPosition(pos=>add("location",`[位置] ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`),()=>showToast("未获得定位权限"));return}
+      if(type==="redpacket"||type==="transfer"){const amount=prompt(`${TYPE_META[type][0]}金额`,"52.00");if(amount)add(type,`[${TYPE_META[type][0]}] ¥${amount}`)}
+    }
+  }
 
   activeRender=conversation;
   return conversation;
