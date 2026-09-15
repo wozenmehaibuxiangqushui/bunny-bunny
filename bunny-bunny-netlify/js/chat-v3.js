@@ -101,7 +101,8 @@ export function createConversationV3Renderer({ store, navigate }) {
       const charStickers=current.stickerLibraries?.characters?.[person.id]||[];
       const stickerGuide=charStickers.length?`当前 CHAR 可用表情包：\n${charStickers.map((x,i)=>`${i+1}. ${x.name||"表情"}｜${x.description||(x.tags||[]).join("、")||"无描述"}`).join("\n")}`:"当前 CHAR 没有可用表情包，不要输出 STICKER 标记。";
       ensureTtsState(current);
-      const prompt=[p?.prompt,...books.map(x=>x.prompt),buildInternalChatPrompt({person,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide})].filter(Boolean).join("\n\n");
+      const user=personById(current,current.currentUserId),boundChar=person.boundCharId?personById(current,person.boundCharId):null;
+      const prompt=[p?.prompt,...books.map(x=>x.prompt),buildInternalChatPrompt({person,user,boundChar,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide})].filter(Boolean).join("\n\n");
       const modelMessages=current.messages[conv.id].map(m=>profile.visionEnabled?m:{...m,src:""});
       const raw=await sendToModel(model,modelMessages,prompt),parsed=parseChatResponse(raw);
       store.update(s=>{for(const reply of parsed.messages)s.messages[conv.id].push({id:id(),role:"char",type:"text",text:reply.text,translation:reply.translation,tone:reply.tone,time:timeNow()});const target=s.conversations.find(x=>x.id===conv.id);if(target&&parsed.messages.length){target.preview=parsed.messages.at(-1).text;target.time=timeNow()}});
