@@ -28,9 +28,9 @@ export const TTS_DEFAULTS={
 };
 
 export function ensureTtsState(state){
-  const saved=state.tts||{},savedProviders=saved.providers||{},legacy=state.voiceApis?.tts||{};
+  const saved=state.tts||{},savedProviders=saved.providers||{},legacy=state.voiceApis?.tts||{},legacyId=legacy.provider==="compatible"?"openai":legacy.provider;
   state.tts={...TTS_DEFAULTS,...saved,providers:{}};
-  for(const [id,defaults] of Object.entries(TTS_DEFAULTS.providers))state.tts.providers[id]={...defaults,...(savedProviders[id]||{}),...(legacy.provider===id?legacy:{})};
+  for(const [id,defaults] of Object.entries(TTS_DEFAULTS.providers))state.tts.providers[id]={...defaults,...(legacyId===id&&!savedProviders[id]?legacy:{}),...(savedProviders[id]||{})};
   return state.tts;
 }
 
