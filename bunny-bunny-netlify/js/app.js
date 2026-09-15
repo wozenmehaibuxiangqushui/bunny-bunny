@@ -2,6 +2,7 @@ import { createStore } from "./core/store.js";
 import { registerRoute, navigate } from "./core/router.js";
 import { createDesktopRenderer } from "./apps/desktop-v2.js";
 import { createChatRenderers } from "./apps/chat-v2.js";
+import { createConversationV3Renderer } from "./chat-v3.js";
 import { createContactsRenderer } from "./apps/contacts.js";
 import { createPhoneSettingsRenderer, applyAppIdentity } from "./apps/phone-settings-v2.js";
 import { createChatSettingsRenderer, applyChatAppearance } from "./apps/chat-settings-v2.js";
@@ -26,7 +27,7 @@ const chats = createChatRenderers(context);
 
 registerRoute("desktop", createDesktopRenderer(context));
 registerRoute("chat", chats.list);
-registerRoute("conversation", chats.conversation);
+registerRoute("conversation", createConversationV3Renderer(context));
 registerRoute("contacts", createContactsRenderer(context));
 registerRoute("phone-settings", createPhoneSettingsRenderer(context));
 registerRoute("chat-settings", createChatSettingsRenderer(context));
