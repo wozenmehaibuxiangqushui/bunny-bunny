@@ -29,7 +29,7 @@ export const seedState = {
     "char-jun": {
       avatarUrl: "", remark: "叙俊", voiceProvider: "浏览器语音", voiceName: "默认男声", voiceSpeed: 1,
       autoPlayVoice: false, voiceId: "voice_kr_01", llmTone: true, language: "自动", emotion: "自动", visionEnabled: true, stickerSteal: true, stickerPack: "日常 · 黑白", replyStyle: "自然短句",
-      memoryDepth: 24, proactive: true, quietHours: "23:00—08:00"
+      memoryDepth: 24, proactive: true, proactiveCall: false, quietHours: "23:00—08:00"
       , relationship: "暧昧中的朋友", userCity: "上海", charCity: "首尔", cityPrototype: "现实首尔", weather: "小雨 · 17°C", longDistance: true,
       autoAvatar: true, memoryMode: "分层长期记忆", imageProfile: "电影感写实", videoPortrait: "静态立绘 + 口型", worldbook: "首尔日常", chainOfThought: "仅保存文学化心声", preset: "自然聊天 v1", patText: "你拍了拍叙俊的唱片袋", patUserText: "叙俊拍了拍你的肩", voiceCallMode: "实时 ASR + TTS", stickerScope: "角色独立 + 通用库"
     },
@@ -74,7 +74,14 @@ export const seedState = {
     { id: "p1", personId: "char-jun", text: "闭店前最后一张唱片。窗外刚好开始下雨。", time: "20分钟前", likes: ["尹夏凛", "朴秀安"], comments: [{ name: "朴秀安", text: "又在等某个人吧。" }] },
     { id: "p2", personId: "npc-soo", text: "周末空出来了，谁负责想吃什么？", time: "1小时前", likes: ["韩叙俊"], comments: [{ name: "尹夏凛", text: "先排除上次那家。" }] }
   ],
-  stickerLibraries: { global: [], characters: { "char-jun": [], "char-rin": [] } }
+  wallet: { balance: 2480, currency: "CNY", ledger: [] },
+  voiceApis: {
+    stt: { provider: "browser", baseUrl: "https://api.groq.com/openai/v1", apiKey: "", model: "whisper-large-v3-turbo", language: "zh" },
+    tts: { provider: "browser", baseUrl: "https://api.groq.com/openai/v1", apiKey: "", model: "canopylabs/orpheus-v1-english", voice: "hannah", speed: 1 }
+  },
+  callPrompts: {},
+  callRuntime: { lastProactiveAt: {} },
+  stickerLibraries: { global: [], user: [], characters: { "char-jun": [], "char-rin": [] } }
 };
 
 function deepCopy(value) { return JSON.parse(JSON.stringify(value)); }
@@ -86,7 +93,11 @@ function mergeState(base, saved) {
     appearance: { ...base.appearance, ...(saved.appearance || {}) },
     chatAppearance: { ...base.chatAppearance, ...(saved.chatAppearance || {}) },
     dataSettings: { ...base.dataSettings, ...(saved.dataSettings || {}) },
-    stickerLibraries: { global: saved.stickerLibraries?.global || base.stickerLibraries.global, characters: { ...base.stickerLibraries.characters, ...(saved.stickerLibraries?.characters || {}) } },
+    wallet: { ...base.wallet, ...(saved.wallet || {}), ledger: saved.wallet?.ledger || base.wallet.ledger },
+    voiceApis: { stt: { ...base.voiceApis.stt, ...(saved.voiceApis?.stt || {}) }, tts: { ...base.voiceApis.tts, ...(saved.voiceApis?.tts || {}) } },
+    callPrompts: { ...base.callPrompts, ...(saved.callPrompts || {}) },
+    callRuntime: { ...base.callRuntime, ...(saved.callRuntime || {}), lastProactiveAt: { ...base.callRuntime.lastProactiveAt, ...(saved.callRuntime?.lastProactiveAt || {}) } },
+    stickerLibraries: { global: saved.stickerLibraries?.global || base.stickerLibraries.global, user: saved.stickerLibraries?.user || base.stickerLibraries.user, characters: { ...base.stickerLibraries.characters, ...(saved.stickerLibraries?.characters || {}) } },
     mediaApis: { minimax: { ...base.mediaApis.minimax, ...(saved.mediaApis?.minimax || {}) }, image: { ...base.mediaApis.image, ...(saved.mediaApis?.image || {}) } },
     chatProfiles: Object.fromEntries(Object.entries(base.chatProfiles).map(([id, profile]) => [id, { ...profile, ...(saved.chatProfiles?.[id] || {}) }]))
   };
