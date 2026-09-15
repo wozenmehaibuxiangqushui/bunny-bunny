@@ -32,7 +32,6 @@ return (container,params={})=>{
   <label class="field"><span>音色 ID / Voice Name（留空使用模型默认）</span><input name="voiceId" value="${escapeHtml(p.voiceId||"")}" placeholder="Voice ID / Voice Name"></label>
   <label class="field"><span>朗读语言</span><select name="language">${opts(langs,p.language||"中文")}</select></label>
   <label class="field"><span>默认情绪</span><select name="emotion">${opts(moods,p.emotion||"自动")}</select></label>
-  <label class="field"><span>角色语气 / 口吻</span><input name="toneStyle" value="${escapeHtml(p.toneStyle||"自然")}" placeholder="例如：冷淡、温柔、活泼、低声"></label>
   <label class="field"><span>角色语速 <output data-speed-out>${Number(p.voiceSpeed||1).toFixed(2)}×</output></span><input name="voiceSpeed" data-speed type="range" min=".5" max="2" step=".05" value="${p.voiceSpeed||1}"></label>
   ${toggle("llmTone","由 LLM 提供语气","开启：模型给出语气；关闭：语音引擎根据正文自行决定",p.llmTone!==false)}
   ${toggle("autoPlayVoice","自动朗读 CHAR 回复","使用当前启用的 TTS 厂商合成",p.autoPlayVoice)}
