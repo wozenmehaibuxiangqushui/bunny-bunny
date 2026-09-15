@@ -10,8 +10,12 @@ const LANGUAGE_RULES={
   "Español":"usar español conversacional natural"
 };
 
-export function buildInternalChatPrompt({person,profile,translationEnabled=false,toneEnabled=false,stickerGuide=""}){const language=profile.language||"自动",foreign=!['自动','中文'].includes(language);return `你正在手机聊天软件里扮演 ${person.name}。
-年龄：${person.age||"未设定"}；性格与人设：${person.personality||person.note||"自然、克制"}；职业：${person.occupation||"未设定"}。
+export function buildInternalChatPrompt({person,user,boundChar,profile,translationEnabled=false,toneEnabled=false,stickerGuide=""}){const language=profile.language||"自动",foreign=!['自动','中文'].includes(language);return `你正在手机聊天软件里扮演 ${person.name}。以下资料来自用户已保存的后台档案，只用于扮演和理解关系，不要逐项复述，不要告诉用户你看到了系统档案。
+【你扮演的角色】
+${identityBlock(person)}
+${person.type==="npc"?`NPC 绑定主角色：${boundChar?identityBlock(boundChar):"尚未绑定"}`:""}
+【正在与你聊天的 USER】
+${identityBlock(user)}
 语言要求：${LANGUAGE_RULES[language]||language}。默认情绪：${profile.emotion||"自动"}；口吻偏好：${profile.toneStyle||"自然"}。
 这是纯线上文字聊天：禁止动作描写、舞台说明、括号动作和旁白；不要写“看着你”“笑了笑”等无法通过线上聊天直接看到的内容。
 模仿真人即时聊天习惯，并严格服从角色年龄与性格。可以自然使用倒装句、无主语、小短句、空格代替部分逗号、不完全规范的标点、偶尔打错一个字再在下一条纠正、符合角色的小口癖。不要每次同时使用全部特征。
@@ -24,3 +28,10 @@ ${toneEnabled?"每条消息填写 tone，使用简短中文语气词，如自然
 export function parseChatResponse(raw){const source=String(raw||"").trim(),candidate=source.replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,""),match=candidate.match(/\{[\s\S]*\}/);if(match){try{const data=JSON.parse(match[0]),messages=(Array.isArray(data.messages)?data.messages:[]).slice(0,6).map(x=>({text:String(x.text||"").trim(),translation:String(x.translation||"").trim(),tone:String(x.tone||"").trim()})).filter(x=>x.text),actions=(Array.isArray(data.actions)?data.actions:[]).map(normalizeAction).filter(Boolean);if(messages.length||actions.length)return{messages,actions}}catch{}}
   const clean=source.replace(/[（(][^）)]*[）)]/g,"").trim();return{messages:clean?[{text:clean,translation:"",tone:""}]:[],actions:[]}}
 function normalizeAction(x){const type=String(x.type||x.kind||"").toLowerCase();if(type==="sticker")return{kind:"sticker",query:String(x.query||x.note||"").trim()};if(type==="redpacket"||type==="transfer"){const amount=Math.max(0,Number(x.amount)||0);if(!amount)return null;return{kind:type,amount,note:String(x.note||"").trim()}}return null}
+function identityBlock(p={}){return[
+  `类型：${p.type||"未设定"}；真实姓名：${p.name||"未设定"}；社交名称：${p.chatName||"未设定"}；年龄：${p.age||"未设定"}；性别：${p.gender||"未设定"}；身高：${p.height||"未设定"}；生日：${p.birthday||"未设定"}`,
+  `职业/身份：${p.occupation||"未设定"}；所在地：${p.location||p.city||"未设定"}；原型城市：${p.cityPrototype||"未设定"}；联系方式：${p.phone||"未设定"}`,
+  `个性签名：${p.signature||"未设定"}；当前状态：${p.note||"未设定"}`,
+  `外形：${p.appearance||"未设定"}；家庭背景：${p.familyBackground||"未设定"}；性格：${p.personality||"未设定"}；爱好：${p.hobbies||"未设定"}；其他 TMI：${p.tmi||"未设定"}`,
+  `完整人物设定：${p.persona||"未设定"}`
+].join("\n")}
