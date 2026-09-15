@@ -1,15 +1,11 @@
 const routes = new Map();
 let current = { name: "desktop", params: {} };
-const navigationTrail = [];
 
 export function registerRoute(name, renderer) { routes.set(name, renderer); }
 export function getRoute() { return current; }
 
 export function navigate(name, params = {}, options = {}) {
   const renderer = routes.get(name) || routes.get("placeholder");
-  const next = { name, params };
-  if (options.reset) navigationTrail.length = 0;
-  else if (!options.fromBack && !sameRoute(current, next)) navigationTrail.push(current);
   current = { name, params };
   const view = document.querySelector("#app-view");
   const screen = document.querySelector("#app-screen");
@@ -31,11 +27,19 @@ export function navigate(name, params = {}, options = {}) {
 }
 
 export function goBack() {
-  const previous = navigationTrail.pop() || { name: "desktop", params: {} };
-  navigate(previous.name, previous.params, { fromBack: true });
+  const parent = parentRoute(current);
+  navigate(parent.name, parent.params, { fromBack: true });
 }
 
-function sameRoute(a,b){return a.name===b.name&&JSON.stringify(a.params||{})===JSON.stringify(b.params||{})}
+function parentRoute(route){
+  const id=route.params?.conversationId||route.params?.id;
+  if(route.name==="conversation")return{name:"chat",params:{}};
+  if(route.name==="call"||route.name==="chat-settings")return{name:"conversation",params:{id}};
+  if(route.name==="character-edit"||route.name==="user-profile")return{name:"contacts",params:{}};
+  if(route.name==="add-friend"||route.name==="friend-requests"||route.name==="chat-me"||route.name==="moments")return{name:"chat",params:{}};
+  if(["data-settings","api","bridge","mcp","worldbook","presets"].includes(route.name))return{name:"phone-settings",params:{}};
+  return{name:"desktop",params:{}};
+}
 
 export function routeTitle(name) {
   return ({ desktop: "", chat: "聊天", conversation: "对话", call: "通话", contacts: "角色档案", "character-edit": "编辑档案", "user-profile": "USER 名片", "add-friend": "添加好友", "friend-requests": "消息记录", "chat-settings": "聊天设置", "chat-me": "我", moments: "朋友圈", "phone-settings": "手机设置", "data-settings": "数据管理", api: "模型与 API", bridge: "现实桥", mcp: "MCP 中心", together: "一起刷", focus: "陪伴专注", world: "世界与身份", forum:"论坛",delivery:"外卖",shop:"购物",flea:"二手平台",sms:"短信",phone:"电话",worldbook:"世界书",presets:"预设",games:"游戏",memos:"备忘录",calendar:"日历",wallet:"钱包" })[name] || "bunny bunny";
