@@ -61,7 +61,7 @@ export const seedState = {
     { id: "preset-story", name: "沉浸叙事", prompt: "使用细腻但克制的沉浸式表达。" }
   ],
   chatAppearance: { interfaceCss: "", interfacePresets: [], bubblePreset: "imessage", bubbleCss: "", bubbleColor: "#111111", bubbleScale: 1, fontSize: 14, fontUrl: "", fontPresets: [], background: "", backgroundHistory: [], hideUserAvatar: false, recentReactions: ["❤️","👍","👎","😂","‼️","❓"] },
-  dataSettings: { autoBackup: false, cloudType: "", cloudEndpoint: "", lastBackup: "", imageQuality: 0.78 },
+  dataSettings: { autoBackup: false, cloudType: "", cloudEndpoint: "", lastBackup: "", imageQuality: 0.78, estimatedBytes: 0, storageWarning: "", lastPersistedAt: "" },
   desktopOrder: ["chat", "contacts", "moments", "forum", "delivery", "shop", "flea", "sms", "phone", "worldbook", "presets", "games", "memos", "calendar", "wallet", "focus", "together", "api", "bridge", "mcp", "phone-settings"],
   desktopWidgets: [
     { id: "widget-char", type: "character", size: "wide", title: "CHAR STATUS", content: "我把唱片留好了。你来之前，它会一直在这里。", style: { background: "#111111", color: "#ffffff" } }
@@ -116,14 +116,29 @@ export function createStore() {
   } catch (error) { console.warn("Bunny state recovery failed", error); }
 
   const listeners = new Set();
-  const save = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    listeners.forEach(listener => listener(state));
+  let saveTimer=0,idleHandle=0;
+  const notify=()=>listeners.forEach(listener=>listener(state));
+  const persist=()=>{
+    saveTimer=0;idleHandle=0;
+    try{
+      const serialized=JSON.stringify(state);
+      state.dataSettings.estimatedBytes=new Blob([serialized]).size;
+      localStorage.setItem(STORAGE_KEY,serialized);
+      state.dataSettings.storageWarning="";
+      state.dataSettings.lastPersistedAt=new Date().toISOString();
+    }catch(error){
+      state.dataSettings.storageWarning="本机存储空间不足。新操作仍可继续，请尽快在数据管理中压缩图片或导出备份。";
+      console.warn("Bunny persistence paused",error);
+    }
   };
+  const scheduleSave=()=>{clearTimeout(saveTimer);if(idleHandle&&globalThis.cancelIdleCallback)cancelIdleCallback(idleHandle);saveTimer=setTimeout(()=>{saveTimer=0;if(globalThis.requestIdleCallback)idleHandle=requestIdleCallback(persist,{timeout:700});else persist()},100)};
+  const flush=()=>{clearTimeout(saveTimer);if(idleHandle&&globalThis.cancelIdleCallback)cancelIdleCallback(idleHandle);persist()};
+  if(globalThis.addEventListener){addEventListener("pagehide",flush);addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flush()})}
   return {
     getState: () => state,
-    update(mutator) { mutator(state); save(); },
-    reset() { state = deepCopy(seedState); save(); },
+    update(mutator) { mutator(state); notify(); scheduleSave(); },
+    reset() { state = deepCopy(seedState); notify(); flush(); },
+    flush,
     subscribe(listener) { listeners.add(listener); return () => listeners.delete(listener); }
   };
 }
