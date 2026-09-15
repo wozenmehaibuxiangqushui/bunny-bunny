@@ -17,7 +17,7 @@ export const TTS_DEFAULTS={
   providers:{
     browser:{voice:"",lang:"zh-CN",speed:1,pitch:1,volume:1},
     openai:{baseUrl:"https://api.openai.com/v1",apiKey:"",model:"gpt-4o-mini-tts",voice:"alloy",format:"mp3",speed:1,instructions:""},
-    minimax:{baseUrl:"https://api.minimaxi.com/v1",apiKey:"",groupId:"",model:"speech-2.8-hd",voiceId:"female-shaonv",emotion:"auto",speed:1,pitch:0,volume:1,format:"mp3",sampleRate:32000,bitrate:128000},
+    minimax:{baseUrl:"https://api.minimax.io/v1",apiKey:"",groupId:"",model:"speech-2.8-hd",voiceId:"female-shaonv",emotion:"auto",speed:1,pitch:0,volume:1,format:"mp3",sampleRate:32000,bitrate:128000},
     elevenlabs:{baseUrl:"https://api.elevenlabs.io/v1",apiKey:"",model:"eleven_multilingual_v2",voiceId:"",stability:.5,similarity:.75,style:0,speakerBoost:true,speed:1,outputFormat:"mp3_44100_128"},
     azure:{region:"eastus",apiKey:"",voice:"zh-CN-XiaoxiaoNeural",language:"zh-CN",style:"general",role:"",speed:1,pitch:0,outputFormat:"audio-24khz-48kbitrate-mono-mp3"},
     google:{baseUrl:"https://texttospeech.googleapis.com/v1",apiKey:"",language:"cmn-CN",voice:"cmn-CN-Wavenet-A",speed:1,pitch:0,audioEncoding:"MP3"},
@@ -58,12 +58,14 @@ function saveForm(store,form){const id=form.dataset.provider,data=Object.fromEnt
 export async function fetchTtsModels(id,c){
   if(id==="browser")return{models:["system-default"],languages:browserLanguages()};
   if(!c.apiKey)throw Error("请先填写 API Key");
-  if(id==="deepgram"||id==="fish")return{models:builtInModels(id),languages:builtInLanguages(id)};
+  // MiniMax does not expose the same stable, universal model-list endpoint as
+  // OpenAI-compatible text APIs. Keep its maintained speech catalogue local;
+  // the adjacent preview button performs the real authenticated synthesis test.
+  if(id==="minimax"||id==="deepgram"||id==="fish")return{models:builtInModels(id),languages:builtInLanguages(id)};
   let response;
   if(id==="elevenlabs")response=await fetch(`${trim(c.baseUrl)}/models`,{headers:{"xi-api-key":c.apiKey}});
   else if(id==="azure")response=await fetch(`https://${c.region}.tts.speech.microsoft.com/cognitiveservices/voices/list`,{headers:{"Ocp-Apim-Subscription-Key":c.apiKey}});
   else if(id==="google")response=await fetch(`${trim(c.baseUrl)}/voices?key=${encodeURIComponent(c.apiKey)}`);
-  else if(id==="minimax"){const query=c.groupId?`?GroupId=${encodeURIComponent(c.groupId)}`:"";response=await fetch(`${trim(c.baseUrl)}/models${query}`,{headers:{Authorization:`Bearer ${c.apiKey}`}})}
   else response=await fetch(`${trim(c.baseUrl)}/models`,{headers:{Authorization:`Bearer ${c.apiKey}`}});
   if(!response.ok)throw Error(`模型拉取失败（${response.status}），请检查厂商必填项、Key 或浏览器跨域权限`);
   const data=await response.json(),items=id==="azure"?(Array.isArray(data)?data:[]):id==="google"?(data.voices||[]):(Array.isArray(data)?data:(data.models||data.data||[]));
@@ -73,7 +75,6 @@ export async function fetchTtsModels(id,c){
   else if(id==="google"){models=items.map(x=>x.name);languages=items.flatMap(x=>x.languageCodes||[])}
   else models=items.map(x=>x.id||x.model_id||x.name);
   if(id==="openai")models=models.filter(x=>/tts|speech|audio/i.test(x));
-  if(id==="minimax")models=models.filter(x=>/speech/i.test(x));
   models=[...new Set(models.filter(Boolean))];languages=[...new Set([...languages.filter(Boolean),...builtInLanguages(id)])];
   return{models:models.length?models:builtInModels(id),languages};
 }
