@@ -51,6 +51,7 @@ export const seedState = {
     { id: "group-tokyo", name: "东京支线", worldId: "world-tokyo", personIds: ["npc-soo"] }
   ],
   friendRequests: [],
+  blockedPersonIds: [],
   worldbooks: [
     { id: "wb-seoul", name: "首尔日常", prompt: "故事发生在当代首尔。角色共享同一时间线与公共事件。", enabled: true },
     { id: "wb-record", name: "唱片店资料", prompt: "唱片店位于延南洞，营业时间 11:00—22:00。", enabled: true }
