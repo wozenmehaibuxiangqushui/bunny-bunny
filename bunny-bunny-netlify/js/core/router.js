@@ -17,6 +17,7 @@ export function navigate(name, params = {}, options = {}) {
   back.textContent = "‹";
   back.onclick = () => {
     if (name === "chat-settings" && params.conversationId) navigate("conversation", { id: params.conversationId });
+    else if (name === "call" && params.id) navigate("conversation", { id: params.id });
     else if (name === "conversation") navigate("chat");
     else navigate("desktop");
   };
@@ -31,5 +32,5 @@ export function navigate(name, params = {}, options = {}) {
 }
 
 export function routeTitle(name) {
-  return ({ desktop: "我的小手机", chat: "聊天", conversation: "对话", contacts: "联系人", "chat-settings": "聊天设置", "chat-me": "我", moments: "朋友圈", "phone-settings": "手机设置", "data-settings": "数据管理", api: "模型与 API", bridge: "现实桥", mcp: "MCP 中心", together: "一起刷", focus: "陪伴专注", world: "世界与身份", forum:"论坛",delivery:"外卖",shop:"购物",flea:"二手平台",sms:"短信",phone:"电话",worldbook:"世界书",presets:"预设",games:"游戏",memos:"备忘录",calendar:"日历",wallet:"钱包" })[name] || "bunny bunny";
+  return ({ desktop: "我的小手机", chat: "聊天", conversation: "对话", call: "通话", contacts: "联系人", "chat-settings": "聊天设置", "chat-me": "我", moments: "朋友圈", "phone-settings": "手机设置", "data-settings": "数据管理", api: "模型与 API", bridge: "现实桥", mcp: "MCP 中心", together: "一起刷", focus: "陪伴专注", world: "世界与身份", forum:"论坛",delivery:"外卖",shop:"购物",flea:"二手平台",sms:"短信",phone:"电话",worldbook:"世界书",presets:"预设",games:"游戏",memos:"备忘录",calendar:"日历",wallet:"钱包" })[name] || "bunny bunny";
 }
