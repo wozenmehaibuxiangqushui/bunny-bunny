@@ -1,6 +1,6 @@
 import { personById } from "../core/store.js";
 import { escapeHtml, initialsAvatar, showToast, openSheet, closeSheet } from "../core/ui.js";
-const langs=["自动","中文","English","한국어","日本語","Français","Deutsch","Español"];
+const langs=["自动","中文","粤语","English","日本語","Français","한국어","Deutsch","Español"];
 const moods=["自动","平静","开心","温柔","害羞","悲伤","生气","激动","疲惫","低语"];
 const bubbleThemes={
 imessage:".message .bubble{border-radius:1.15rem}.message.user .bubble{background:#111;color:#fff}",
@@ -26,13 +26,18 @@ return (container,params={})=>{
   ${cityRow("char","CHAR",person.city||p.charCity,person.cityPrototype||p.cityPrototype,p.weather)}
   ${cityRow("user","USER",user.city||p.userCity,user.cityPrototype||"",user.weather)}
  </section>
- <div class="section-title"><h3>TTS 角色朗读</h3><span>厂商配置已统一</span></div>
+ <div class="section-title"><h3>TTS 角色朗读</h3><span>当前 CHAR 独立</span></div>
  <section class="card stack">
-  <p class="callout">TTS 厂商、Key、模型和语气来源统一在“模型与 API → TTS 语音”设置；这里仅绑定当前角色。</p>
-  <label class="field"><span>角色音色 ID（留空使用厂商默认）</span><input name="voiceId" value="${escapeHtml(p.voiceId||"")}" placeholder="Voice ID / Voice Name"></label>
+  <p class="callout">厂商、Key 和模型在“模型与 API → TTS 语音”连接；下面只调整当前角色的表现。</p>
+  <label class="field"><span>音色 ID / Voice Name（留空使用模型默认）</span><input name="voiceId" value="${escapeHtml(p.voiceId||"")}" placeholder="Voice ID / Voice Name"></label>
+  <label class="field"><span>朗读语言</span><select name="language">${opts(langs,p.language||"中文")}</select></label>
+  <label class="field"><span>默认情绪</span><select name="emotion">${opts(moods,p.emotion||"自动")}</select></label>
+  <label class="field"><span>角色语气 / 口吻</span><input name="toneStyle" value="${escapeHtml(p.toneStyle||"自然")}" placeholder="例如：冷淡、温柔、活泼、低声"></label>
   <label class="field"><span>角色语速 <output data-speed-out>${Number(p.voiceSpeed||1).toFixed(2)}×</output></span><input name="voiceSpeed" data-speed type="range" min=".5" max="2" step=".05" value="${p.voiceSpeed||1}"></label>
+  ${toggle("llmTone","由 LLM 提供语气","开启：模型给出语气；关闭：语音引擎根据正文自行决定",p.llmTone!==false)}
   ${toggle("autoPlayVoice","自动朗读 CHAR 回复","使用当前启用的 TTS 厂商合成",p.autoPlayVoice)}
-  <button class="button secondary" type="button" data-open-tts-center>打开 TTS 语音配置</button>
+  ${toggle("translationEnabled","显示中文翻译","外语回复会在原文气泡下显示同次生成的中文翻译",p.translationEnabled)}
+  <button class="button secondary" type="button" data-open-tts-center>连接或切换 TTS 厂商</button>
  </section>
  <div class="section-title"><h3>模型、记忆与互动</h3><span>原版功能保留</span></div>
  <section class="card stack">
@@ -94,7 +99,7 @@ return (container,params={})=>{
  container.querySelector("[data-open-tts-center]").onclick=()=>navigate("api",{section:"voice"});
  container.querySelector("[data-batch]").onclick=()=>batchStickers(personId);
  container.querySelector("[data-sticker]").onchange=e=>localStickers([...e.target.files],personId);
- form.onsubmit=e=>{e.preventDefault();const d=new FormData(form),worldbookIds=d.getAll("worldbookIds");store.update(s=>{Object.assign(s.chatProfiles[personId],Object.fromEntries(d),{voiceSpeed:Number(d.get("voiceSpeed")),memoryDepth:Number(d.get("memoryDepth")),worldbookIds,autoPlayVoice:form.autoPlayVoice.checked,visionEnabled:form.visionEnabled.checked,proactive:form.proactive.checked,stickerSteal:form.stickerSteal.checked});Object.assign(person,{city:d.get("charCity"),cityPrototype:d.get("charPrototype")});s.chatProfiles[personId].weather=form.querySelector('[data-weather-result="char"]').textContent;Object.assign(user,{city:d.get("userCity"),cityPrototype:d.get("userPrototype"),weather:form.querySelector('[data-weather-result="user"]').textContent});Object.assign(s.chatAppearance,formAppearance(form,a),{hideUserAvatar:form.hideUserAvatar.checked})});applyChatAppearance(store.getState().chatAppearance);showToast("全部聊天设置已保存")};
+ form.onsubmit=e=>{e.preventDefault();const d=new FormData(form),worldbookIds=d.getAll("worldbookIds");store.update(s=>{Object.assign(s.chatProfiles[personId],Object.fromEntries(d),{voiceSpeed:Number(d.get("voiceSpeed")),memoryDepth:Number(d.get("memoryDepth")),worldbookIds,llmTone:form.llmTone.checked,autoPlayVoice:form.autoPlayVoice.checked,translationEnabled:form.translationEnabled.checked,visionEnabled:form.visionEnabled.checked,proactive:form.proactive.checked,stickerSteal:form.stickerSteal.checked});Object.assign(person,{city:d.get("charCity"),cityPrototype:d.get("charPrototype")});s.chatProfiles[personId].weather=form.querySelector('[data-weather-result="char"]').textContent;Object.assign(user,{city:d.get("userCity"),cityPrototype:d.get("userPrototype"),weather:form.querySelector('[data-weather-result="user"]').textContent});Object.assign(s.chatAppearance,formAppearance(form,a),{hideUserAvatar:form.hideUserAvatar.checked})});applyChatAppearance(store.getState().chatAppearance);showToast("全部聊天设置已保存")};
  function chooseAvatar(type,pid,uid,c,pa){const input=document.createElement("input");input.type="file";input.accept="image/*";input.onchange=e=>readImage(e.target.files[0],url=>{store.update(s=>{if(type==="char")s.chatProfiles[pid].avatarUrl=url;else personById(s,uid).avatarUrl=url});createChatSettingsRenderer({store,navigate})(c,pa)});input.click()}
  function urlAvatar(type,pid,uid,c,pa){const url=prompt("头像图床 URL","https://");if(!/^https?:\/\//.test(url||""))return;store.update(s=>{if(type==="char")s.chatProfiles[pid].avatarUrl=url;else personById(s,uid).avatarUrl=url});createChatSettingsRenderer({store,navigate})(c,pa)}
  function bindBg(input,c,pa){input.onchange=e=>readImage(e.target.files[0],url=>saveBg(url,c,pa))}
