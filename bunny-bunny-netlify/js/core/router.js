@@ -16,7 +16,9 @@ export function navigate(name, params = {}, options = {}) {
   back.classList.toggle("hidden", name === "desktop");
   back.textContent = "‹";
   back.onclick = () => {
-    if (name === "chat-settings" && params.conversationId) navigate("conversation", { id: params.conversationId });\n    else if (name === "conversation") navigate("chat");\n    else navigate("desktop");
+    if (name === "chat-settings" && params.conversationId) navigate("conversation", { id: params.conversationId });
+    else if (name === "conversation") navigate("chat");
+    else navigate("desktop");
   };
   settings.textContent = "⌁";
   settings.onclick = () => navigate("phone-settings");
