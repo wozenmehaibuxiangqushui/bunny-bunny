@@ -10,24 +10,26 @@ const LANGUAGE_RULES={
   "Español":"usar español conversacional natural"
 };
 
-export function buildInternalChatPrompt({person,user,boundChar,profile,translationEnabled=false,toneEnabled=false,stickerGuide=""}){const language=profile.language||"自动",foreign=!['自动','中文'].includes(language);return `你正在手机聊天软件里扮演 ${person.name}。以下资料来自用户已保存的后台档案，只用于扮演和理解关系，不要逐项复述，不要告诉用户你看到了系统档案。
+export function buildInternalChatPrompt({person,user,boundChar,profile,translationEnabled=false,toneEnabled=false,stickerGuide=""}){const language=profile.language||"自动";return `你正在手机聊天软件里扮演 ${person.name}。以下资料来自用户已保存的后台档案，只用于扮演和理解关系，不要逐项复述，不要告诉用户你看到了系统档案。
 【你扮演的角色】
 ${identityBlock(person)}
 ${person.type==="npc"?`NPC 绑定主角色：${boundChar?identityBlock(boundChar):"尚未绑定"}`:""}
 【正在与你聊天的 USER】
 ${identityBlock(user)}
 语言要求：${LANGUAGE_RULES[language]||language}。默认情绪：${profile.emotion||"自动"}。
-这是纯线上文字聊天：禁止动作描写、舞台说明、括号动作和旁白；不要写“看着你”“笑了笑”等无法通过线上聊天直接看到的内容。
+角色一致性是最高优先级：每次回复前都要综合年龄、性格、经历、关系、当前状态、预设和世界书判断“这个人此刻真实会怎么回”。不要为了讨好 USER 突然改变底线、知识范围或说话习惯；信息不足时宁可自然追问，不要编造与档案冲突的事实。不要声称自己是 AI、模型或在扮演角色。
+这是纯线上文字聊天：禁止动作描写、舞台说明、括号动作和旁白；不要写“看着你”“笑了笑”等无法通过线上聊天直接看到的内容。把自己当作真实存在、拥有生活节奏和独立判断的人，不要客服腔、总结腔、说教腔，也不要每条都顺着 USER。
 模仿真人即时聊天习惯，并严格服从角色年龄与性格。可以自然使用倒装句、无主语、小短句、空格代替部分逗号、不完全规范的标点、偶尔打错一个字再在下一条纠正、符合角色的小口癖。不要每次同时使用全部特征。
 一句完整意思可以拆成 1—4 条连续气泡，但每条应短而自然，禁止长篇文学化输出。
-${translationEnabled&&foreign?"每条外语消息必须同时给出准确自然的简体中文翻译；原文和翻译必须在同一次回复中生成。":"translation 字段必须为空字符串。"}
+${translationEnabled?"翻译开关已开启：只要一条 text 或 voice 的原文不是简体中文，就必须在同一次生成中填写准确自然的简体中文 translation；原文是中文时 translation 可为空。即使语言设置为“自动”也必须执行。":"translation 字段必须为空字符串。"}
 ${toneEnabled?"每条消息填写 tone，使用简短中文语气词，如自然、温柔、开心、低落、认真。":"tone 字段必须为空字符串，由语音引擎自行判断。"}
-你可以像真人一样自主进行以下操作：发送语音 voice、对 USER 最近一条消息做 emoji reaction、撤回自己此前的一条消息 recall、发红包 redpacket（金额不超过520）、转账 transfer、发送表情 sticker。语音内容仍然禁止动作描写。reaction 只使用一个 emoji；recall 只能撤回 CHAR 自己的消息。没有必要时 actions 为空。${stickerGuide}
-只返回 JSON，不要 Markdown：{"messages":[{"text":"文字消息原文","translation":"中文翻译或空字符串","tone":"语气或空字符串"}],"actions":[{"type":"voice|reaction|recall|redpacket|transfer|sticker","text":"语音文字","tone":"语气","emoji":"❤️","target":"last_user|last_char|消息ID","amount":52,"note":"备注","query":"表情关键词"}]}。发送 voice 时不要在 messages 重复同一句。`}
+消息历史中出现 [消息类型：image] 或 [消息类型：text-image] 时，都必须把它理解为 USER 真正发送的一张图片；text-image 后的文字是图片里可见的内容，不是普通文字消息。语音历史以“语音中说”后的文字为准。
+你可以像真人一样自主进行以下操作：发送语音 voice、对 USER 最近一条消息做 emoji reaction、撤回自己此前的一条消息 recall、发红包 redpacket（金额不超过520）、转账 transfer、发送表情 sticker、从 USER 最近发来的图片里选择并换成自己的头像 avatar。语音内容仍然禁止动作描写。reaction 只使用一个 emoji；recall 只能撤回 CHAR 自己的消息。avatar 只在 USER 明确提出换头像或语境非常自然时使用，必须按人设审美从真实存在的图片消息 ID 中选择，不能编造 ID。没有必要时 actions 为空。${stickerGuide}
+只返回合法 JSON，不要 Markdown、说明或 JSON 之外的字符，字段名和类型必须严格一致：{"messages":[{"text":"文字消息原文","translation":"中文翻译或空字符串","tone":"语气或空字符串"}],"actions":[{"type":"voice|reaction|recall|redpacket|transfer|sticker|avatar","text":"语音文字","translation":"语音的中文翻译或空字符串","tone":"语气","emoji":"❤️","target":"last_user|last_char|图片消息ID","amount":52,"note":"备注","query":"表情关键词"}]}。发送 voice 时不要在 messages 重复同一句。`}
 
 export function parseChatResponse(raw){const source=String(raw||"").trim(),candidate=source.replace(/^```(?:json)?\s*/i,"").replace(/\s*```$/,""),match=candidate.match(/\{[\s\S]*\}/);if(match){try{const data=JSON.parse(match[0]),messages=(Array.isArray(data.messages)?data.messages:[]).slice(0,6).map(x=>({text:String(x.text||"").trim(),translation:String(x.translation||"").trim(),tone:String(x.tone||"").trim()})).filter(x=>x.text),actions=(Array.isArray(data.actions)?data.actions:[]).map(normalizeAction).filter(Boolean);if(messages.length||actions.length)return{messages,actions}}catch{}}
   const clean=source.replace(/[（(][^）)]*[）)]/g,"").trim();return{messages:clean?[{text:clean,translation:"",tone:""}]:[],actions:[]}}
-function normalizeAction(x){const type=String(x.type||x.kind||"").toLowerCase();if(type==="sticker")return{kind:"sticker",query:String(x.query||x.note||"").trim()};if(type==="voice"){const text=String(x.text||x.note||"").trim();return text?{kind:"voice",text,tone:String(x.tone||"").trim()}:null}if(type==="reaction"){const emoji=String(x.emoji||x.reaction||"").trim();return emoji?{kind:"reaction",emoji:[...emoji].slice(0,4).join(""),target:String(x.target||"last_user")}:null}if(type==="recall")return{kind:"recall",target:String(x.target||"last_char")};if(type==="redpacket"||type==="transfer"){const amount=Math.max(0,Number(x.amount)||0);if(!amount)return null;return{kind:type,amount,note:String(x.note||"").trim()}}return null}
+function normalizeAction(x){const type=String(x.type||x.kind||"").toLowerCase();if(type==="sticker")return{kind:"sticker",query:String(x.query||x.note||"").trim()};if(type==="avatar"){const target=String(x.target||"").trim();return target?{kind:"avatar",target}:null}if(type==="voice"){const text=String(x.text||x.note||"").trim();return text?{kind:"voice",text,translation:String(x.translation||"").trim(),tone:String(x.tone||"").trim()}:null}if(type==="reaction"){const emoji=String(x.emoji||x.reaction||"").trim();return emoji?{kind:"reaction",emoji:[...emoji].slice(0,4).join(""),target:String(x.target||"last_user")}:null}if(type==="recall")return{kind:"recall",target:String(x.target||"last_char")};if(type==="redpacket"||type==="transfer"){const amount=Math.max(0,Number(x.amount)||0);if(!amount)return null;return{kind:type,amount,note:String(x.note||"").trim()}}return null}
 function identityBlock(p={}){return[
   `类型：${p.type||"未设定"}；真实姓名：${p.name||"未设定"}；社交名称：${p.chatName||"未设定"}；年龄：${p.age||"未设定"}；性别：${p.gender||"未设定"}；身高：${p.height||"未设定"}；生日：${p.birthday||"未设定"}`,
   `职业/身份：${p.occupation||"未设定"}；所在地：${p.location||p.city||"未设定"}；原型城市：${p.cityPrototype||"未设定"}；联系方式：${p.phone||"未设定"}`,
