@@ -17,7 +17,7 @@ const TYPE_META = {
 };
 
 export function createConversationV3Renderer({ store, navigate }) {
-  const ui = { quoteId: "", selectMode: false, selected: new Set() };
+  const ui = { conversationId: "", quoteId: "", selectMode: false, selected: new Set() };
 
   function conversation(container, params = {}) {
     const state = store.getState();
