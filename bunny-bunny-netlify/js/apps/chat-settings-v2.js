@@ -43,7 +43,7 @@ return (container,params={})=>{
   ${toggle("stickerSteal","根据人设偷表情包","仅收藏可见对话中的表情",p.stickerSteal)}
   <label class="field"><span>记忆系统</span><input name="memoryMode" value="${escapeHtml(p.memoryMode||"")}"></label>
   <label class="field"><span>记忆召回条数</span><input name="memoryDepth" type="number" min="4" max="80" value="${p.memoryDepth||24}"></label>
-  <label class="field"><span>安静时段</span><input name="quietHours" value="${escapeHtml(p.quietHours||"")}"></label>
+  <label class="field"><span>安静时段</span><input name="quietHours" value="${escapeHtml(p.quietHours||"")}"></label>\n  <div class="pat-copy-settings"><label class="field"><span>我拍 CHAR 时的文案</span><input name="patText" value="${escapeHtml(p.patText||`你拍了拍${person.name}`)}" placeholder="你拍了拍 CHAR"></label><label class="field"><span>CHAR 拍我时的文案</span><input name="patUserText" value="${escapeHtml(p.patUserText||`${person.name}拍了拍你`)}" placeholder="CHAR 拍了拍你"></label><small>双击聊天头像触发；两条文案分别保存到当前角色。</small></div>
   <div class="row"><label class="button secondary file-button">上传表情<input data-sticker type="file" accept="image/*" multiple hidden></label><button class="button secondary" type="button" data-batch>批量图床</button></div>
  </section>
  <div class="section-title"><h3>提示词绑定</h3><span>预设优先于世界书</span></div>
