@@ -54,7 +54,7 @@ placeholderRoutes.filter(route => !["worldbook","presets","wallet"].includes(rou
 registerRoute("wallet", createWalletRenderer(context));
 registerRoute("placeholder", container => { container.innerHTML = `<div class="empty"><strong>这个模块还在路上</strong><span>当前版本不会伪装成已经接入。</span></div>`; });
 
-document.querySelector("#home-button").addEventListener("click", () => navigate("desktop"));
+document.querySelector("#home-button").addEventListener("click", () => navigate("desktop", {}, { reset: true }));
 document.querySelector("#app-view").addEventListener("scroll", event => document.querySelector("#app-header").classList.toggle("scrolled", event.target.scrollTop > 8));
 
 const initialHash = location.hash.slice(1);
