@@ -79,6 +79,7 @@ export const seedState = {
     stt: { provider: "browser", baseUrl: "https://api.groq.com/openai/v1", apiKey: "", model: "whisper-large-v3-turbo", language: "zh" },
     tts: { provider: "browser", baseUrl: "https://api.groq.com/openai/v1", apiKey: "", model: "canopylabs/orpheus-v1-english", voice: "hannah", speed: 1 }
   },
+  tts: { activeProvider: "browser", llmProsody: true, providers: {} },
   callPrompts: {},
   callRuntime: { lastProactiveAt: {} },
   stickerLibraries: { global: [], user: [], characters: { "char-jun": [], "char-rin": [] } }
@@ -95,6 +96,7 @@ function mergeState(base, saved) {
     dataSettings: { ...base.dataSettings, ...(saved.dataSettings || {}) },
     wallet: { ...base.wallet, ...(saved.wallet || {}), ledger: saved.wallet?.ledger || base.wallet.ledger },
     voiceApis: { stt: { ...base.voiceApis.stt, ...(saved.voiceApis?.stt || {}) }, tts: { ...base.voiceApis.tts, ...(saved.voiceApis?.tts || {}) } },
+    tts: { ...base.tts, ...(saved.tts || {}), providers: { ...base.tts.providers, ...(saved.tts?.providers || {}) } },
     callPrompts: { ...base.callPrompts, ...(saved.callPrompts || {}) },
     callRuntime: { ...base.callRuntime, ...(saved.callRuntime || {}), lastProactiveAt: { ...base.callRuntime.lastProactiveAt, ...(saved.callRuntime?.lastProactiveAt || {}) } },
     stickerLibraries: { global: saved.stickerLibraries?.global || base.stickerLibraries.global, user: saved.stickerLibraries?.user || base.stickerLibraries.user, characters: { ...base.stickerLibraries.characters, ...(saved.stickerLibraries?.characters || {}) } },
