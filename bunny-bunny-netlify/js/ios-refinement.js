@@ -107,10 +107,10 @@ export function setupIosRefinement({store,navigate}){
    const c=mediaContext||{};closeSheet();
    if(c.target==="app-icon"){store.update(s=>s.appearance.appIcon=url);setFavicon(url);navigate("phone-settings");showToast("应用图标已更新")}
    else if(c.target==="wallpaper"){store.update(s=>s.appearance.wallpaper=url);setPhoneAppearance(store.getState().appearance);navigate("phone-settings");showToast("壁纸已更新")}
-   else if(c.target==="avatar"){const {kind,personId,userId}=c;store.update(s=>{if(kind==="char")s.chatProfiles[personId].avatarUrl=url;else personById(s,userId).avatarUrl=url});navigate("chat-settings",{personId:c.personId});showToast("头像已更新")}
-   else if(c.target==="chat-bg"){store.update(s=>{s.chatAppearance.background=url;s.chatAppearance.backgroundHistory=[url,...s.chatAppearance.backgroundHistory.filter(x=>x!==url)].slice(0,12)});navigate("chat-settings",{personId:c.personId});showToast("聊天背景已保存")}
+   else if(c.target==="avatar"){const {kind,personId,userId}=c;store.update(s=>{if(kind==="char")s.chatProfiles[personId].avatarUrl=url;else personById(s,userId).avatarUrl=url});navigate("chat-settings",{personId:c.personId,conversationId:c.conversationId});showToast("头像已更新")}
+   else if(c.target==="chat-bg"){store.update(s=>{s.chatAppearance.background=url;s.chatAppearance.backgroundHistory=[url,...s.chatAppearance.backgroundHistory.filter(x=>x!==url)].slice(0,12)});navigate("chat-settings",{personId:c.personId,conversationId:c.conversationId});showToast("聊天背景已保存")}
  }
- function saveStickers(urls,files){const c=mediaContext;closeSheet();store.update(s=>urls.forEach((url,i)=>s.stickerLibraries.characters[c.personId].push({name:files[i]?.name||"图床表情",url,tags:["图片"]})));navigate("chat-settings",{personId:c.personId});showToast(`已添加 ${urls.length} 张图片`)}
+ function saveStickers(urls,files){const c=mediaContext;closeSheet();store.update(s=>urls.forEach((url,i)=>s.stickerLibraries.characters[c.personId].push({name:files[i]?.name||"图床表情",url,tags:["图片"]})));navigate("chat-settings",{personId:c.personId,conversationId:c.conversationId});showToast(`已添加 ${urls.length} 张图片`)}
  function setFavicon(url){const icon=document.querySelector('link[rel="icon"]');if(icon)icon.href=url}
  document.addEventListener("click",e=>{
    const bunny=e.target.closest("[data-bunny]");if(bunny){e.preventDefault();e.stopImmediatePropagation();const kind=bunny.dataset.bunny,url=bunnyData(kind);store.update(s=>{s.appearance.bunnyIcon=kind;s.appearance.appIcon=url});setFavicon(url);navigate("phone-settings");showToast("已换成标准兔子图标");return}
@@ -119,8 +119,8 @@ export function setupIosRefinement({store,navigate}){
    e.preventDefault();e.stopImmediatePropagation();
    const route=getRoute(),personId=route.params.personId||"char-jun",state=store.getState();
    if(target.matches("[data-app-icon]"))openPicker({target:"app-icon"});
-   else if(target.matches("[data-avatar]"))openPicker({target:"avatar",kind:target.dataset.avatar,personId,userId:state.currentUserId});
-   else openPicker({target:target.dataset.mediaTarget,personId});
+   else if(target.matches("[data-avatar]"))openPicker({target:"avatar",kind:target.dataset.avatar,personId,userId:state.currentUserId,conversationId:route.params.conversationId});
+   else openPicker({target:target.dataset.mediaTarget,personId,conversationId:route.params.conversationId});
  },true);
  let swipe=null;
  screen.addEventListener("pointerdown",e=>{if(screen.dataset.app!=="desktop"&&e.clientX<38)swipe={x:e.clientX,y:e.clientY}}, {passive:true});
