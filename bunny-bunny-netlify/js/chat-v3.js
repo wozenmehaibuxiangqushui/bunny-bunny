@@ -23,6 +23,7 @@ export function createConversationV3Renderer({ store, navigate }) {
     const state = store.getState();
     const conv = conversationById(state, params.id || "conv-jun");
     if (!conv) return navigate("chat");
+    if (ui.conversationId !== conv.id) { ui.conversationId=conv.id; ui.quoteId=""; ui.selectMode=false; ui.selected.clear(); }
     const person = personById(state, conv.personId);
     const user = personById(state, state.currentUserId);
     const profile = state.chatProfiles[person.id];
