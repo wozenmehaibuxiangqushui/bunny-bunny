@@ -26,15 +26,13 @@ return (container,params={})=>{
   ${cityRow("char","CHAR",person.city||p.charCity,person.cityPrototype||p.cityPrototype,p.weather)}
   ${cityRow("user","USER",user.city||p.userCity,user.cityPrototype||"",user.weather)}
  </section>
- <div class="section-title"><h3>语音配置</h3><span>角色级</span></div>
+ <div class="section-title"><h3>TTS 角色朗读</h3><span>厂商配置已统一</span></div>
  <section class="card stack">
-  <label class="field"><span>语音提供方</span><input name="voiceProvider" value="${escapeHtml(p.voiceProvider||"")}"></label>
-  <label class="field"><span>音色 ID</span><input name="voiceId" value="${escapeHtml(p.voiceId||"")}" placeholder="voice_kr_01"></label>
-  <label class="field"><span>语速 <output data-speed-out>${Number(p.voiceSpeed||1).toFixed(1)}×</output></span><input name="voiceSpeed" data-speed type="range" min=".5" max="2" step=".1" value="${p.voiceSpeed||1}"></label>
-  ${toggle("llmTone","根据 LLM 提供语气","关闭时由语音 API 自动判断语气",p.llmTone)}
-  <label class="field"><span>语言</span><select name="language">${opts(langs,p.language)}</select></label>
-  <label class="field"><span>情绪</span><select name="emotion">${opts(moods,p.emotion)}</select></label>
-  ${toggle("autoPlayVoice","自动播放语音","收到 CHAR 回复后朗读",p.autoPlayVoice)}
+  <p class="callout">TTS 厂商、Key、模型和语气来源统一在“模型与 API → TTS 语音”设置；这里仅绑定当前角色。</p>
+  <label class="field"><span>角色音色 ID（留空使用厂商默认）</span><input name="voiceId" value="${escapeHtml(p.voiceId||"")}" placeholder="Voice ID / Voice Name"></label>
+  <label class="field"><span>角色语速 <output data-speed-out>${Number(p.voiceSpeed||1).toFixed(2)}×</output></span><input name="voiceSpeed" data-speed type="range" min=".5" max="2" step=".05" value="${p.voiceSpeed||1}"></label>
+  ${toggle("autoPlayVoice","自动朗读 CHAR 回复","使用当前启用的 TTS 厂商合成",p.autoPlayVoice)}
+  <button class="button secondary" type="button" data-open-tts-center>打开 TTS 语音配置</button>
  </section>
  <div class="section-title"><h3>模型、记忆与互动</h3><span>原版功能保留</span></div>
  <section class="card stack">
@@ -93,9 +91,10 @@ return (container,params={})=>{
  container.querySelector("[data-bg-url]").onclick=()=>{const url=prompt("聊天背景图床 URL","https://");if(/^https?:\/\//.test(url||""))saveBg(url,container,params)};
  container.querySelectorAll("[data-use-bg]").forEach(x=>x.onclick=e=>{if(e.target.closest("[data-delete-bg]"))return;store.update(s=>s.chatAppearance.background=a.backgroundHistory[Number(x.dataset.useBg)]);showToast("聊天背景已切换")});
  container.querySelectorAll("[data-delete-bg]").forEach(x=>x.onclick=e=>{e.stopPropagation();store.update(s=>{const i=Number(x.dataset.deleteBg),old=s.chatAppearance.backgroundHistory.splice(i,1)[0];if(s.chatAppearance.background===old)s.chatAppearance.background=""});createChatSettingsRenderer({store,navigate})(container,params)});
+ container.querySelector("[data-open-tts-center]").onclick=()=>navigate("api",{section:"voice"});
  container.querySelector("[data-batch]").onclick=()=>batchStickers(personId);
  container.querySelector("[data-sticker]").onchange=e=>localStickers([...e.target.files],personId);
- form.onsubmit=e=>{e.preventDefault();const d=new FormData(form),worldbookIds=d.getAll("worldbookIds");store.update(s=>{Object.assign(s.chatProfiles[personId],Object.fromEntries(d),{voiceSpeed:Number(d.get("voiceSpeed")),memoryDepth:Number(d.get("memoryDepth")),worldbookIds,llmTone:form.llmTone.checked,autoPlayVoice:form.autoPlayVoice.checked,visionEnabled:form.visionEnabled.checked,proactive:form.proactive.checked,stickerSteal:form.stickerSteal.checked});Object.assign(person,{city:d.get("charCity"),cityPrototype:d.get("charPrototype")});s.chatProfiles[personId].weather=form.querySelector('[data-weather-result="char"]').textContent;Object.assign(user,{city:d.get("userCity"),cityPrototype:d.get("userPrototype"),weather:form.querySelector('[data-weather-result="user"]').textContent});Object.assign(s.chatAppearance,formAppearance(form,a),{hideUserAvatar:form.hideUserAvatar.checked})});applyChatAppearance(store.getState().chatAppearance);showToast("全部聊天设置已保存")};
+ form.onsubmit=e=>{e.preventDefault();const d=new FormData(form),worldbookIds=d.getAll("worldbookIds");store.update(s=>{Object.assign(s.chatProfiles[personId],Object.fromEntries(d),{voiceSpeed:Number(d.get("voiceSpeed")),memoryDepth:Number(d.get("memoryDepth")),worldbookIds,autoPlayVoice:form.autoPlayVoice.checked,visionEnabled:form.visionEnabled.checked,proactive:form.proactive.checked,stickerSteal:form.stickerSteal.checked});Object.assign(person,{city:d.get("charCity"),cityPrototype:d.get("charPrototype")});s.chatProfiles[personId].weather=form.querySelector('[data-weather-result="char"]').textContent;Object.assign(user,{city:d.get("userCity"),cityPrototype:d.get("userPrototype"),weather:form.querySelector('[data-weather-result="user"]').textContent});Object.assign(s.chatAppearance,formAppearance(form,a),{hideUserAvatar:form.hideUserAvatar.checked})});applyChatAppearance(store.getState().chatAppearance);showToast("全部聊天设置已保存")};
  function chooseAvatar(type,pid,uid,c,pa){const input=document.createElement("input");input.type="file";input.accept="image/*";input.onchange=e=>readImage(e.target.files[0],url=>{store.update(s=>{if(type==="char")s.chatProfiles[pid].avatarUrl=url;else personById(s,uid).avatarUrl=url});createChatSettingsRenderer({store,navigate})(c,pa)});input.click()}
  function urlAvatar(type,pid,uid,c,pa){const url=prompt("头像图床 URL","https://");if(!/^https?:\/\//.test(url||""))return;store.update(s=>{if(type==="char")s.chatProfiles[pid].avatarUrl=url;else personById(s,uid).avatarUrl=url});createChatSettingsRenderer({store,navigate})(c,pa)}
  function bindBg(input,c,pa){input.onchange=e=>readImage(e.target.files[0],url=>saveBg(url,c,pa))}
