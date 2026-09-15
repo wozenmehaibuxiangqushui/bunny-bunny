@@ -20,7 +20,7 @@ const TYPE_META = {
 };
 
 export function createConversationV3Renderer({ store, navigate }) {
-  const ui = { conversationId:"", quoteId: "", selectMode: false, selected: new Set(), attachmentsOpen:false };
+  const ui = { conversationId:"", quoteId: "", selectMode: false, selected: new Set(), attachmentsOpen:false, sending:false };
 
   function conversation(container, params = {}) {
     const state = store.getState();
@@ -76,6 +76,7 @@ export function createConversationV3Renderer({ store, navigate }) {
     const form=container.querySelector("[data-composer]");
     if(form){
       form.onsubmit=e=>{e.preventDefault();submitMessage(true,form,conv,person,profile,container,params)};
+      form.querySelector("[data-send-ai]").onclick=()=>submitMessage(true,form,conv,person,profile,container,params);
       form.querySelector("[data-send-only]").onclick=()=>submitMessage(false,form,conv,person,profile,container,params);
       form.querySelector("[data-plus]").onclick=()=>{ui.attachmentsOpen=!ui.attachmentsOpen;activeRender(container,params)};
       container.querySelectorAll("[data-fold-action]").forEach(button=>button.onclick=()=>handleFoldAction(button.dataset.foldAction,conv,person,container,params));
@@ -88,11 +89,13 @@ export function createConversationV3Renderer({ store, navigate }) {
   function createConversationV3RendererRenderHack(container,params){activeRender?.(container,params)}
 
   async function submitMessage(sendAi,form,conv,person,profile,container,params){
+    if(sendAi&&ui.sending)return showToast("正在等待 AI 回复");
     const input=form.elements.message,text=input.value.trim();if(!text)return;
     const replyTo=ui.quoteId||"",now=timeNow();
     store.update(s=>{s.messages[conv.id].push({id:id(),role:"user",type:"text",text,time:now,replyTo});const c=conversationById(s,conv.id);c.preview=text;c.time=now});
     ui.quoteId=""; input.value=""; activeRender(container,params);
     if(!sendAi)return;
+    ui.sending=true;
     const current=store.getState(),model=current.modelProfiles.find(x=>x.id===current.activeModelProfileId);
     updateIsland(`${person.name} 正在回复…`,true);
     try{
@@ -109,7 +112,7 @@ export function createConversationV3Renderer({ store, navigate }) {
       for(const action of parsed.actions){if(action.kind==="sticker"){const query=action.query.toLowerCase(),item=charStickers.find(x=>[x.name,x.description,...(x.tags||[])].filter(Boolean).some(v=>String(v).toLowerCase().includes(query)||query.includes(String(v).toLowerCase())))||charStickers[0];if(item)store.update(s=>s.messages[conv.id].push({id:id(),role:"char",type:"sticker",text:item.name||"表情包",src:item.url,description:item.description||(item.tags||[]).join("、")||"CHAR 发送的表情包",time:timeNow()}));continue}const kind=action.kind==="redpacket"&&action.amount>520?"transfer":action.kind,messageId=id();store.update(s=>s.messages[conv.id].push({id:messageId,role:"char",type:kind,text:action.note||(kind==="redpacket"?"大吉大利":"转账给你"),amount:action.amount,time:timeNow()}));walletCredit(store,{amount:action.amount,kind,title:`收到 ${person.name} 的${kind==="redpacket"?"红包":"转账"}`,conversationId:conv.id,messageId,note:action.note})}
       activeRender(container,params);
       if(profile.autoPlayVoice&&parsed.messages.length){const spoken=parsed.messages.map(x=>x.text).join("。"),tone=parsed.messages.find(x=>x.tone)?.tone||"";synthesizeSpeech(resolveTtsConfig(store.getState(),profile),spoken,{tone}).catch(error=>showToast(error.message))}
-    }catch(error){showToast(error.message)}finally{updateIsland("bunny 正在陪你",false)}
+    }catch(error){showToast(error.message)}finally{ui.sending=false;updateIsland("bunny 正在陪你",false)}
   }
 
   function openMessageMenu(messageId,conv,person,container,params){
@@ -190,7 +193,7 @@ function messageContent(message){
   if(message.type&&message.type!=="text")return`<div class="typed-message"><span>${TYPE_META[message.type]?.[1]||"□"}</span><div><small>${TYPE_META[message.type]?.[0]||"消息"}</small><strong>${escapeHtml(message.text)}</strong></div></div>`;
   return escapeHtml(message.text)
 }
-function composerView(quote,open){const actions=[["camera","camera","拍摄"],["album","image","照片"],["text-image","text","文字图"],["redpacket","gift","红包"],["transfer","money","转账"],["sticker","smile","表情包"],["call","phone","语音通话"],["video","video","视频通话"]];return `<div class="composer-shell-v3 ${open?"attachments-open":""}">${quote?`<div class="composer-quote"><div><strong>回复</strong><span>${escapeHtml(quote.text)}</span></div><button data-cancel-quote aria-label="取消引用">×</button></div>`:""}<div class="folded-attachments"><div>${actions.map(x=>`<button type="button" data-fold-action="${x[0]}">${foldIcon(x[1])}<span>${x[2]}</span></button>`).join("")}</div></div><form class="composer-v3" data-composer><button type="button" data-plus aria-label="展开更多功能">${open?"×":"＋"}</button><textarea name="message" rows="1" placeholder="iMessage" aria-label="消息"></textarea><button type="button" class="send-icon" data-send-only aria-label="仅发送">${sendIcon()}</button><button class="ai-send-v3" aria-label="发送并让 AI 回复">${sparkIcon()}</button></form></div>`}
+function composerView(quote,open){const actions=[["camera","camera","拍摄"],["album","image","照片"],["text-image","text","文字图"],["redpacket","gift","红包"],["transfer","money","转账"],["sticker","smile","表情包"],["call","phone","语音通话"],["video","video","视频通话"]];return `<div class="composer-shell-v3 ${open?"attachments-open":""}">${quote?`<div class="composer-quote"><div><strong>回复</strong><span>${escapeHtml(quote.text)}</span></div><button data-cancel-quote aria-label="取消引用">×</button></div>`:""}<div class="folded-attachments"><div>${actions.map(x=>`<button type="button" data-fold-action="${x[0]}">${foldIcon(x[1])}<span>${x[2]}</span></button>`).join("")}</div></div><form class="composer-v3" data-composer><button type="button" data-plus aria-label="展开更多功能">${open?"×":"＋"}</button><textarea name="message" rows="1" placeholder="iMessage" aria-label="消息"></textarea><button type="button" class="send-icon" data-send-only aria-label="仅发送">${sendIcon()}</button><button type="button" class="ai-send-v3" data-send-ai aria-label="发送并让 AI 回复">${sparkIcon()}</button></form></div>`}
 function selectionBar(count){return`<nav class="selection-toolbar"><button data-selection-delete ${count?"":"disabled"}>⌫<span>删除</span></button><strong>${count?`已选择 ${count} 条`:"选择消息"}</strong><button data-selection-forward ${count?"":"disabled"}>↗<span>转发</span></button></nav>`}
 function backgroundStyle(url){return url?`background-image:linear-gradient(rgba(246,246,244,.72),rgba(246,246,244,.72)),url('${escapeHtml(url)}');background-size:cover;background-position:center`:""}
 function bindLongPress(element,callback){let timer,x=0,y=0;element.onpointerdown=e=>{x=e.clientX;y=e.clientY;timer=setTimeout(()=>{navigator.vibrate?.(12);callback()},460)};element.onpointermove=e=>{if(Math.abs(e.clientX-x)>8||Math.abs(e.clientY-y)>8)clearTimeout(timer)};element.onpointerup=element.onpointercancel=()=>clearTimeout(timer)}
