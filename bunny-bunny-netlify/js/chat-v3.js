@@ -2,8 +2,8 @@ import { conversationById, personById } from "./core/store.js";
 import { escapeHtml, initialsAvatar, showToast, updateIsland, openSheet, closeSheet } from "./core/ui.js";
 import { sendToModel } from "./integrations/ai-client.js";
 import { walletDebit, walletCredit, ensureWallet, insufficientSheet } from "./wallet-v2.js";
-import { ensureCallPrompts, extractChatActions } from "./call-prompts.js";
-import { ensureTtsState, resolveTtsConfig, parseToneDirective, toneInstruction, synthesizeSpeech } from "./tts-providers.js";
+import { ensureTtsState, resolveTtsConfig, synthesizeSpeech } from "./tts-providers.js";
+import { buildInternalChatPrompt, parseChatResponse } from "./chat-protocol.js";
 
 const DEFAULT_REACTIONS = ["❤️", "👍", "👎", "😂", "‼️", "❓"];
 const EMOJI_GROUPS = {
@@ -100,14 +100,14 @@ export function createConversationV3Renderer({ store, navigate }) {
       const books=current.worldbooks.filter(x=>(profile.worldbookIds||[]).includes(x.id)||x.name===profile.worldbook);
       const charStickers=current.stickerLibraries?.characters?.[person.id]||[];
       const stickerGuide=charStickers.length?`当前 CHAR 可用表情包：\n${charStickers.map((x,i)=>`${i+1}. ${x.name||"表情"}｜${x.description||(x.tags||[]).join("、")||"无描述"}`).join("\n")}`:"当前 CHAR 没有可用表情包，不要输出 STICKER 标记。";
-      const tts=ensureTtsState(current);
-      const prompt=[p?.prompt,...books.map(x=>x.prompt),ensureCallPrompts(current).chatActions,stickerGuide,toneInstruction(tts.llmProsody)].filter(Boolean).join("\n\n");
+      ensureTtsState(current);
+      const prompt=[p?.prompt,...books.map(x=>x.prompt),buildInternalChatPrompt({person,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide})].filter(Boolean).join("\n\n");
       const modelMessages=current.messages[conv.id].map(m=>profile.visionEnabled?m:{...m,src:""});
-      const raw=await sendToModel(model,modelMessages,prompt),parsed=extractChatActions(raw),speech=parseToneDirective(parsed.clean);
-      store.update(s=>{if(speech.text)s.messages[conv.id].push({id:id(),role:"char",type:"text",text:speech.text,time:timeNow(),tone:speech.tone})});
+      const raw=await sendToModel(model,modelMessages,prompt),parsed=parseChatResponse(raw);
+      store.update(s=>{for(const reply of parsed.messages)s.messages[conv.id].push({id:id(),role:"char",type:"text",text:reply.text,translation:reply.translation,tone:reply.tone,time:timeNow()});const target=s.conversations.find(x=>x.id===conv.id);if(target&&parsed.messages.length){target.preview=parsed.messages.at(-1).text;target.time=timeNow()}});
       for(const action of parsed.actions){if(action.kind==="sticker"){const query=action.query.toLowerCase(),item=charStickers.find(x=>[x.name,x.description,...(x.tags||[])].filter(Boolean).some(v=>String(v).toLowerCase().includes(query)||query.includes(String(v).toLowerCase())))||charStickers[0];if(item)store.update(s=>s.messages[conv.id].push({id:id(),role:"char",type:"sticker",text:item.name||"表情包",src:item.url,description:item.description||(item.tags||[]).join("、")||"CHAR 发送的表情包",time:timeNow()}));continue}const kind=action.kind==="redpacket"&&action.amount>520?"transfer":action.kind,messageId=id();store.update(s=>s.messages[conv.id].push({id:messageId,role:"char",type:kind,text:action.note||(kind==="redpacket"?"大吉大利":"转账给你"),amount:action.amount,time:timeNow()}));walletCredit(store,{amount:action.amount,kind,title:`收到 ${person.name} 的${kind==="redpacket"?"红包":"转账"}`,conversationId:conv.id,messageId,note:action.note})}
       activeRender(container,params);
-      if(profile.autoPlayVoice&&speech.text)synthesizeSpeech(resolveTtsConfig(store.getState(),profile),speech.text,{tone:speech.tone}).catch(error=>showToast(error.message));
+      if(profile.autoPlayVoice&&parsed.messages.length){const spoken=parsed.messages.map(x=>x.text).join("。"),tone=parsed.messages.find(x=>x.tone)?.tone||"";synthesizeSpeech(resolveTtsConfig(store.getState(),profile),spoken,{tone}).catch(error=>showToast(error.message))}
     }catch(error){showToast(error.message)}finally{updateIsland("bunny 正在陪你",false)}
   }
 
@@ -175,7 +175,7 @@ function messageView(message,continuation,person,user,profile,appearance,message
   const quote=message.replyTo?messages.find(x=>x.id===message.replyTo):null;
   const select=ui.selectMode&&!isUser?`<button class="select-circle ${ui.selected.has(message.id)?"checked":""}" data-select-message="${message.id}" aria-label="选择消息"></button>`:"";
   const avatar=hide?"":`<div class="message-avatar-v3 ${continuation?"invisible":""}" ${isUser?"":"data-pat-avatar"}>${initialsAvatar(owner,avatarProfile)}</div>`;
-  return `<article class="message ${message.role} ${continuation?"continuation":""}" data-message-id="${message.id}">${select}${avatar}<div class="message-body-v3"><div class="bubble-v3">${quote?`<div class="inline-quote"><strong>${quote.role==="user"?escapeHtml(user.name):escapeHtml(person.name)}</strong><span>${escapeHtml(quote.text)}</span></div>`:""}${messageContent(message)}</div>${message.reaction?`<button class="message-reaction-v3">${message.reaction}</button>`:""}<time>${message.time}${message.edited?" · 已编辑":""}</time></div></article>`;
+  return `<article class="message ${message.role} ${continuation?"continuation":""}" data-message-id="${message.id}">${select}${avatar}<div class="message-body-v3"><div class="bubble-v3">${quote?`<div class="inline-quote"><strong>${quote.role==="user"?escapeHtml(user.name):escapeHtml(person.name)}</strong><span>${escapeHtml(quote.text)}</span></div>`:""}${messageContent(message)}</div>${message.translation?`<div class="message-translation">${escapeHtml(message.translation)}</div>`:""}${message.reaction?`<button class="message-reaction-v3">${message.reaction}</button>`:""}<time>${message.time}${message.edited?" · 已编辑":""}</time></div></article>`;
 }
 function messageContent(message){
   if(message.type==="chat-record")return`<div class="chat-record-card"><strong>💬 ${escapeHtml(message.text)}</strong><span>${message.bundle?.length||0} 条消息</span><small>${(message.bundle||[]).slice(0,3).map(x=>escapeHtml(x.text)).join(" · ")}</small></div>`;
