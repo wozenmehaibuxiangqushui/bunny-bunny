@@ -5,10 +5,10 @@ export const seedState = {
   currentUserId: "user-me",
   worlds: [{ id: "world-seoul", name: "首尔 · 平行日常", timezone: "Asia/Seoul" }],
   people: [
-    { id: "user-me", type: "user", name: "林小满", chatName: "manni", initials: "ME", note: "慢热，喜欢旧电影与雨天", city: "上海", cityPrototype: "Shanghai", accounts: [{ id: "acc-main", name: "manni", primary: true }] },
-    { id: "char-jun", type: "char", name: "韩叙俊", initials: "HJ", note: "在唱片店整理新到的黑胶", signature: "雨停之前，都算借来的时间。", city: "首尔", cityPrototype: "Seoul", groupId: "group-seoul", online: true },
+    { id: "user-me", type: "user", name: "林小满", chatName: "manni", initials: "ME", height: "165cm", phone: "", location: "上海", note: "慢热，喜欢旧电影与雨天", signature: "今天也要把日常过得轻一点。", appearance: "", familyBackground: "", personality: "慢热、细腻，熟悉后会有很多小话", tmi: "喜欢旧电影、雨天和深夜便利店", city: "上海", cityPrototype: "Shanghai", accounts: [{ id: "acc-main", name: "manni", primary: true }] },
+    { id: "char-jun", type: "char", name: "韩叙俊", initials: "HJ", age: "24", occupation: "唱片店店员", personality: "沉静克制，熟悉后偶尔毒舌，聊天喜欢短句", note: "在唱片店整理新到的黑胶", signature: "雨停之前，都算借来的时间。", city: "首尔", cityPrototype: "Seoul", groupId: "group-seoul", online: true },
     { id: "char-rin", type: "char", name: "尹夏凛", initials: "YR", note: "刚下课，晚点回复", signature: "今天也要把话留一半。", city: "釜山", cityPrototype: "Busan", groupId: "group-seoul", online: false },
-    { id: "npc-soo", type: "npc", name: "朴秀安", initials: "PS", note: "你和叙俊的共同好友", signature: "周末只接收好消息。", city: "东京", cityPrototype: "Tokyo", groupId: "group-tokyo", online: true }
+    { id: "npc-soo", type: "npc", name: "朴秀安", initials: "PS", boundCharId: "char-jun", persona: "韩叙俊和 USER 的共同好友，外向爽快，很会观察气氛，会自然推动两人的关系。", note: "你和叙俊的共同好友", signature: "周末只接收好消息。", city: "东京", cityPrototype: "Tokyo", groupId: "group-tokyo", online: true }
   ],
   conversations: [
     { id: "conv-jun", personId: "char-jun", unread: 2, preview: "等你忙完，我们一起看那个视频。", time: "21:08" },
@@ -101,7 +101,7 @@ function mergeState(base, saved) {
     callRuntime: { ...base.callRuntime, ...(saved.callRuntime || {}), lastProactiveAt: { ...base.callRuntime.lastProactiveAt, ...(saved.callRuntime?.lastProactiveAt || {}) } },
     stickerLibraries: { global: saved.stickerLibraries?.global || base.stickerLibraries.global, user: saved.stickerLibraries?.user || base.stickerLibraries.user, characters: { ...base.stickerLibraries.characters, ...(saved.stickerLibraries?.characters || {}) } },
     mediaApis: { minimax: { ...base.mediaApis.minimax, ...(saved.mediaApis?.minimax || {}) }, image: { ...base.mediaApis.image, ...(saved.mediaApis?.image || {}) } },
-    chatProfiles: Object.fromEntries(Object.entries(base.chatProfiles).map(([id, profile]) => [id, { ...profile, ...(saved.chatProfiles?.[id] || {}) }]))
+    chatProfiles: Object.fromEntries([...new Set([...Object.keys(base.chatProfiles), ...Object.keys(saved.chatProfiles || {})])].map(id => [id, { ...(base.chatProfiles[id] || {}), ...(saved.chatProfiles?.[id] || {}) }]))
   };
 }
 
