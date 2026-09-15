@@ -31,14 +31,14 @@ export const seedState = {
       autoPlayVoice: false, voiceId: "voice_kr_01", llmTone: true, language: "自动", emotion: "自动", visionEnabled: true, stickerSteal: true, stickerPack: "日常 · 黑白", replyStyle: "自然短句",
       memoryDepth: 24, proactive: true, quietHours: "23:00—08:00"
       , relationship: "暧昧中的朋友", userCity: "上海", charCity: "首尔", cityPrototype: "现实首尔", weather: "小雨 · 17°C", longDistance: true,
-      autoAvatar: true, memoryMode: "分层长期记忆", imageProfile: "电影感写实", videoPortrait: "静态立绘 + 口型", worldbook: "首尔日常", chainOfThought: "仅保存文学化心声", preset: "自然聊天 v1", patText: "拍了拍叙俊的唱片袋", voiceCallMode: "实时 ASR + TTS", stickerScope: "角色独立 + 通用库"
+      autoAvatar: true, memoryMode: "分层长期记忆", imageProfile: "电影感写实", videoPortrait: "静态立绘 + 口型", worldbook: "首尔日常", chainOfThought: "仅保存文学化心声", preset: "自然聊天 v1", patText: "你拍了拍叙俊的唱片袋", patUserText: "叙俊拍了拍你的肩", voiceCallMode: "实时 ASR + TTS", stickerScope: "角色独立 + 通用库"
     },
     "char-rin": {
       avatarUrl: "", remark: "夏凛", voiceProvider: "浏览器语音", voiceName: "默认女声", voiceSpeed: 1,
       autoPlayVoice: false, voiceId: "voice_kr_02", llmTone: false, language: "自动", emotion: "自动", visionEnabled: true, stickerSteal: false, stickerPack: "轻松日常", replyStyle: "克制留白",
       memoryDepth: 16, proactive: true, quietHours: "23:00—08:00"
       , relationship: "多年好友", userCity: "上海", charCity: "釜山", cityPrototype: "现实釜山", weather: "晴 · 20°C", longDistance: true,
-      autoAvatar: false, memoryMode: "分层长期记忆", imageProfile: "清透胶片", videoPortrait: "静态立绘", worldbook: "首尔日常", chainOfThought: "关闭", preset: "克制短句", patText: "拍了拍夏凛的肩", voiceCallMode: "按键说话", stickerScope: "角色独立"
+      autoAvatar: false, memoryMode: "分层长期记忆", imageProfile: "清透胶片", videoPortrait: "静态立绘", worldbook: "首尔日常", chainOfThought: "关闭", preset: "克制短句", patText: "你拍了拍夏凛的肩", patUserText: "夏凛拍了拍你的肩", voiceCallMode: "按键说话", stickerScope: "角色独立"
     }
   },
   mcp: { name: "", endpoint: "", transport: "HTTP / SSE", connected: false, enabledTools: ["share_context", "open_companion"] },
@@ -57,7 +57,7 @@ export const seedState = {
     { id: "preset-natural", name: "自然聊天", prompt: "保持自然、简洁、有生活感的对话。" },
     { id: "preset-story", name: "沉浸叙事", prompt: "使用细腻但克制的沉浸式表达。" }
   ],
-  chatAppearance: { interfaceCss: "", interfacePresets: [], bubblePreset: "imessage", bubbleCss: "", bubbleColor: "#111111", bubbleScale: 1, fontSize: 14, fontUrl: "", fontPresets: [], background: "", backgroundHistory: [], hideUserAvatar: false },
+  chatAppearance: { interfaceCss: "", interfacePresets: [], bubblePreset: "imessage", bubbleCss: "", bubbleColor: "#111111", bubbleScale: 1, fontSize: 14, fontUrl: "", fontPresets: [], background: "", backgroundHistory: [], hideUserAvatar: false, recentReactions: ["❤️","👍","👎","😂","‼️","❓"] },
   dataSettings: { autoBackup: false, cloudType: "", cloudEndpoint: "", lastBackup: "", imageQuality: 0.78 },
   desktopOrder: ["chat", "contacts", "moments", "forum", "delivery", "shop", "flea", "sms", "phone", "worldbook", "presets", "games", "memos", "calendar", "wallet", "focus", "together", "api", "bridge", "mcp", "phone-settings"],
   desktopWidgets: [
