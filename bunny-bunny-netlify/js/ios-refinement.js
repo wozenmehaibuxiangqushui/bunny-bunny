@@ -124,7 +124,7 @@ export function setupIosRefinement({store,navigate}){
  },true);
  let swipe=null;
  screen.addEventListener("pointerdown",e=>{if(screen.dataset.app!=="desktop"&&e.clientX<38)swipe={x:e.clientX,y:e.clientY}}, {passive:true});
- screen.addEventListener("pointerup",e=>{if(!swipe)return;const dx=e.clientX-swipe.x,dy=Math.abs(e.clientY-swipe.y);swipe=null;if(dx>72&&dy<55){const r=getRoute();navigate(["conversation","chat-settings"].includes(r.name)?"chat":"desktop");showToast("已退出当前界面")}}, {passive:true});
+ screen.addEventListener("pointerup",e=>{if(!swipe)return;const dx=e.clientX-swipe.x,dy=Math.abs(e.clientY-swipe.y);swipe=null;if(dx>72&&dy<55){const r=getRoute();if(r.name==="chat-settings"&&r.params.conversationId)navigate("conversation",{id:r.params.conversationId});else navigate(r.name==="conversation"?"chat":"desktop");showToast("已退出当前界面")}}, {passive:true});
  const observer=new MutationObserver(refresh);observer.observe(document.querySelector("#app-screen"),{subtree:true,childList:true,characterData:true});
  setInterval(refresh,30000);refresh();
 }
