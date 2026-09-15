@@ -26,6 +26,14 @@ export async function fetchModels(profile) {
   return items.map(item => item.id || item.name?.replace(/^models\//, "")).filter(Boolean).sort();
 }
 
+export async function testModelConnection(profile) {
+  const started=performance.now();
+  const reply=await sendToModel(profile,[{role:"user",text:"只回复 OK"}],"这是 API 连通性测试。只回复 OK，不要补充其他内容。");
+  const elapsed=Math.max(1,Math.round(performance.now()-started));
+  if(!String(reply||"").trim())throw Error("接口已响应，但没有返回文字");
+  return `${elapsed}ms · ${String(reply).trim().slice(0,18)}`;
+}
+
 export async function sendToModel(profile, messages, systemPrompt = "") {
   if (!profile?.apiKey || !profile.model) throw new Error("请先在“模型与 API”中选择一个可用预设");
   const base = profile.baseUrl.replace(/\/$/, "");
