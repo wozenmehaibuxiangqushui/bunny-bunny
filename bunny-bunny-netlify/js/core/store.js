@@ -71,7 +71,7 @@ export const seedState = {
   apiDraft: { provider: "OpenAI", name: "OpenAI 默认", baseUrl: "https://api.openai.com/v1", apiKey: "", persistKey: true, model: "", models: [] },
   mediaApis: {
     minimax: { baseUrl: "https://api.minimax.io/v1", apiKey: "", groupId: "", model: "speech-02-hd", voiceId: "" },
-    image: { provider: "OpenAI Images", baseUrl: "https://api.openai.com/v1", apiKey: "", model: "gpt-image-1", size: "1024x1024" }
+    image: { enabled: false, provider: "OpenAI Images", baseUrl: "https://api.openai.com/v1", apiKey: "", model: "gpt-image-1", size: "1024x1024" }
   },
   moments: [
     { id: "p1", personId: "char-jun", text: "闭店前最后一张唱片。窗外刚好开始下雨。", time: "20分钟前", likes: ["尹夏凛", "朴秀安"], comments: [{ name: "朴秀安", text: "又在等某个人吧。" }] },
