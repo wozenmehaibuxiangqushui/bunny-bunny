@@ -44,7 +44,7 @@ export const seedState = {
   },
   mcp: { name: "", endpoint: "", transport: "HTTP / SSE", connected: false, enabledTools: ["share_context", "open_companion"] },
   bridge: { camera: false, microphone: false, screen: false, location: false, notifications: false, companionMode: true },
-  appearance: { theme: "mono", wallpaperType: "gradient", wallpaper: "", appName: "bunny bunny", appIcon: "", bunnyIcon: "line", deviceProfile: "iphone-pro" },
+  appearance: { theme: "mono", wallpaperType: "gradient", wallpaper: "", appName: "bunny bunny", appIcon: "", bunnyIcon: "classic", deviceProfile: "iphone-pro" },
   desktopFolders: [],
   chatGroups: [
     { id: "group-default", name: "默认", worldId: "world-seoul", personIds: [] },
@@ -67,7 +67,10 @@ export const seedState = {
   ],
   chatAppearance: { interfaceCss: "", interfacePresets: [], bubblePreset: "imessage", bubbleCss: "", bubbleColor: "#111111", bubbleScale: 1, fontSize: 14, fontUrl: "", fontPresets: [], background: "", backgroundHistory: [], hideUserAvatar: false, recentReactions: ["❤️","👍","👎","😂","‼️","❓"] },
   dataSettings: { autoBackup: false, cloudType: "", cloudEndpoint: "", lastBackup: "", imageQuality: 0.78, estimatedBytes: 0, storageWarning: "", lastPersistedAt: "" },
-  desktopOrder: ["chat", "contacts", "moments", "forum", "delivery", "shop", "flea", "sms", "phone", "worldbook", "presets", "games", "memos", "calendar", "wallet", "focus", "together", "api", "bridge", "mcp", "phone-settings"],
+  desktopOrder: ["chat", "contacts", "moments", "phone", "sms", "calendar", "memos", "worldbook", "presets", "wallet", "focus", "together", "forum", "delivery", "shop", "flea", "games", "x-social", "tiktok", "phone-settings"],
+  desktopLayout: [],
+  desktopLayoutInitialized: false,
+  appCustomizations: {},
   desktopWidgets: [
     { id: "widget-char", type: "character", size: "wide", title: "CHAR STATUS", content: "我把唱片留好了。你来之前，它会一直在这里。", style: { background: "#111111", color: "#ffffff" } }
   ],
@@ -106,6 +109,7 @@ function mergeState(base, saved) {
   return {
     ...base, ...saved,
     appearance: { ...base.appearance, ...(saved.appearance || {}) },
+    appCustomizations: { ...base.appCustomizations, ...(saved.appCustomizations || {}) },
     chatAppearance: { ...base.chatAppearance, ...(saved.chatAppearance || {}) },
     dataSettings: { ...base.dataSettings, ...(saved.dataSettings || {}) },
     wallet: { ...base.wallet, ...(saved.wallet || {}), ledger: saved.wallet?.ledger || base.wallet.ledger },
