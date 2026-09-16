@@ -1,0 +1,15 @@
+const DB_NAME="bunny-bunny-media";
+const STORE_NAME="assets";
+const URLS=new Map();
+
+function openDb(){return new Promise((resolve,reject)=>{if(!globalThis.indexedDB)return reject(Error("当前浏览器不支持媒体持久化"));const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE_NAME))req.result.createObjectStore(STORE_NAME)};req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||Error("媒体数据库打开失败"))})}
+async function transact(mode,operation){const db=await openDb();return new Promise((resolve,reject)=>{const tx=db.transaction(STORE_NAME,mode),store=tx.objectStore(STORE_NAME),req=operation(store);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error||Error("媒体数据库操作失败"));tx.oncomplete=()=>db.close();tx.onerror=()=>{db.close();reject(tx.error||Error("媒体数据库写入失败"))}})}
+export async function saveMediaBlob(blob,id=crypto.randomUUID?.()||`asset-${Date.now()}-${Math.random().toString(16).slice(2)}`){if(!(blob instanceof Blob))throw Error("媒体内容无效");await transact("readwrite",store=>store.put(blob,id));const src=objectUrl(id,blob);return{mediaId:id,src}}
+export async function getMediaBlob(id){if(!id)return null;try{return await transact("readonly",store=>store.get(id))||null}catch{return null}}
+export async function getMediaUrl(id){if(!id)return"";if(URLS.has(id))return URLS.get(id);const blob=await getMediaBlob(id);return blob?objectUrl(id,blob):""}
+export async function hydrateMediaState(state){const jobs=[];for(const list of Object.values(state.messages||{}))for(const message of list||[]){hydrateItem(message,jobs)}for(const favorite of state.favorites||[]){hydrateItem(favorite,jobs);if(favorite.snapshot)hydrateItem(favorite.snapshot,jobs)}for(const profile of Object.values(state.chatProfiles||{})){if(profile.videoBackgroundMediaId)jobs.push(getMediaUrl(profile.videoBackgroundMediaId).then(url=>{if(url)profile.videoBackground=url}));if(profile.userVideoPortraitMediaId)jobs.push(getMediaUrl(profile.userVideoPortraitMediaId).then(url=>{if(url)profile.userVideoPortrait=url}))}await Promise.allSettled(jobs);return state}
+export async function sourceToDataUrl(src){if(!src)return"";if(String(src).startsWith("data:"))return src;try{const blob=await fetch(src).then(r=>{if(!r.ok)throw Error();return r.blob()});return await blobToDataUrl(blob)}catch{return src}}
+export function blobToDataUrl(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(Error("媒体读取失败"));reader.readAsDataURL(blob)})}
+export async function deleteMedia(id){if(!id)return;const url=URLS.get(id);if(url){URL.revokeObjectURL(url);URLS.delete(id)}try{await transact("readwrite",store=>store.delete(id))}catch{}}
+function objectUrl(id,blob){const old=URLS.get(id);if(old)URL.revokeObjectURL(old);const url=URL.createObjectURL(blob);URLS.set(id,url);return url}
+function hydrateItem(item,jobs){if(item.mediaId)jobs.push(getMediaUrl(item.mediaId).then(url=>{if(url)item.src=url}));if(item.audioMediaId)jobs.push(getMediaUrl(item.audioMediaId).then(url=>{if(url)item.audioUrl=url}))}
