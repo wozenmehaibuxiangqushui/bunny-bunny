@@ -3,6 +3,7 @@ const STORAGE_KEY = "bunny-bunny:m0";
 export const seedState = {
   currentWorldId: "world-seoul",
   currentUserId: "user-me",
+  activeUserAccountId: "user-me",
   worlds: [{ id: "world-seoul", name: "首尔 · 平行日常", timezone: "Asia/Seoul" }],
   people: [
     { id: "user-me", type: "user", name: "林小满", chatName: "manni", initials: "ME", height: "165cm", phone: "", location: "上海", note: "慢热，喜欢旧电影与雨天", signature: "今天也要把日常过得轻一点。", appearance: "", familyBackground: "", personality: "慢热、细腻，熟悉后会有很多小话", tmi: "喜欢旧电影、雨天和深夜便利店", city: "上海", cityPrototype: "Shanghai", accounts: [{ id: "acc-main", name: "manni", primary: true }] },
@@ -51,6 +52,8 @@ export const seedState = {
     { id: "group-tokyo", name: "东京支线", worldId: "world-tokyo", personIds: ["npc-soo"] }
   ],
   friendRequests: [],
+  accountRelations: { "user-me": { type: "main", relatedTo: "", disclosedTo: {} } },
+  accountFriends: { "user-me": ["char-jun", "char-rin"] },
   blockedPersonIds: [],
   worldbooks: [
     { id: "wb-seoul", name: "首尔日常", prompt: "故事发生在当代首尔。角色共享同一时间线与公共事件。", enabled: true },
@@ -71,8 +74,9 @@ export const seedState = {
   apiDraft: { provider: "OpenAI", name: "OpenAI 默认", baseUrl: "https://api.openai.com/v1", apiKey: "", persistKey: true, model: "", models: [] },
   mediaApis: {
     minimax: { baseUrl: "https://api.minimax.io/v1", apiKey: "", groupId: "", model: "speech-02-hd", voiceId: "" },
-    image: { enabled: false, provider: "OpenAI Images", baseUrl: "https://api.openai.com/v1", apiKey: "", model: "gpt-image-1", size: "1024x1024" }
+    image: { enabled: false, provider: "OpenAI Images", baseUrl: "https://api.openai.com/v1", apiKey: "", model: "gpt-image-1", size: "1024x1024", globalPositivePrompt: "", globalNegativePrompt: "", responseFormat: "b64_json", quality: "auto" }
   },
+  momentsSettings: { backgrounds: {}, lastAutoAt: {}, lastRefreshAt: {} },
   moments: [
     { id: "p1", personId: "char-jun", text: "闭店前最后一张唱片。窗外刚好开始下雨。", time: "20分钟前", likes: ["尹夏凛", "朴秀安"], comments: [{ name: "朴秀安", text: "又在等某个人吧。" }] },
     { id: "p2", personId: "npc-soo", text: "周末空出来了，谁负责想吃什么？", time: "1小时前", likes: ["韩叙俊"], comments: [{ name: "尹夏凛", text: "先排除上次那家。" }] }
@@ -107,6 +111,9 @@ function mergeState(base, saved) {
     tts: { ...base.tts, ...(saved.tts || {}), providers: { ...base.tts.providers, ...(saved.tts?.providers || {}) } },
     callPrompts: { ...base.callPrompts, ...(saved.callPrompts || {}) },
     callRuntime: { ...base.callRuntime, ...(saved.callRuntime || {}), lastProactiveAt: { ...base.callRuntime.lastProactiveAt, ...(saved.callRuntime?.lastProactiveAt || {}) } },
+    accountRelations: { ...base.accountRelations, ...(saved.accountRelations||{}) },
+    accountFriends: { ...base.accountFriends, ...(saved.accountFriends||{}) },
+    momentsSettings: { ...base.momentsSettings, ...(saved.momentsSettings||{}), backgrounds:{...base.momentsSettings.backgrounds,...(saved.momentsSettings?.backgrounds||{})}, lastAutoAt:{...base.momentsSettings.lastAutoAt,...(saved.momentsSettings?.lastAutoAt||{})}, lastRefreshAt:{...base.momentsSettings.lastRefreshAt,...(saved.momentsSettings?.lastRefreshAt||{})} },
     memoryProfiles: { ...(base.memoryProfiles||{}), ...(saved.memoryProfiles||{}) },
     anonymousQuestions: saved.anonymousQuestions || base.anonymousQuestions,
     anonymousBoxConfig: { ...base.anonymousBoxConfig, ...(saved.anonymousBoxConfig||{}) },
@@ -129,7 +136,7 @@ export function createStore() {
   const persist=()=>{
     saveTimer=0;idleHandle=0;
     try{
-      const serialized=JSON.stringify(state,function(key,value){if((key==="src"&&this?.mediaId)||(key==="audioUrl"&&this?.audioMediaId)||(key==="videoBackground"&&this?.videoBackgroundMediaId)||(key==="userVideoPortrait"&&this?.userVideoPortraitMediaId)){if(typeof value==="string"&&value.startsWith("blob:"))return""}return value});
+      const serialized=JSON.stringify(state,function(key,value){if((key==="src"&&this?.mediaId)||(key==="audioUrl"&&this?.audioMediaId)||(key==="videoBackground"&&this?.videoBackgroundMediaId)||(key==="userVideoPortrait"&&this?.userVideoPortraitMediaId)||(key==="imageReferenceFace"&&this?.imageReferenceFaceMediaId)){if(typeof value==="string"&&value.startsWith("blob:"))return""}return value});
       state.dataSettings.estimatedBytes=new Blob([serialized]).size;
       localStorage.setItem(STORAGE_KEY,serialized);
       state.dataSettings.storageWarning="";

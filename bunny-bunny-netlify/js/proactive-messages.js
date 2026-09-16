@@ -1,15 +1,16 @@
 import { personById } from "./core/store.js";
 import { sendToModel } from "./integrations/ai-client.js";
+import { ensureAccountState, conversationsForAccount } from "./account-system.js";
 
 export function setupProactiveMessages({store}){
   let running=false;
   const check=async()=>{
     if(running||document.hidden)return;running=true;
     try{
-      const state=store.getState(),now=Date.now();
+      const state=ensureAccountState(store.getState()),now=Date.now();
       if(now-Number(state.callRuntime?.lastMessageCheck||0)<4*60*1000)return;
       store.update(s=>s.callRuntime={...(s.callRuntime||{}),lastMessageCheck:now,lastProactiveAt:{...(s.callRuntime?.lastProactiveAt||{})}});
-      for(const conv of state.conversations){
+      for(const conv of conversationsForAccount(state)){
         const profile=state.chatProfiles[conv.personId]||{};if(!profile.proactive||inQuietHours(profile.quietHours))continue;
         const last=(state.messages[conv.id]||[]).at(-1),previous=Number(state.callRuntime?.lastProactiveAt?.[conv.id]||0);
         if(now-previous<45*60*1000)continue;

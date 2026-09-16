@@ -27,7 +27,7 @@ export async function transcribeAudio(config,blob){
   if(!response.ok)throw Error(`语音识别失败（${response.status}）`);const data=await response.json();return data.text||"";
 }
 
-export async function speakText(config,text,options={}){const clean=String(text||"").replace(/[（(][^）)]*[）)]/g,"").trim();return synthesizeSpeech({...voiceDefaults.tts,...config},clean,options)}
+export async function speakText(config,text,options={}){const clean=String(text||"").replace(/[（(][^）)]*[）)]/g,"").trim();if(!clean)return;const resolved={...voiceDefaults.tts,...config};try{return await synthesizeSpeech(resolved,clean,options)}catch(error){if(resolved.provider==="browser")throw error;console.warn("Configured TTS unavailable; falling back to device speech",error);return synthesizeSpeech({provider:"browser",lang:resolved.lang||resolved.language||"zh-CN",speed:resolved.speed||1,pitch:1,volume:1},clean,options)}}
 
 export async function recordAudio({onState}={}){
   if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder)throw Error("当前浏览器不支持录音");const stream=await navigator.mediaDevices.getUserMedia({audio:true});const chunks=[],recorder=new MediaRecorder(stream);
