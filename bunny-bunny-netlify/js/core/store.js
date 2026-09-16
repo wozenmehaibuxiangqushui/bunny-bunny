@@ -87,7 +87,10 @@ export const seedState = {
   callRuntime: { lastProactiveAt: {} },
   stickerLibraries: { global: [], user: [], characters: { "char-jun": [], "char-rin": [] } },
   favorites: [],
-  callRecords: []
+  callRecords: [],
+  memoryProfiles: {},
+  anonymousQuestions: [],
+  anonymousBoxConfig: { proactive: true, lastGeneratedAt: 0 }
 };
 
 function deepCopy(value) { return JSON.parse(JSON.stringify(value)); }
@@ -104,6 +107,9 @@ function mergeState(base, saved) {
     tts: { ...base.tts, ...(saved.tts || {}), providers: { ...base.tts.providers, ...(saved.tts?.providers || {}) } },
     callPrompts: { ...base.callPrompts, ...(saved.callPrompts || {}) },
     callRuntime: { ...base.callRuntime, ...(saved.callRuntime || {}), lastProactiveAt: { ...base.callRuntime.lastProactiveAt, ...(saved.callRuntime?.lastProactiveAt || {}) } },
+    memoryProfiles: { ...(base.memoryProfiles||{}), ...(saved.memoryProfiles||{}) },
+    anonymousQuestions: saved.anonymousQuestions || base.anonymousQuestions,
+    anonymousBoxConfig: { ...base.anonymousBoxConfig, ...(saved.anonymousBoxConfig||{}) },
     stickerLibraries: { global: saved.stickerLibraries?.global || base.stickerLibraries.global, user: saved.stickerLibraries?.user || base.stickerLibraries.user, characters: { ...base.stickerLibraries.characters, ...(saved.stickerLibraries?.characters || {}) } },
     mediaApis: { minimax: { ...base.mediaApis.minimax, ...(saved.mediaApis?.minimax || {}) }, image: { ...base.mediaApis.image, ...(saved.mediaApis?.image || {}) } },
     chatProfiles: Object.fromEntries([...new Set([...Object.keys(base.chatProfiles), ...Object.keys(saved.chatProfiles || {})])].map(id => [id, { ...(base.chatProfiles[id] || {}), ...(saved.chatProfiles?.[id] || {}) }]))

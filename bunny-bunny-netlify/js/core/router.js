@@ -38,10 +38,12 @@ function parentRoute(route){
   if(route.name==="character-edit"||route.name==="user-profile")return{name:"contacts",params:{}};
   if(route.name==="add-friend"||route.name==="friend-requests"||route.name==="chat-me"||route.name==="moments")return{name:"chat",params:{}};
   if(route.name==="favorites")return{name:"chat-me",params:{}};
+  if(route.name==="anonymous-box")return{name:"chat-me",params:{}};
+  if(route.name==="memory-debug")return{name:"chat-settings",params:{personId:route.params?.personId,conversationId:route.params?.conversationId}};
   if(["data-settings","api","bridge","mcp","worldbook","presets"].includes(route.name))return{name:"phone-settings",params:{}};
   return{name:"desktop",params:{}};
 }
 
 export function routeTitle(name) {
-  return ({ desktop: "", chat: "聊天", conversation: "对话", call: "通话", contacts: "角色档案", "character-edit": "编辑档案", "user-profile": "USER 名片", "add-friend": "添加好友", "friend-requests": "消息记录", "chat-settings": "聊天设置", "chat-me": "我", favorites:"收藏", moments: "朋友圈", "phone-settings": "手机设置", "data-settings": "数据管理", api: "模型与 API", bridge: "现实桥", mcp: "MCP 中心", together: "一起刷", focus: "陪伴专注", world: "世界与身份", forum:"论坛",delivery:"外卖",shop:"购物",flea:"二手平台",sms:"短信",phone:"电话",worldbook:"世界书",presets:"预设",games:"游戏",memos:"备忘录",calendar:"日历",wallet:"钱包" })[name] || "bunny bunny";
+  return ({ desktop: "", chat: "聊天", conversation: "对话", call: "通话", contacts: "角色档案", "character-edit": "编辑档案", "user-profile": "USER 名片", "add-friend": "添加好友", "friend-requests": "消息记录", "chat-settings": "聊天设置", "chat-me": "我", favorites:"收藏", "memory-debug":"角色内心", "anonymous-box":"匿名提问箱", moments: "朋友圈", "phone-settings": "手机设置", "data-settings": "数据管理", api: "模型与 API", bridge: "现实桥", mcp: "MCP 中心", together: "一起刷", focus: "陪伴专注", world: "世界与身份", forum:"论坛",delivery:"外卖",shop:"购物",flea:"二手平台",sms:"短信",phone:"电话",worldbook:"世界书",presets:"预设",games:"游戏",memos:"备忘录",calendar:"日历",wallet:"钱包" })[name] || "bunny bunny";
 }

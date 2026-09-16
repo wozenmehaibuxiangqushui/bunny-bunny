@@ -7,6 +7,7 @@ import { buildInternalChatPrompt, parseChatResponse } from "./chat-protocol.js";
 import { goBack } from "./core/router.js";
 import { recordAudio, startBrowserRecognition } from "./voice-client.js";
 import { saveMediaBlob } from "./media-store.js";
+import { retrieveMemoryContext, scheduleMemoryMaintenance, savePromptDebug } from "./memory-engine.js";
 
 const DEFAULT_REACTIONS = ["❤️", "👍", "👎", "😂", "‼️", "❓"];
 const EMOJI_GROUPS = {
@@ -65,7 +66,7 @@ export function createConversationV3Renderer({ store, navigate }) {
 
   function bind(container, params, conv, person, user, profile, messages) {
     container.querySelector("[data-chat-settings]").onclick=()=>navigate("chat-settings",{personId:person.id,conversationId:conv.id});
-    container.querySelectorAll("[data-start-call]").forEach(button=>button.onclick=()=>navigate("call",{id:conv.id,mode:button.dataset.startCall}));
+    container.querySelectorAll("[data-start-call]").forEach(button=>button.onclick=()=>{unlockCallAudio();navigate("call",{id:conv.id,mode:button.dataset.startCall})});
     container.querySelectorAll(".money-card").forEach(card=>card.onclick=()=>{const message=messages.find(item=>item.id===card.closest(".message")?.dataset.messageId);if(message)openMoneyReceipt(message,person)});
     const topAvatar=container.querySelector("[data-profile-card]");
     let singleTimer;
@@ -119,11 +120,12 @@ export function createConversationV3Renderer({ store, navigate }) {
       const commonStickers=(current.stickerLibraries?.global||[]).map(x=>({...x,scope:"CHAR 通用"})),exclusiveStickers=(current.stickerLibraries?.characters?.[person.id]||[]).map(x=>({...x,scope:"角色专属"})),charStickers=[...exclusiveStickers,...commonStickers];
       const stickerGuide=charStickers.length?`当前 CHAR 可用表情包（只能按描述选择）：\n${charStickers.map((x,i)=>`${i+1}. [${x.scope}] ${x.name||"表情"}｜${x.description||(x.tags||[]).join("、")||"无描述"}`).join("\n")}`:"当前 CHAR 没有可用表情包，不要输出 sticker；仍可在开启偷表情时收藏 USER 发来的表情。";
       ensureTtsState(current);
-      const user=personById(current,current.currentUserId),boundChar=person.boundCharId?personById(current,person.boundCharId):null;
-      const prompt=[p?.prompt,...books.map(x=>x.prompt),buildInternalChatPrompt({person,user,boundChar,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:Boolean(current.mediaApis?.image?.enabled)}),options.instruction].filter(Boolean).join("\n\n");
+      const user=personById(current,current.currentUserId),boundChar=person.boundCharId?personById(current,person.boundCharId):null,lastUser=[...(current.messages[conv.id]||[])].reverse().find(x=>x.role==="user"&&!x.recalled),memory=await retrieveMemoryContext(current,person.id,lastUser?.text||lastUser?.description||"");
+      const prompt=[p?.prompt,...books.map(x=>x.prompt),buildInternalChatPrompt({person,user,boundChar,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:Boolean(current.mediaApis?.image?.enabled)}),memory.promptBlock,options.instruction].filter(Boolean).join("\n\n");
       const avatarContext=profile.visionEnabled&&user.avatarUrl?[{id:"user-current-avatar",role:"user",type:"image",src:user.avatarUrl,text:"USER 当前头像",description:"这是 USER 当前正在使用的头像。你可以识别它，但不要机械复述。"}]:[];
       store.update(s=>{for(const message of s.messages[conv.id]||[])if(message.role==="user"&&!message.charReadAt)message.charReadAt=Date.now()});
       const modelMessages=[...avatarContext,...current.messages[conv.id].map(m=>profile.visionEnabled?m:{...m,src:""})];
+      savePromptDebug(store,person.id,{systemPrompt:prompt,messages:modelMessages,retrieval:{query:lastUser?.text||lastUser?.description||"",selected:memory.selected.map(x=>({id:x.id,kind:x.kind,text:x.text||x.event})),semantic:memory.semantic}});
       const raw=await sendToModel(model,modelMessages,prompt),parsed=parseChatResponse(raw),responseBatchId=id();
       store.update(s=>{for(const reply of parsed.messages)s.messages[conv.id].push({id:id(),responseBatchId,role:"char",type:"text",text:reply.text,translation:reply.translation,tone:reply.tone,time:timeNow(),createdAt:Date.now()});const target=s.conversations.find(x=>x.id===conv.id);if(target&&parsed.messages.length){target.preview=parsed.messages.at(-1).text;target.time=timeNow()}});
       for(const action of parsed.actions){
@@ -138,6 +140,7 @@ export function createConversationV3Renderer({ store, navigate }) {
         const kind=action.kind==="redpacket"&&action.amount>520?"transfer":action.kind,messageId=id();store.update(s=>s.messages[conv.id].push({id:messageId,responseBatchId,role:"char",type:kind,text:action.note||(kind==="redpacket"?"大吉大利":"转账给你"),amount:action.amount,time:timeNow()}));walletCredit(store,{amount:action.amount,kind,title:`收到 ${person.name} 的${kind==="redpacket"?"红包":"转账"}`,conversationId:conv.id,messageId,note:action.note})
       }
       activeRender(container,params);
+      scheduleMemoryMaintenance({store,personId:person.id,model,messages:store.getState().messages[conv.id]||[]});
       if(profile.voiceGenerationMode==="auto"){const voices=(store.getState().messages[conv.id]||[]).filter(x=>x.responseBatchId===responseBatchId&&x.type==="voice"&&!x.audioMediaId);for(const message of voices)await cacheVoiceMessage(message,profile).catch(error=>showToast(error.message))}
       if(profile.autoPlayVoice&&parsed.messages.length){const spoken=parsed.messages.map(x=>x.text).join("。"),tone=parsed.messages.find(x=>x.tone)?.tone||"";synthesizeSpeech(resolveTtsConfig(store.getState(),profile),spoken,{tone}).catch(error=>showToast(error.message))}
     }catch(error){ui.error=readableAiError(error);showToast(ui.error)}finally{ui.sending=false;updateIsland("bunny 正在陪你",false);activeRender(container,params)}
@@ -235,17 +238,19 @@ function messageView(message,continuation,person,user,profile,appearance,message
   const quote=message.replyTo?messages.find(x=>x.id===message.replyTo):null;
   const select=ui.selectMode?`<button class="select-circle ${ui.selected.has(message.id)?"checked":""}" data-select-message="${message.id}" aria-label="选择消息"></button>`:"";
   const avatar=hide?"":`<div class="message-avatar-v3 ${continuation?"invisible":""}" ${isUser?"":"data-pat-avatar"}>${initialsAvatar(owner,avatarProfile)}</div>`;
-  return `<article class="message ${message.role} ${continuation?"continuation":""}" data-message-id="${message.id}">${select}${avatar}<div class="message-body-v3"><div class="bubble-v3">${quote?`<div class="inline-quote"><strong>${quote.role==="user"?escapeHtml(user.name):escapeHtml(person.name)}</strong><span>${escapeHtml(quote.text)}</span></div>`:""}${messageContent(message)}</div>${message.translation&&message.type!=="voice"?`<div class="message-translation">${escapeHtml(message.translation)}</div>`:""}${message.reaction?`<button class="message-reaction-v3">${message.reaction}</button>`:""}<time>${message.time}${message.edited?" · 已编辑":""}${message.readAt||message.charReadAt?'<em class="message-read">已读</em>':""}</time></div></article>`;
+  const special=message.type&&message.type!=="text"?"special-message":"";
+  return `<article class="message ${message.role} ${continuation?"continuation":""} ${special}" data-message-id="${message.id}">${select}${avatar}<div class="message-body-v3"><div class="bubble-v3">${quote?`<div class="inline-quote"><strong>${quote.role==="user"?escapeHtml(user.name):escapeHtml(person.name)}</strong><span>${escapeHtml(quote.text)}</span></div>`:""}${messageContent(message)}</div>${message.translation&&message.type!=="voice"?`<div class="message-translation">${escapeHtml(message.translation)}</div>`:""}${message.reaction?`<button class="message-reaction-v3">${message.reaction}</button>`:""}<time>${message.time}${message.edited?" · 已编辑":""}${message.readAt||message.charReadAt?'<em class="message-read">已读</em>':""}</time></div></article>`;
 }
 function messageContent(message){
   if(message.type==="chat-record")return`<div class="chat-record-card"><strong>💬 ${escapeHtml(message.text)}</strong><span>${message.bundle?.length||0} 条消息</span><small>${(message.bundle||[]).slice(0,3).map(x=>escapeHtml(x.text)).join(" · ")}</small></div>`;
   if(message.type==="image"){const description=message.description||message.text||"一张照片";return`<button class="real-photo-message" data-real-photo="${message.id}" type="button" aria-label="查看真实照片"><img src="${escapeHtml(message.src||"")}" alt="${escapeHtml(description)}" loading="lazy"></button>`}
-  if(message.type==="text-image"){const description=message.description||message.text||"一张文字图片";return`<button class="polaroid-message text-polaroid" data-polaroid type="button" aria-label="翻转查看文字图片内容"><span class="polaroid-inner"><span class="polaroid-front word-photo-front"><span class="word-photo-logo">${bunnyStamp()}</span><span class="word-photo-turn">↻</span></span><span class="polaroid-back word-photo-back"><i>${bunnyStamp()}</i><small>TEXT NOTE</small><strong>${escapeHtml(description)}</strong><span>轻点翻回正面</span></span></span></button>`}
+  if(message.type==="text-image"){const description=message.description||message.text||"图片内容";return`<button class="polaroid-message text-polaroid" data-polaroid type="button" aria-label="翻转查看图片内容"><span class="polaroid-inner"><span class="polaroid-front word-photo-front"><span class="word-photo-logo">${bunnyStamp()}</span><span class="word-photo-turn">↻</span></span><span class="polaroid-back word-photo-back"><i>${bunnyStamp()}</i><strong>${escapeHtml(description)}</strong><span>轻点翻回正面</span></span></span></button>`}
   if(message.type==="redpacket"||message.type==="transfer")return`<article class="money-card ${message.type}"><header><span class="money-symbol">${message.type==="redpacket"?"礼":"¥"}</span><div><strong>${escapeHtml(message.text|| (message.type==="redpacket"?"大吉大利":"转账给你"))}</strong><small>${message.role==="char"?"来自 CHAR":"发给 CHAR"}</small></div></header><div class="amount">¥${Number(message.amount||0).toFixed(2)}</div><footer>${message.type==="redpacket"?"Bunny 红包":"Bunny 转账"}</footer></article>`;
-  if(message.type==="sticker")return`<div class="sticker-message"><img src="${escapeHtml(message.src||"")}" alt="${escapeHtml(message.description||"表情包")}"><small>${escapeHtml(message.description||"")}</small></div>`;
+  if(message.type==="sticker")return`<div class="sticker-message"><img src="${escapeHtml(message.src||"")}" alt="${escapeHtml(message.text||"表情包")}"></div>`;
   if(message.type==="voice"){const transcript=message.transcript||message.text||"语音消息",translation=message.translation?`（${message.translation}）`:"";return`<div class="voice-message-wrap"><button class="voice-play-hit" data-play-voice="${message.id}" type="button" aria-label="播放语音"></button><button class="voice-message" data-voice-transcript-toggle type="button" aria-label="展开完整语音文字"><span class="voice-progress"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><strong data-voice-clock>${formatDuration(message.duration||estimateVoiceDuration(message.text))}</strong></button><div class="voice-transcript"><span>${escapeHtml(transcript)}</span>${translation?`<strong>${escapeHtml(translation)}</strong>`:""}</div></div>`}
   if(message.type==="location")return`<div class="location-message"><strong>${escapeHtml(message.text||"共享位置")}</strong><div class="location-map"></div></div>`;
   if(message.type==="file")return`<div class="file-message"><span>DOC</span><strong>${escapeHtml(message.text||"文件")}</strong></div>`;
+  if(message.type==="voice-call"||message.type==="video-call")return`<div class="call-summary-message"><span>${message.type==="video-call"?"▣":"☎"}</span><strong>${message.type==="video-call"?"视频通话":"语音通话"} <time>${formatDuration(message.duration||0)}</time></strong></div>`;
   if(message.type&&message.type!=="text")return`<div class="typed-message"><span>${TYPE_META[message.type]?.[1]||"□"}</span><div><small>${TYPE_META[message.type]?.[0]||"消息"}</small><strong>${escapeHtml(message.text)}</strong></div></div>`;
   return escapeHtml(message.text)
 }
@@ -281,3 +286,4 @@ function rollbackWalletMessages(state,messageIds){if(!messageIds.size||!state.wa
 function refreshConversationPreview(state,conversationId){const conversation=state.conversations.find(x=>x.id===conversationId),last=[...(state.messages[conversationId]||[])].reverse().find(x=>!x.recalled);if(!conversation)return;conversation.preview=last?previewFor(last):"暂无消息";conversation.time=last?.time||""}
 function previewFor(message={}){return({voice:"[语音]",redpacket:"[红包]",transfer:"[转账]",image:"[图片]","text-image":"[图片]",sticker:"[表情包]",location:"[位置]",file:"[文件]","voice-call":"[语音通话]","video-call":"[视频通话]","chat-record":"[聊天记录]"})[message.type]||message.text||"新消息"}
 function readableAiError(error){const text=String(error?.message||error||"AI 请求失败");if(/Failed to fetch|NetworkError|Load failed/i.test(text))return"AI 请求未送达：请检查 Base URL、网络或接口是否允许网页跨域访问";return text}
+function unlockCallAudio(){try{window.speechSynthesis?.resume?.();const Context=window.AudioContext||window.webkitAudioContext;if(Context){window.__bunnyCallAudio=window.__bunnyCallAudio||new Context();window.__bunnyCallAudio.resume?.()}}catch{}}
