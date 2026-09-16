@@ -10,6 +10,7 @@ import { saveMediaBlob } from "./media-store.js";
 import { retrieveMemoryContext, scheduleMemoryMaintenance, savePromptDebug } from "./memory-engine.js";
 import { ensureAccountState, accountContext } from "./account-system.js";
 import { generateImage } from "./image-client.js";
+import { ensureTimeProfile, buildTimeContext, timeSummary, localDateValue, localTimeValue } from "./time-context.js";
 
 const DEFAULT_REACTIONS = ["❤️", "👍", "👎", "😂", "‼️", "❓"];
 const EMOJI_GROUPS = {
@@ -35,7 +36,7 @@ export function createConversationV3Renderer({ store, navigate }) {
     if(ui.conversationId!==conv.id){ui.conversationId=conv.id;ui.quoteId="";ui.selectMode=false;ui.selected.clear();ui.attachmentsOpen=false}
     const person = personById(state, conv.personId);
     const user = personById(state, state.currentUserId);
-    const profile = state.chatProfiles[person.id];
+    const profile = ensureTimeProfile(state.chatProfiles[person.id]||(state.chatProfiles[person.id]={}));
     const appearance = state.chatAppearance;
     if(conv.unread||state.messages[conv.id]?.some(x=>x.role==="char"&&!x.readAt))store.update(s=>{const target=conversationById(s,conv.id);if(target)target.unread=0;if(profile.readReceipts!==false)for(const message of s.messages[conv.id]||[])if(message.role==="char"&&!message.readAt)message.readAt=Date.now()});
     configureHeader();
@@ -46,7 +47,7 @@ export function createConversationV3Renderer({ store, navigate }) {
       <header class="chat-contact-bar">
         <button class="chat-contact-avatar" data-profile-card aria-label="查看 ${escapeHtml(person.name)} 的资料">${initialsAvatar(person, profile)}</button>
         <div><strong>${escapeHtml(profile.remark || person.name)}</strong><span>${person.online ? "在线" : escapeHtml(person.note)}</span></div>
-        <div class="chat-contact-actions"><button data-start-call="voice" aria-label="语音通话">${callIcon(false)}</button><button data-start-call="video" aria-label="视频通话">${callIcon(true)}</button><button class="chat-more" data-chat-settings aria-label="聊天设置">•••</button></div>
+        <div class="chat-contact-actions"><button class="chat-time ${profile.timeAwarenessEnabled!==false?"active":"manual"}" data-time-awareness aria-label="时间感知：${escapeHtml(timeSummary(profile))}" title="${escapeHtml(timeSummary(profile))}">${clockIcon()}</button><button data-start-call="voice" aria-label="语音通话">${callIcon(false)}</button><button data-start-call="video" aria-label="视频通话">${callIcon(true)}</button><button class="chat-more" data-chat-settings aria-label="聊天设置">•••</button></div>
       </header>
       <div class="chat-stream-v3" data-stream>${messages.map((message,index,list)=>messageView(message,index>0&&list[index-1].role===message.role,person,user,profile,appearance,messages,ui)).join("")}${ui.sending?typingView(person,profile):""}</div>
       ${ui.selectMode ? selectionBar(ui.selected.size) : composerView(quoted,ui.attachmentsOpen,ui.sending,ui.error)}
@@ -68,6 +69,7 @@ export function createConversationV3Renderer({ store, navigate }) {
 
   function bind(container, params, conv, person, user, profile, messages) {
     container.querySelector("[data-chat-settings]").onclick=()=>navigate("chat-settings",{personId:person.id,conversationId:conv.id});
+    container.querySelector("[data-time-awareness]").onclick=()=>openTimeAwareness(profile,person,container,params);
     container.querySelectorAll("[data-start-call]").forEach(button=>button.onclick=()=>{unlockCallAudio();navigate("call",{id:conv.id,mode:button.dataset.startCall})});
     container.querySelectorAll(".money-card").forEach(card=>card.onclick=()=>{const message=messages.find(item=>item.id===card.closest(".message")?.dataset.messageId);if(message)openMoneyReceipt(message,person)});
     const topAvatar=container.querySelector("[data-profile-card]");
@@ -97,6 +99,11 @@ export function createConversationV3Renderer({ store, navigate }) {
     }
   }
 
+  function openTimeAwareness(profile,person,container,params){
+    ensureTimeProfile(profile);const today=new Date();
+    openSheet(`<form class="time-awareness-sheet"><div class="sheet-title"><div><small>TIME AWARENESS</small><h3>${escapeHtml(person.name)} 的时间感知</h3></div><button type="button" class="button ghost" data-sheet-close>取消</button></div><label class="setting-row time-awareness-switch"><div><span class="label">跟随现实时间</span><small>开启后会感知日期、时段、间隔与作息</small></div><input class="switch" type="checkbox" name="enabled" ${profile.timeAwarenessEnabled!==false?"checked":""}></label><div class="time-manual-fields" data-manual-time><label class="field"><span>当前年月日</span><input type="date" name="manualDate" value="${escapeHtml(profile.manualDate||localDateValue(today))}"></label><label class="field"><span>当前时刻</span><input type="time" name="manualTime" value="${escapeHtml(profile.manualTime||localTimeValue(today))}"></label><p>关闭现实时间后，AI 会把这里设定的日期与时刻当作当前世界的真实现在。</p></div><button class="button" type="submit">保存时间设置</button></form>`,{onReady(sheet){const form=sheet.querySelector("form"),toggle=form.elements.enabled,manual=sheet.querySelector("[data-manual-time]");const sync=()=>{manual.classList.toggle("disabled",toggle.checked);manual.querySelectorAll("input").forEach(input=>input.disabled=toggle.checked)};toggle.onchange=sync;sync();form.onsubmit=event=>{event.preventDefault();const data=new FormData(form);store.update(s=>{const target=ensureTimeProfile(s.chatProfiles[person.id]);target.timeAwarenessEnabled=toggle.checked;target.manualDate=String(data.get("manualDate")||profile.manualDate||localDateValue(today));target.manualTime=String(data.get("manualTime")||profile.manualTime||localTimeValue(today))});closeSheet();activeRender(container,params);showToast(toggle.checked?"已跟随现实时间":"已切换到自定义时间")}}});
+  }
+
   function renderAgain(container,params){createConversationV3RendererRenderHack(container,params)}
   let activeRender=null;
   function createConversationV3RendererRenderHack(container,params){activeRender?.(container,params)}
@@ -122,13 +129,13 @@ export function createConversationV3Renderer({ store, navigate }) {
       const commonStickers=(current.stickerLibraries?.global||[]).map(x=>({...x,scope:"CHAR 通用"})),exclusiveStickers=(current.stickerLibraries?.characters?.[person.id]||[]).map(x=>({...x,scope:"角色专属"})),charStickers=[...exclusiveStickers,...commonStickers];
       const stickerGuide=charStickers.length?`当前 CHAR 可用表情包（只能按描述选择）：\n${charStickers.map((x,i)=>`${i+1}. [${x.scope}] ${x.name||"表情"}｜${x.description||(x.tags||[]).join("、")||"无描述"}`).join("\n")}`:"当前 CHAR 没有可用表情包，不要输出 sticker；仍可在开启偷表情时收藏 USER 发来的表情。";
       ensureTtsState(current);
-      ensureAccountState(current);const user=personById(current,current.currentUserId),identity=accountContext(current,person.id,user.id),boundChar=person.boundCharId?personById(current,person.boundCharId):null,boundIdentities=[...new Set([...(person.boundIdentityIds||[]),...(person.boundCharId?[person.boundCharId]:[])])].map(id=>personById(current,id)).filter(Boolean),lastUser=[...(current.messages[conv.id]||[])].reverse().find(x=>x.role==="user"&&!x.recalled),memory=await retrieveMemoryContext(current,identity.memoryOwnerId,lastUser?.text||lastUser?.description||"");
-      const imageEnabled=Boolean(current.mediaApis?.image?.enabled&&profile.imageGenerationEnabled),prompt=[p?.prompt,...books.map(x=>x.prompt),buildInternalChatPrompt({person,user,boundChar,boundIdentities,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:imageEnabled}),`【当前账号身份规则】\n${identity.prompt}`,memory.promptBlock,options.instruction].filter(Boolean).join("\n\n");
+      ensureAccountState(current);const user=personById(current,current.currentUserId),identity=accountContext(current,person.id,user.id),boundChar=person.boundCharId?personById(current,person.boundCharId):null,boundIdentities=[...new Set([...(person.boundIdentityIds||[]),...(person.boundCharId?[person.boundCharId]:[])])].map(id=>personById(current,id)).filter(Boolean),history=current.messages[conv.id]||[],lastUser=[...history].reverse().find(x=>x.role==="user"&&!x.recalled),lastMessage=[...history].reverse().find(x=>x.createdAt),memory=await retrieveMemoryContext(current,identity.memoryOwnerId,lastUser?.text||lastUser?.description||""),world=current.worlds.find(x=>x.id===current.currentWorldId);
+      const imageEnabled=Boolean(current.mediaApis?.image?.enabled&&profile.imageGenerationEnabled),timeContext=buildTimeContext(profile,{timezone:world?.timezone,lastMessageAt:lastMessage?.createdAt}),prompt=[p?.prompt,...books.map(x=>x.prompt),buildInternalChatPrompt({person,user,boundChar,boundIdentities,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:imageEnabled}),timeContext,`【当前账号身份规则】\n${identity.prompt}`,memory.promptBlock,options.instruction].filter(Boolean).join("\n\n");
       const avatarContext=profile.visionEnabled&&user.avatarUrl?[{id:"user-current-avatar",role:"user",type:"image",src:user.avatarUrl,text:"USER 当前头像",description:"这是 USER 当前正在使用的头像。你可以识别它，但不要机械复述。"}]:[];
       store.update(s=>{for(const message of s.messages[conv.id]||[])if(message.role==="user"&&!message.charReadAt)message.charReadAt=Date.now()});
       const modelMessages=[...avatarContext,...current.messages[conv.id].map(m=>profile.visionEnabled?m:{...m,src:""})];
       savePromptDebug(store,identity.memoryOwnerId,{systemPrompt:prompt,messages:modelMessages,retrieval:{query:lastUser?.text||lastUser?.description||"",selected:memory.selected.map(x=>({id:x.id,kind:x.kind,text:x.text||x.event})),semantic:memory.semantic}});
-      const raw=await sendToModel(model,modelMessages,prompt),parsed=parseChatResponse(raw),responseBatchId=id();
+      const raw=await sendToModel(model,modelMessages,prompt),parsed=await enforceChatFormat(raw,model,profile),responseBatchId=id();
       store.update(s=>{for(const reply of parsed.messages)s.messages[conv.id].push({id:id(),responseBatchId,role:"char",type:"text",text:reply.text,translation:reply.translation,tone:reply.tone,time:timeNow(),createdAt:Date.now()});const target=s.conversations.find(x=>x.id===conv.id);if(target&&parsed.messages.length){target.preview=parsed.messages.at(-1).text;target.time=timeNow()}});
       for(const action of parsed.actions){
         if(action.kind==="sticker"){const query=action.query.toLowerCase(),item=charStickers.find(x=>[x.name,x.description,...(x.tags||[])].filter(Boolean).some(v=>String(v).toLowerCase().includes(query)||query.includes(String(v).toLowerCase())))||charStickers[0];if(item)store.update(s=>s.messages[conv.id].push({id:id(),responseBatchId,role:"char",type:"sticker",text:item.name||"表情包",src:item.url,description:item.description||(item.tags||[]).join("、")||"CHAR 发送的表情包",time:timeNow()}));continue}
@@ -268,6 +275,7 @@ function sendIcon(){return'<svg viewBox="0 0 24 24"><path d="m5 12 14-7-4 14-3-5
 function sparkIcon(){return'<svg viewBox="0 0 24 24"><path d="M12 3c.7 4.3 2.7 6.3 7 7-4.3.7-6.3 2.7-7 7-.7-4.3-2.7-6.3-7-7 4.3-.7 6.3-2.7 7-7Z"/><path d="M18 16c.3 1.7 1.3 2.7 3 3-1.7.3-2.7 1.3-3 3-.3-1.7-1.3-2.7-3-3 1.7-.3 2.7-1.3 3-3Z"/></svg>'}
 function micIcon(){return foldIcon("mic")}
 function callIcon(video){return video?foldIcon("video"):foldIcon("phone")}
+function clockIcon(){return'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>'}
 function readAsDataUrl(file){return new Promise((resolve,reject)=>{if(file.size>5*1024*1024)return reject(Error("请选择 5MB 以内文件"));const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(Error("文件读取失败"));r.readAsDataURL(file)})}
 function readBlobAsDataUrl(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(Error("录音保存失败"));r.readAsDataURL(blob)})}
 async function readImageOptimized(file,max=1280,quality=.82){if(!file.type.startsWith("image/"))throw Error("请选择图片文件");if(file.size>18*1024*1024)throw Error("请选择 18MB 以内图片");const src=await readAsDataUrl(new File([file],file.name,{type:file.type})).catch(async()=>{const r=new FileReader();return await new Promise((resolve,reject)=>{r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})});const image=await new Promise((resolve,reject)=>{const img=new Image();img.onload=()=>resolve(img);img.onerror=()=>reject(Error("图片无法读取"));img.src=src});const scale=Math.min(1,max/Math.max(image.naturalWidth,image.naturalHeight)),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));canvas.getContext("2d").drawImage(image,0,0,canvas.width,canvas.height);return canvas.toDataURL("image/webp",quality)}
@@ -281,6 +289,16 @@ function mergeStickers(target,rows){for(const row of rows)if(!target.some(x=>x.u
 async function readDocxText(file){if(!file)throw Error("请选择 DOCX 文件");const bytes=new Uint8Array(await file.arrayBuffer()),view=new DataView(bytes.buffer);let eocd=-1;for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--)if(view.getUint32(i,true)===0x06054b50){eocd=i;break}if(eocd<0)throw Error("DOCX 文件结构无效");const entries=view.getUint16(eocd+10,true),central=view.getUint32(eocd+16,true),decoder=new TextDecoder();let offset=central,target=null;for(let i=0;i<entries;i++){if(view.getUint32(offset,true)!==0x02014b50)break;const method=view.getUint16(offset+10,true),size=view.getUint32(offset+20,true),nameLen=view.getUint16(offset+28,true),extraLen=view.getUint16(offset+30,true),commentLen=view.getUint16(offset+32,true),local=view.getUint32(offset+42,true),name=decoder.decode(bytes.slice(offset+46,offset+46+nameLen));if(name==="word/document.xml")target={method,size,local};offset+=46+nameLen+extraLen+commentLen}if(!target)throw Error("DOCX 中没有可读取的正文");const nameLen=view.getUint16(target.local+26,true),extraLen=view.getUint16(target.local+28,true),start=target.local+30+nameLen+extraLen,compressed=bytes.slice(start,start+target.size);let raw=compressed;if(target.method===8){if(typeof DecompressionStream==="undefined")throw Error("当前浏览器不支持直接解析 DOCX");raw=new Uint8Array(await new Response(new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer())}else if(target.method!==0)throw Error("不支持该 DOCX 压缩格式");const xml=new DOMParser().parseFromString(decoder.decode(raw),"application/xml");return[...xml.getElementsByTagNameNS("*","p")].map(p=>[...p.getElementsByTagNameNS("*","t")].map(x=>x.textContent).join("")).join("\n")}
 function timeNow(){return new Date().toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false})}
 function id(){return crypto.randomUUID?.()||`m-${Date.now()}-${Math.random().toString(16).slice(2)}`}
+
+async function enforceChatFormat(raw,model,profile){
+  if(validChatEnvelope(raw,profile))return parseChatResponse(raw);
+  const repair=`把下面的模型输出修复成聊天协议 JSON。不得改写人物原意，不得添加解释或 Markdown。顶层必须只有 messages 与 actions 两个数组；messages 每项必须有字符串 text、translation、tone；actions 每项必须有 type，并保持原操作。${profile.translationEnabled?"外语 text/voice 必须填写简体中文 translation；中文原文 translation 为空。":"所有 translation 必须是空字符串。"}\n严格输出：{\"messages\":[{\"text\":\"原文\",\"translation\":\"译文或空字符串\",\"tone\":\"语气或空字符串\"}],\"actions\":[]}\n待修复内容：\n${String(raw||"").slice(0,12000)}`;
+  const fixed=await sendToModel(model,[{role:"user",text:repair}],"");
+  if(!validChatEnvelope(fixed,profile))throw Error("AI 回复格式连续两次不符合聊天协议，已停止写入，避免出现错误气泡")
+  return parseChatResponse(fixed);
+}
+function validChatEnvelope(raw,profile){try{const source=String(raw||"").trim(),types=new Set(["voice","reaction","recall","redpacket","transfer","sticker","steal_sticker","image","avatar","signature"]);if(!source.startsWith("{")||!source.endsWith("}"))return false;const data=JSON.parse(source);if(!Array.isArray(data.messages)||!Array.isArray(data.actions)||(!data.messages.length&&!data.actions.length))return false;if(!data.messages.every(x=>x&&typeof x.text==="string"&&typeof x.translation==="string"&&typeof x.tone==="string"))return false;if(!data.actions.every(x=>x&&types.has(String(x.type||x.kind).toLowerCase())))return false;if(profile.translationEnabled){for(const row of [...data.messages,...data.actions.filter(x=>String(x.type||x.kind).toLowerCase()==="voice")])if(looksForeign(row.text)&&!String(row.translation||"").trim())return false}else if([...data.messages,...data.actions].some(x=>String(x.translation||"").trim()))return false;return true}catch{return false}}
+function looksForeign(value){const text=String(value||"").trim(),cjk=(text.match(/[\u3400-\u9fff]/g)||[]).length;if(/[\u3040-\u30ff\uac00-\ud7af\u0400-\u04ff\u0600-\u06ff]/.test(text))return true;return /[A-Za-z]{2}/.test(text)&&cjk<2}
 function formatDuration(value){const seconds=Math.max(0,Math.round(Number(value)||0));return`${String(Math.floor(seconds/60)).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`}
 function estimateVoiceDuration(text){return Math.max(2,Math.min(60,Math.round(String(text||"").length/4.2)))}
 function findActionTarget(messages,target,role){if(target&&!/^last_/.test(target)){const exact=messages.find(x=>x.id===target&&x.role===role);if(exact)return exact}return[...messages].reverse().find(x=>x.role===role&&!x.recalled)}

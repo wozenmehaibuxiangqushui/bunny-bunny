@@ -3,6 +3,8 @@ export function ensureAccountState(state){
   state.currentUserId=state.activeUserAccountId;
   state.accountRelations=state.accountRelations||{};
   state.accountFriends=state.accountFriends||{};
+  state.relationshipLabels=state.relationshipLabels||{};
+  state.roleRelationships=state.roleRelationships||{};
   const users=state.people.filter(x=>x.type==="user"),main=users.find(x=>x.id==="user-me")||users[0];
   for(const user of users){state.accountRelations[user.id]=state.accountRelations[user.id]||{type:user.id===main?.id?"main":"none",relatedTo:user.id===main?.id?"":main?.id||"",disclosedTo:{}};state.accountFriends[user.id]=state.accountFriends[user.id]||[]}
   for(const conversation of state.conversations||[]){conversation.userAccountId=conversation.userAccountId||main?.id||state.activeUserAccountId;state.accountFriends[conversation.userAccountId]=state.accountFriends[conversation.userAccountId]||[];if(!state.accountFriends[conversation.userAccountId].includes(conversation.personId))state.accountFriends[conversation.userAccountId].push(conversation.personId)}
