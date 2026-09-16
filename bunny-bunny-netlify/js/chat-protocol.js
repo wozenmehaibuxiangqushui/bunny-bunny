@@ -10,10 +10,10 @@ const LANGUAGE_RULES={
   "Español":"usar español conversacional natural"
 };
 
-export function buildInternalChatPrompt({person,user,boundChar,profile,translationEnabled=false,toneEnabled=false,stickerGuide="",imageGenerationEnabled=false}){const language=profile.language||"自动";return `你正在手机聊天软件里扮演 ${person.name}。以下资料来自用户已保存的后台档案，只用于扮演和理解关系，不要逐项复述，不要告诉用户你看到了系统档案。
+export function buildInternalChatPrompt({person,user,boundChar,boundIdentities=[],profile,translationEnabled=false,toneEnabled=false,stickerGuide="",imageGenerationEnabled=false}){const language=profile.language||"自动";return `你正在手机聊天软件里扮演 ${person.name}。以下资料来自用户已保存的后台档案，只用于扮演和理解关系，不要逐项复述，不要告诉用户你看到了系统档案。
 【你扮演的角色】
 ${identityBlock(person)}
-${person.type==="npc"?`NPC 绑定主角色：${boundChar?identityBlock(boundChar):"尚未绑定"}`:""}
+${person.type==="npc"?`NPC 身份简述：${person.note||"未设定"}\nNPC 已绑定身份（这些关系必须遵守）：${boundIdentities.length?boundIdentities.map(identityBlock).join("\n---\n"):(boundChar?identityBlock(boundChar):"尚未绑定")}`:""}
 【正在与你聊天的 USER】
 ${identityBlock(user)}
 语言要求：${LANGUAGE_RULES[language]||language}。默认情绪：${profile.emotion||"自动"}。

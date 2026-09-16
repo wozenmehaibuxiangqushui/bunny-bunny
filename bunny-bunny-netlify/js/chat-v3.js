@@ -5,7 +5,7 @@ import { walletDebit, walletCredit, ensureWallet, insufficientSheet } from "./wa
 import { ensureTtsState, resolveTtsConfig, synthesizeSpeech } from "./tts-providers.js";
 import { buildInternalChatPrompt, parseChatResponse } from "./chat-protocol.js";
 import { goBack } from "./core/router.js";
-import { recordAudio, startBrowserRecognition } from "./voice-client.js";
+import { recordAudio, startBrowserRecognition, prepareCallAudio } from "./voice-client.js";
 import { saveMediaBlob } from "./media-store.js";
 import { retrieveMemoryContext, scheduleMemoryMaintenance, savePromptDebug } from "./memory-engine.js";
 import { ensureAccountState, accountContext } from "./account-system.js";
@@ -122,8 +122,8 @@ export function createConversationV3Renderer({ store, navigate }) {
       const commonStickers=(current.stickerLibraries?.global||[]).map(x=>({...x,scope:"CHAR 通用"})),exclusiveStickers=(current.stickerLibraries?.characters?.[person.id]||[]).map(x=>({...x,scope:"角色专属"})),charStickers=[...exclusiveStickers,...commonStickers];
       const stickerGuide=charStickers.length?`当前 CHAR 可用表情包（只能按描述选择）：\n${charStickers.map((x,i)=>`${i+1}. [${x.scope}] ${x.name||"表情"}｜${x.description||(x.tags||[]).join("、")||"无描述"}`).join("\n")}`:"当前 CHAR 没有可用表情包，不要输出 sticker；仍可在开启偷表情时收藏 USER 发来的表情。";
       ensureTtsState(current);
-      ensureAccountState(current);const user=personById(current,current.currentUserId),identity=accountContext(current,person.id,user.id),boundChar=person.boundCharId?personById(current,person.boundCharId):null,lastUser=[...(current.messages[conv.id]||[])].reverse().find(x=>x.role==="user"&&!x.recalled),memory=await retrieveMemoryContext(current,identity.memoryOwnerId,lastUser?.text||lastUser?.description||"");
-      const imageEnabled=Boolean(current.mediaApis?.image?.enabled&&profile.imageGenerationEnabled),prompt=[p?.prompt,...books.map(x=>x.prompt),buildInternalChatPrompt({person,user,boundChar,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:imageEnabled}),`【当前账号身份规则】\n${identity.prompt}`,memory.promptBlock,options.instruction].filter(Boolean).join("\n\n");
+      ensureAccountState(current);const user=personById(current,current.currentUserId),identity=accountContext(current,person.id,user.id),boundChar=person.boundCharId?personById(current,person.boundCharId):null,boundIdentities=[...new Set([...(person.boundIdentityIds||[]),...(person.boundCharId?[person.boundCharId]:[])])].map(id=>personById(current,id)).filter(Boolean),lastUser=[...(current.messages[conv.id]||[])].reverse().find(x=>x.role==="user"&&!x.recalled),memory=await retrieveMemoryContext(current,identity.memoryOwnerId,lastUser?.text||lastUser?.description||"");
+      const imageEnabled=Boolean(current.mediaApis?.image?.enabled&&profile.imageGenerationEnabled),prompt=[p?.prompt,...books.map(x=>x.prompt),buildInternalChatPrompt({person,user,boundChar,boundIdentities,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:imageEnabled}),`【当前账号身份规则】\n${identity.prompt}`,memory.promptBlock,options.instruction].filter(Boolean).join("\n\n");
       const avatarContext=profile.visionEnabled&&user.avatarUrl?[{id:"user-current-avatar",role:"user",type:"image",src:user.avatarUrl,text:"USER 当前头像",description:"这是 USER 当前正在使用的头像。你可以识别它，但不要机械复述。"}]:[];
       store.update(s=>{for(const message of s.messages[conv.id]||[])if(message.role==="user"&&!message.charReadAt)message.charReadAt=Date.now()});
       const modelMessages=[...avatarContext,...current.messages[conv.id].map(m=>profile.visionEnabled?m:{...m,src:""})];
@@ -288,4 +288,4 @@ function rollbackWalletMessages(state,messageIds){if(!messageIds.size||!state.wa
 function refreshConversationPreview(state,conversationId){const conversation=state.conversations.find(x=>x.id===conversationId),last=[...(state.messages[conversationId]||[])].reverse().find(x=>!x.recalled);if(!conversation)return;conversation.preview=last?previewFor(last):"暂无消息";conversation.time=last?.time||""}
 function previewFor(message={}){return({voice:"[语音]",redpacket:"[红包]",transfer:"[转账]",image:"[图片]","text-image":"[图片]",sticker:"[表情包]",location:"[位置]",file:"[文件]","voice-call":"[语音通话]","video-call":"[视频通话]","chat-record":"[聊天记录]"})[message.type]||message.text||"新消息"}
 function readableAiError(error){const text=String(error?.message||error||"AI 请求失败");if(/Failed to fetch|NetworkError|Load failed/i.test(text))return"AI 请求未送达：请检查 Base URL、网络或接口是否允许网页跨域访问";return text}
-function unlockCallAudio(){try{window.speechSynthesis?.resume?.();const Context=window.AudioContext||window.webkitAudioContext;if(Context){window.__bunnyCallAudio=window.__bunnyCallAudio||new Context();window.__bunnyCallAudio.resume?.()}}catch{}}
+function unlockCallAudio(){prepareCallAudio()}
