@@ -34,10 +34,12 @@ export async function testModelConnection(profile) {
   return `${elapsed}ms · ${String(reply).trim().slice(0,18)}`;
 }
 
+import { sourceToDataUrl } from "../media-store.js";
+
 export async function sendToModel(profile, messages, systemPrompt = "") {
   if (!profile?.apiKey || !profile.model) throw new Error("请先在“模型与 API”中选择一个可用预设");
   const base = profile.baseUrl.replace(/\/$/, "");
-  const recent = messages.slice(-24);
+  const recent = await Promise.all(messages.slice(-24).map(async message=>message.src&&String(message.src).startsWith("blob:")?{...message,src:await sourceToDataUrl(message.src)}:message));
   const messageText = message => [`[消息ID：${message.id||"unknown"}]`,message.recalled?`[${message.role==="char"?"CHAR":"USER"} 撤回了一条消息，撤回前内容：${message.recalledText||message.text||""}]`:"",!message.recalled&&message.type&&message.type!=="text"?`[消息类型：${message.type}]`:"",!message.recalled&&message.type==="text-image"?`[这是一张文字图片，图片中可见文字：${message.text||message.description||""}]`:!message.recalled&&message.type==="voice"?`[语音中说：${message.transcript||message.text||""}]`:!message.recalled&&(message.text||""),!message.recalled&&(message.description||""),message.reaction?`[${message.reactionBy==="char"?"CHAR":"USER"} 对这条消息做出 reaction：${message.reaction}]`:""].filter(Boolean).join("\n");
   const clean = recent.map(message => ({ role: message.role === "char" ? "assistant" : "user", content: messageText(message) }));
   const claudeClean = recent.map(message => {const text=messageText(message),source=!message.recalled?imageSource(message.src):null;return{role:message.role==="char"?"assistant":"user",content:source?[{type:"text",text},{type:"image",source}]:text}});
