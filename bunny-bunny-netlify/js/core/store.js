@@ -85,7 +85,9 @@ export const seedState = {
   tts: { activeProvider: "browser", llmProsody: true, providers: {} },
   callPrompts: {},
   callRuntime: { lastProactiveAt: {} },
-  stickerLibraries: { global: [], user: [], characters: { "char-jun": [], "char-rin": [] } }
+  stickerLibraries: { global: [], user: [], characters: { "char-jun": [], "char-rin": [] } },
+  favorites: [],
+  callRecords: []
 };
 
 function deepCopy(value) { return JSON.parse(JSON.stringify(value)); }
@@ -121,7 +123,7 @@ export function createStore() {
   const persist=()=>{
     saveTimer=0;idleHandle=0;
     try{
-      const serialized=JSON.stringify(state);
+      const serialized=JSON.stringify(state,function(key,value){if((key==="src"&&this?.mediaId)||(key==="audioUrl"&&this?.audioMediaId)||(key==="videoBackground"&&this?.videoBackgroundMediaId)||(key==="userVideoPortrait"&&this?.userVideoPortraitMediaId)){if(typeof value==="string"&&value.startsWith("blob:"))return""}return value});
       state.dataSettings.estimatedBytes=new Blob([serialized]).size;
       localStorage.setItem(STORAGE_KEY,serialized);
       state.dataSettings.storageWarning="";
