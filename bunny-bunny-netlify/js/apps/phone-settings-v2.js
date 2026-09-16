@@ -16,6 +16,7 @@ function makeIcon(kind){return"data:image/svg+xml,"+encodeURIComponent(bunnySvg(
 
 export function createPhoneSettingsRenderer({store,navigate}){
   return container=>{
+    container.className="app-view phone-settings-view";
     const state=store.getState(),a=state.appearance,iconMarkup=a.appIcon?`<img src="${escapeHtml(a.appIcon)}" alt="">`:bunnySvg(a.bunnyIcon||"classic");
     container.innerHTML=`
       <div class="section-title"><h3>应用身份</h3><span>同步桌面与书签</span></div>
