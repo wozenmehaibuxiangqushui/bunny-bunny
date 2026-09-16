@@ -101,7 +101,7 @@ export function createConversationV3Renderer({ store, navigate }) {
   async function submitMessage(sendAi,form,conv,person,profile,container,params){
     if(sendAi&&ui.sending)return showToast("正在等待 AI 回复");
     const input=form.elements.message,text=input.value.trim();
-    if(text){const replyTo=ui.quoteId||"",now=timeNow();store.update(s=>{s.messages[conv.id].push({id:id(),role:"user",type:"text",text,time:now,replyTo});const c=conversationById(s,conv.id);c.preview=text;c.time=now});ui.quoteId="";ui.error="";input.value=""}
+    if(text){const replyTo=ui.quoteId||"",now=timeNow();store.update(s=>{s.messages[conv.id].push({id:id(),role:"user",type:"text",text,time:now,createdAt:Date.now(),replyTo});const c=conversationById(s,conv.id);c.preview=text;c.time=now});ui.quoteId="";ui.error="";input.value=""}
     else if(!sendAi)return showToast("请输入消息内容");
     if(!sendAi){activeRender(container,params);return}
     ui.sending=true;activeRender(container,params);
@@ -125,7 +125,7 @@ export function createConversationV3Renderer({ store, navigate }) {
       store.update(s=>{for(const message of s.messages[conv.id]||[])if(message.role==="user"&&!message.charReadAt)message.charReadAt=Date.now()});
       const modelMessages=[...avatarContext,...current.messages[conv.id].map(m=>profile.visionEnabled?m:{...m,src:""})];
       const raw=await sendToModel(model,modelMessages,prompt),parsed=parseChatResponse(raw),responseBatchId=id();
-      store.update(s=>{for(const reply of parsed.messages)s.messages[conv.id].push({id:id(),responseBatchId,role:"char",type:"text",text:reply.text,translation:reply.translation,tone:reply.tone,time:timeNow()});const target=s.conversations.find(x=>x.id===conv.id);if(target&&parsed.messages.length){target.preview=parsed.messages.at(-1).text;target.time=timeNow()}});
+      store.update(s=>{for(const reply of parsed.messages)s.messages[conv.id].push({id:id(),responseBatchId,role:"char",type:"text",text:reply.text,translation:reply.translation,tone:reply.tone,time:timeNow(),createdAt:Date.now()});const target=s.conversations.find(x=>x.id===conv.id);if(target&&parsed.messages.length){target.preview=parsed.messages.at(-1).text;target.time=timeNow()}});
       for(const action of parsed.actions){
         if(action.kind==="sticker"){const query=action.query.toLowerCase(),item=charStickers.find(x=>[x.name,x.description,...(x.tags||[])].filter(Boolean).some(v=>String(v).toLowerCase().includes(query)||query.includes(String(v).toLowerCase())))||charStickers[0];if(item)store.update(s=>s.messages[conv.id].push({id:id(),responseBatchId,role:"char",type:"sticker",text:item.name||"表情包",src:item.url,description:item.description||(item.tags||[]).join("、")||"CHAR 发送的表情包",time:timeNow()}));continue}
         if(action.kind==="steal_sticker"){const source=current.messages[conv.id].find(x=>x.id===action.target&&x.role==="user"&&x.type==="sticker"&&x.src);if(source&&profile.stickerSteal){store.update(s=>{const library=s.stickerLibraries.characters[person.id]||(s.stickerLibraries.characters[person.id]=[]);if(!library.some(x=>x.url===source.src))library.push({name:source.text||"收藏的表情",url:source.src,description:source.description||source.text||"从 USER 收藏的表情",tags:["偷来的"]})});showToast(`${person.name} 收藏了这张表情`)}continue}
