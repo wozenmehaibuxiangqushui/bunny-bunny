@@ -1,4 +1,4 @@
-const CACHE_NAME = "bunny-bunny-shell-v31";
+const CACHE_NAME = "bunny-bunny-shell-v32";
 const OFFLINE_URL = new URL("./index.html", self.registration.scope).href;
 const APP_SHELL = [
   './css/apps/widget-surfaces.css', './js/apps/widget-surfaces.js',
