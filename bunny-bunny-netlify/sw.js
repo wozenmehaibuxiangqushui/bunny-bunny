@@ -1,6 +1,7 @@
-const CACHE_NAME = "bunny-bunny-shell-v30";
+const CACHE_NAME = "bunny-bunny-shell-v31";
 const OFFLINE_URL = new URL("./index.html", self.registration.scope).href;
 const APP_SHELL = [
+  './css/apps/widget-surfaces.css', './js/apps/widget-surfaces.js',
   "./", "./index.html", "./manifest.webmanifest", "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./apple-touch-icon.png",
   "./css/tokens.css", "./css/enhancements.css", "./css/splash.css", "./css/shell.css", "./css/components.css", "./css/apps/desktop.css", "./css/apps/chat.css", "./css/apps/settings.css", "./css/apps/social.css", "./css/responsive.css", "./css/ios-refinement.css", "./css/chat-v3.css", "./css/call-v3.css", "./css/contacts-v2.css",
   "./js/app.js", "./js/chat-v3.js", "./js/chat-protocol.js", "./js/time-context.js", "./js/favorites.js", "./js/proactive-messages.js", "./js/media-store.js", "./js/account-system.js", "./js/image-client.js", "./js/moments-v2.js", "./js/relationship-notebook.js", "./js/friend-request-protocol.js", "./js/tts-providers.js", "./js/wallet-v2.js", "./js/voice-client.js", "./js/call-prompts.js", "./js/call-v3.js", "./js/memory-engine.js", "./js/memory-debug.js", "./js/anonymous-box.js", "./js/ios-refinement.js", "./js/splash.js", "./js/pwa.js", "./js/webmcp.js", "./js/core/store.js", "./js/core/router.js", "./js/core/ui.js",
