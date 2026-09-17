@@ -70,9 +70,11 @@ export const seedState = {
   desktopOrder: ["chat", "contacts", "moments", "phone", "sms", "calendar", "memos", "worldbook", "presets", "wallet", "focus", "together", "forum", "delivery", "shop", "flea", "games", "x-social", "tiktok", "phone-settings"],
   desktopLayout: [],
   desktopLayoutInitialized: false,
+  desktopWidgetDesignVersion: 2,
   appCustomizations: {},
   desktopWidgets: [
-    { id: "widget-char", type: "character", size: "wide", title: "CHAR STATUS", content: "我把唱片留好了。你来之前，它会一直在这里。", style: { background: "#111111", color: "#ffffff" } }
+    { id: "widget-weather-default", type: "weather", design: "ios", size: "2x2", title: "首尔天气", content: "首尔 · 微雨 17°C", style: { background: "#53677a", color: "#ffffff" } },
+    { id: "widget-calendar-default", type: "calendar-widget", design: "ios", size: "2x2", title: "日历", content: "今天无日程", style: { background: "#ffffff", color: "#111111" } }
   ],
   modelProfiles: [],
   activeModelProfileId: "",
