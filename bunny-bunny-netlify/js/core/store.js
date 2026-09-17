@@ -70,7 +70,7 @@ export const seedState = {
   desktopOrder: ["chat", "contacts", "moments", "phone", "sms", "calendar", "memos", "worldbook", "presets", "wallet", "focus", "together", "forum", "delivery", "shop", "flea", "games", "x-social", "tiktok", "phone-settings"],
   desktopLayout: [],
   desktopLayoutInitialized: false,
-  desktopWidgetDesignVersion: 2,
+  desktopWidgetDesignVersion: 3,
   appCustomizations: {},
   desktopWidgets: [
     { id: "widget-weather-default", type: "weather", design: "ios", size: "2x2", title: "首尔天气", content: "首尔 · 微雨 17°C", style: { background: "#53677a", color: "#ffffff" } },
