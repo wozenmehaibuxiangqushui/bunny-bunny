@@ -24,7 +24,7 @@ export const widgetImageUrl=value=>/^(https?:\/\/|data:image\/(png|jpe?g|webp|gi
 const picture=(w,index=0)=>{const src=widgetImageUrl(w.images?.[index]||(index===0?w.image:''));return src?`<img src="${esc(src)}" alt="${esc(w.title||'照片')}" loading="lazy" draggable="false">`:`<span class="collection-art art-${index%4}">${surfaceIcon('bunny')}</span>`};
 const photo=(w,i)=>`<button class="collection-photo" data-photo="${i}" aria-label="查看照片 ${i+1}">${picture(w,i)}</button>`;
 const nowText=()=>new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});
-function dateText(){const d=new Date(),solar=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});try{return `${solar} · ${new Intl.DateTimeFormat('zh-CN-u-ca-chinese',{month:'long',day:'numeric'}).format(d)}`}catch{return solar}}
+function dateText(){const d=new Date(),solar=d.toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});try{const parts=new Intl.DateTimeFormat('zh-CN-u-ca-chinese',{year:'numeric',month:'long',day:'numeric'}).formatToParts(d),get=k=>parts.find(p=>p.type===k)?.value||'',n=Number(get('day')),digits=['一','二','三','四','五','六','七','八','九','十'],day=n<=10?'初'+digits[n-1]:n<20?'十'+digits[n-11]:n===20?'二十':n<30?'廿'+digits[n-21]:'三十';return `${solar} · ${get('yearName')?get('yearName')+'年':''}${get('month')}${day}`}catch{return solar}}
 
 export function renderCollection(w){if(!spec(w))return null;const title=esc(w.title),text=esc(w.content),name=esc(w.nickname||'Bunny'),sub=esc(w.subtitle||'');let body='';
  if(w.type==='large-clock')body=`<div class="collection-clock"><small data-collection-date>${dateText()}</small><time data-collection-clock>${nowText()}</time></div>`;
@@ -44,6 +44,7 @@ export function renderCollection(w){if(!spec(w))return null;const title=esc(w.ti
 }
 
 export function bindCollection(container,{store,editing,editWidget}){
+ if(!container.querySelector('.collection-surface'))return()=>{};
  const cleanups=[];
  container.querySelectorAll('[data-widget-id]').forEach(card=>{const w=store.getState().desktopWidgets.find(x=>x.id===card.dataset.widgetId);if(!w||!spec(w)||editing)return;const surface=card.querySelector('.collection-surface');const save=patch=>store.update(s=>Object.assign(s.desktopWidgets.find(x=>x.id===w.id)||{},patch));
  surface.querySelectorAll('button').forEach(b=>b.onpointerdown=e=>e.stopPropagation());
