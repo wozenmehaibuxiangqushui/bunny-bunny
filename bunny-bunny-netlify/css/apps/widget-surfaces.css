@@ -4,7 +4,7 @@
 #phone-root .home-widget-v4:has(.ref-clock,.ref-modes){background:transparent!important;color:var(--text)!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}
 #phone-root .home-widget-v4>.ref-clock{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:1.1rem}
 #phone-root .ref-clock time{font-size:1.55rem;order:0;font-weight:800}
-#phone-root .ref-clock span{font-size:1.25rem;order:1;opacity:1;font-weight:680}
+#phone-root .ref-clock span{font-size:1.25rem;order:1;opacity:1;font-weight:680;align-self:center}
 #phone-root .ref-player input[type=range]{height:.3rem;min-height:0;padding:0;border:0;background:#242b3033;border-radius:99px}
 #phone-root .ref-player strong{font-size:.82rem}#phone-root .ref-player header span{font-size:.64rem}
 #phone-root .ref-notification strong{font-size:.76rem}#phone-root .ref-notification>span>span{font-size:.7rem}
