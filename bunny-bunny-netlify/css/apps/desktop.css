@@ -1,4 +1,5 @@
 @import url('./widget-surfaces.css');
+@import url('./widget-collection.css');
 /* Bunny Home v4 — fixed-cell iOS-inspired desktop */
 .home-screen-v4{position:relative;height:100%;min-height:0;overflow:hidden;padding-bottom:0!important;touch-action:pan-x;contain:layout paint style}
 .home-date-ribbon{height:2rem;display:flex;align-items:center;justify-content:space-between;padding:0 .15rem;color:var(--text)}.home-date-ribbon span{font-size:.62rem;font-weight:690}.home-date-ribbon small{max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:.48rem;letter-spacing:.08em}

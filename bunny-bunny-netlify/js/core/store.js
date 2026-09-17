@@ -72,10 +72,7 @@ export const seedState = {
   desktopLayoutInitialized: false,
   desktopWidgetDesignVersion: 3,
   appCustomizations: {},
-  desktopWidgets: [
-    { id: "widget-weather-default", type: "weather", design: "ios", size: "2x2", title: "首尔天气", content: "首尔 · 微雨 17°C", style: { background: "#53677a", color: "#ffffff" } },
-    { id: "widget-calendar-default", type: "calendar-widget", design: "ios", size: "2x2", title: "日历", content: "今天无日程", style: { background: "#ffffff", color: "#111111" } }
-  ],
+  desktopWidgets: [],
   modelProfiles: [],
   activeModelProfileId: "",
   apiDraft: { provider: "OpenAI", name: "OpenAI 默认", baseUrl: "https://api.openai.com/v1", apiKey: "", persistKey: true, model: "", models: [] },
