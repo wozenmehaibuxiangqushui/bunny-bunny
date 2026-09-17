@@ -83,3 +83,10 @@ html,body,.phone,.screen,.app-view,button,a,img,svg{-webkit-tap-highlight-color:
 
 /* Every non-home renderer owns a fresh vertical scroll surface. */
 .screen[data-app="phone-settings"] .app-view.phone-settings-view{height:100%;min-height:0;overflow-x:hidden!important;overflow-y:auto!important;touch-action:pan-y!important;overscroll-behavior-y:contain;padding-bottom:calc(1.5rem + var(--safe-bottom))}
+
+/* Final Home v6 precedence: legacy refinements must not recolor monochrome icons. */
+.home-screen-v4 .home-widget-entry{display:none!important}
+.phone[data-theme="mono"] .home-screen-v4 .app-icon:not(:has(>img)){--icon-bg:#050505!important;--icon-fg:#fff!important;background:#050505!important;color:#fff!important;border:0!important}
+.phone[data-theme="mono"] .home-screen-v4 .app-icon:not(:has(>img)):before,.phone[data-theme="mono"] .home-screen-v4 .app-icon:not(:has(>img)):after{display:none!important;content:none!important}
+.phone[data-theme="mono"] .home-screen-v4 .folder-icon{background:#050505!important}.phone[data-theme="mono"] .home-screen-v4 .folder-icon i{background:transparent!important;color:#fff!important}
+.phone[data-theme="glass"] .home-screen-v4 .app-icon:not(:has(>img)){background:linear-gradient(145deg,rgba(255,255,255,.34),rgba(93,121,134,.23))!important;color:#fff!important;border-color:rgba(255,255,255,.7)!important}

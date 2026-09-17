@@ -1,4 +1,4 @@
-const CACHE_NAME = "bunny-bunny-shell-v24";
+const CACHE_NAME = "bunny-bunny-shell-v25";
 const OFFLINE_URL = new URL("./index.html", self.registration.scope).href;
 const APP_SHELL = [
   "./", "./index.html", "./manifest.webmanifest", "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./apple-touch-icon.png",

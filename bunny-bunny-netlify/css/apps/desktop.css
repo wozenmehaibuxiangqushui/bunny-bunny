@@ -23,3 +23,65 @@
 .home-remove,.home-edit{width:1.28rem;height:1.28rem}.home-remove{left:calc(50% - 2.25rem);top:calc(50% - 2.4rem)}.home-edit{right:calc(50% - 2.25rem);top:calc(50% - 2.4rem)}
 .home-folder-sheet{gap:1rem}.home-folder-sheet>header{display:grid;justify-items:center;gap:.22rem}.home-folder-sheet>header small{color:var(--muted);font-size:.46rem}.folder-title-inline{min-width:7rem;max-width:90%;overflow:hidden;border:1px dashed transparent;border-radius:.55rem;padding:.34rem .7rem;text-align:center;font-size:1.05rem;font-weight:680;letter-spacing:-.03em;outline:0}.folder-title-inline.editing{border-color:var(--text);background:var(--surface-soft)}.folder-apps-v4{min-height:9.5rem;grid-template-columns:repeat(3,minmax(0,1fr));align-content:start;gap:1rem .65rem;border-radius:1.45rem;background:rgba(118,118,128,.08);padding:1rem .65rem}.folder-apps-v4 button{touch-action:none;transition:transform .16s ease,opacity .16s ease}.folder-apps-v4 button.dragging-out{z-index:4;transform:scale(1.08);opacity:.72}.folder-apps-v4 .app-icon{width:3.35rem}.folder-eject-zone{border:1px dashed var(--line);border-radius:.9rem;color:var(--muted);padding:.55rem;text-align:center;font-size:.47rem;transition:.18s}.folder-eject-zone.active{border-color:#111;background:#111;color:#fff;transform:scale(1.02)}.phone[data-theme="glass"] .folder-apps-v4{border:.5px solid rgba(255,255,255,.52);background:rgba(255,255,255,.19);box-shadow:inset 0 1px rgba(255,255,255,.4);backdrop-filter:blur(18px)}.phone[data-theme="glass"] .folder-eject-zone.active{border-color:rgba(255,255,255,.65);background:rgba(22,34,39,.78)}
 @media(max-height:735px){.home-date-ribbon{height:2.2rem}.home-screen-v4 .desktop-pages{height:calc(100% - 3.5rem)}.home-screen-v4 .app-icon{width:clamp(2.55rem,12.5vw,3.2rem)}.home-grid{gap:.2rem .4rem}.home-widget-entry{height:1.8rem}.folder-apps-v4{min-height:8rem}}
+
+/* Bunny Home v6 — flat monochrome glyphs + layered Liquid Glass */
+.home-screen-v4{--home-side:clamp(.72rem,3.8vw,1.08rem);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","PingFang SC",sans-serif}
+.home-screen-v4 .home-widget-entry{display:none!important}
+.home-date-ribbon{height:2.35rem;display:flex;align-items:flex-end;padding:.05rem .12rem .38rem}
+.home-date-ribbon>div{display:flex;align-items:baseline;justify-content:space-between;width:100%;gap:.7rem}
+.home-date-ribbon span{font-size:.72rem;font-weight:650;letter-spacing:-.035em}
+.home-date-ribbon small{max-width:52%;font-size:.39rem;font-weight:680;letter-spacing:.13em;opacity:.52;text-align:right}
+.home-screen-v4 .desktop-pages{height:calc(100% - 3.6rem)}
+.home-screen-v4 .desktop-page{padding:.12rem var(--home-side) .12rem}
+.home-screen-v4 .home-grid{gap:clamp(.26rem,1.4vw,.46rem) clamp(.42rem,2.2vw,.66rem);padding:.08rem 0 .18rem}
+.home-screen-v4 .app-launch{gap:.3rem}
+.home-screen-v4 .app-icon{width:clamp(2.92rem,14vw,3.72rem);max-width:3.72rem;border-radius:clamp(.92rem,4.2vw,1.18rem);isolation:isolate}
+.home-screen-v4 .app-icon>svg{width:50%!important;height:50%!important;fill:none;stroke:currentColor;stroke-width:1.72;stroke-linecap:round;stroke-linejoin:round}
+.home-screen-v4 .app-label{font-size:clamp(.55rem,2.55vw,.66rem);font-weight:510;letter-spacing:-.018em}
+.phone[data-theme="mono"] .home-screen-v4 .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-pearl .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-stone .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-cream .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-rose .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-sage .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-mint .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-green .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-paper .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-lilac .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-blue .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-yellow .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-red .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-graphite .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-sand .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-sky .app-icon:not(:has(>img)),
+.phone[data-theme="mono"] .home-screen-v4 .tone-silver .app-icon:not(:has(>img)){
+  --icon-bg:#050505!important;--icon-fg:#fff!important;background:#050505!important;color:#fff!important;border:0!important;box-shadow:0 5px 13px rgba(0,0,0,.17),inset 0 0 0 .5px rgba(255,255,255,.12)!important
+}
+.phone[data-theme="mono"] .home-screen-v4 .app-icon:not(:has(>img)):before,
+.phone[data-theme="mono"] .home-screen-v4 .app-icon:not(:has(>img)):after{display:none!important;content:none!important}
+.phone[data-theme="mono"] .home-screen-v4 .folder-icon{background:#050505!important;padding:.46rem!important}
+.phone[data-theme="mono"] .home-screen-v4 .folder-icon i{background:transparent!important;color:#fff!important;border:.5px solid rgba(255,255,255,.18)}
+.phone[data-theme="mono"] .home-screen-v4 .app-label{color:#111;text-shadow:0 1px 2px rgba(255,255,255,.82)}
+.phone[data-theme="glass"] .home-screen-v4 .app-icon:not(:has(>img)){
+  --icon-fg:#fff!important;background:linear-gradient(145deg,rgba(255,255,255,.34),rgba(93,121,134,.23))!important;color:#fff!important;border:.6px solid rgba(255,255,255,.7)!important;box-shadow:inset 0 1px rgba(255,255,255,.63),inset 0 -1px rgba(30,57,70,.12),0 8px 20px rgba(33,58,69,.16)!important;backdrop-filter:blur(22px) saturate(145%);-webkit-backdrop-filter:blur(22px) saturate(145%)
+}
+.phone[data-theme="glass"] .home-screen-v4 .app-icon:not(:has(>img)):before{display:block!important;content:""!important;position:absolute;inset:1px 2px auto;height:46%;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.42),transparent);filter:none;opacity:1}
+.phone[data-theme="glass"] .home-screen-v4 .app-icon:not(:has(>img)):after{display:block!important;content:""!important;position:absolute;inset:0;border-radius:inherit;background:radial-gradient(circle at 74% 82%,rgba(119,185,207,.18),transparent 43%)}
+.phone[data-theme="glass"] .home-screen-v4 .folder-icon{background:rgba(255,255,255,.24)!important}
+.phone[data-theme="glass"] .home-screen-v4 .folder-icon i{background:rgba(21,35,42,.62)!important;color:#fff!important;border:.4px solid rgba(255,255,255,.35)}
+.home-screen-v4 .page-dots{height:1.15rem;min-width:0;width:auto;padding:0;background:transparent;backdrop-filter:none}
+.home-screen-v4 .page-dots button,.home-screen-v4 .page-dots button.active{width:.32rem;height:.32rem;border-radius:50%}
+.home-screen-v4 .page-dots button.active{background:#111;transform:scale(1.08)}
+
+.home-widget-v4{border-radius:1.3rem!important;padding:.72rem!important;box-shadow:0 7px 18px rgba(0,0,0,.08),inset 0 0 0 .5px rgba(0,0,0,.04)!important}
+.home-widget-v4:after{display:none!important}.home-widget-v4.design-bunny{border-radius:1.3rem!important;box-shadow:0 7px 18px rgba(0,0,0,.08),inset 0 0 0 .5px rgba(0,0,0,.04)!important}.home-widget-v4.design-bunny:before{display:none!important}
+.phone[data-theme="mono"] .home-widget-v4{border:.5px solid rgba(0,0,0,.07)!important;background:var(--widget-bg)!important;color:var(--widget-color)!important}
+.phone[data-theme="glass"] .home-widget-v4{border:.6px solid rgba(255,255,255,.72)!important;background:linear-gradient(145deg,rgba(255,255,255,.49),rgba(185,211,220,.25))!important;color:#102129!important;box-shadow:inset 0 1px rgba(255,255,255,.78),0 9px 24px rgba(32,58,69,.14)!important;backdrop-filter:blur(24px) saturate(145%);-webkit-backdrop-filter:blur(24px) saturate(145%)}
+.widget-clock{height:100%;display:grid;grid-template-columns:1fr auto;grid-template-rows:auto 1fr;align-items:end}.widget-clock span{align-self:start;font-size:.44rem;font-weight:750;letter-spacing:.12em;opacity:.62}.widget-clock strong{grid-row:2;font-size:clamp(1.28rem,7vw,2rem);font-weight:300;letter-spacing:-.07em;line-height:.86}.widget-clock small{grid-column:2;grid-row:2;max-width:5.5rem;font-size:.42rem;text-align:right;opacity:.62}
+.widget-message{height:100%;display:grid;grid-template-columns:2.1rem 1fr;grid-template-rows:auto 1fr auto;gap:.18rem .5rem}.widget-message>i{grid-row:1/4;width:2.05rem;height:2.05rem;display:grid;place-items:center;align-self:start;overflow:hidden;border-radius:50%;background:#111;color:#fff}.widget-message>i svg,.widget-message>i img{width:100%;height:100%;object-fit:cover}.widget-message>i svg{padding:.38rem;fill:none;stroke:currentColor;stroke-width:1.2}.widget-message span{font-size:.43rem;font-weight:750;opacity:.58}.widget-message strong{font-size:.62rem;line-height:1.35}.widget-message small{font-size:.4rem;opacity:.48}
+.widget-profile{height:100%;display:grid;grid-template-columns:2.4rem 1fr;grid-template-rows:auto 1fr auto;gap:.16rem .55rem}.widget-profile>i,.widget-profile>img{grid-row:1/4;width:2.35rem;height:2.35rem;align-self:start;overflow:hidden;border-radius:.78rem;background:#fff;color:#111;object-fit:cover}.widget-profile>i svg{width:100%;height:100%;padding:.36rem;fill:none;stroke:currentColor;stroke-width:1.15}.widget-profile span{font-size:.4rem;font-weight:800;letter-spacing:.14em;opacity:.57}.widget-profile strong{font-size:.6rem;line-height:1.35}.widget-profile small{font-size:.39rem;opacity:.65}.widget-profile small b{display:inline-block;width:.34rem;height:.34rem;margin-right:.24rem;border-radius:50%;background:#fff}
+.widget-sticky{height:100%;display:grid;grid-template-rows:auto 1fr repeat(3,1px);gap:.34rem}.widget-sticky span{font-size:.42rem;font-weight:850;letter-spacing:.14em}.widget-sticky p{margin:.08rem 0;font:650 .65rem/1.45 "Songti SC",serif;white-space:pre-wrap}.widget-sticky i{background:currentColor;opacity:.12}
+.widget-day{height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr auto;align-items:end}.widget-day small{grid-column:1/-1;align-self:start;font-size:.42rem;font-weight:850;letter-spacing:.17em;opacity:.55}.widget-day strong{font-size:clamp(2.7rem,13vw,4.3rem);font-weight:260;letter-spacing:-.1em;line-height:.84}.widget-day span{align-self:center;font-size:.55rem;font-weight:650;text-align:right}.widget-day p{grid-column:1/-1;margin:.45rem 0 0;padding-top:.42rem;border-top:.5px solid currentColor;font-size:.5rem;opacity:.7}
+.widget-archive{height:100%;display:grid;grid-template-rows:auto 1fr auto auto;gap:.65rem}.widget-archive header{display:flex;align-items:center;justify-content:space-between}.widget-archive header span{font-size:.43rem;font-weight:850;letter-spacing:.18em}.widget-archive header b{width:1.5rem;height:1.5rem;display:grid;place-items:center;border:1px solid currentColor;border-radius:50%;font-size:.42rem}.widget-archive>strong{max-width:12rem;align-self:end;font:620 1rem/1.45 "Songti SC",serif}.widget-archive>div{display:grid;grid-template-columns:repeat(4,1fr);gap:.35rem}.widget-archive>div i{height:2.4rem;border:.5px solid currentColor;border-radius:.45rem;opacity:.25}.widget-archive>div i:nth-child(2){opacity:.5}.widget-archive>div i:nth-child(3){opacity:.7}.widget-archive>small{font-size:.38rem;letter-spacing:.15em;opacity:.5}
+.widget-weather strong{font-size:1.16rem;font-weight:430}.widget-weather i{width:2.45rem}.widget-music{border-radius:1.15rem}.widget-search{border-radius:99rem}.widget-option-v4.design-bunny{border-radius:1.05rem;box-shadow:0 6px 16px rgba(0,0,0,.08)}
+@media(max-height:735px){.home-date-ribbon{height:1.9rem}.home-screen-v4 .desktop-pages{height:calc(100% - 3.1rem)}.home-screen-v4 .app-icon{width:clamp(2.5rem,12.2vw,3.12rem)}.home-screen-v4 .home-grid{gap:.16rem .38rem}.home-widget-v4{padding:.54rem!important}}
