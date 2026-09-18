@@ -1,4 +1,5 @@
 import { createStore } from "./core/store.js";
+import { createXRenderer } from './x-app.js';
 import { registerRoute, navigate } from "./core/router.js";
 import { createDesktopRenderer } from "./apps/desktop-v2.js";
 import { createChatRenderers } from "./apps/chat-v2.js";
@@ -39,6 +40,7 @@ const context = { store, navigate };
 const chats = createChatRenderers(context);
 
 registerRoute("desktop", createDesktopRenderer(context));
+registerRoute('x-social', createXRenderer(context));
 registerRoute("chat", chats.list);
 registerRoute("conversation", createConversationV3Renderer(context));
 registerRoute("call", createCallRenderer(context));
@@ -66,7 +68,7 @@ registerRoute("mcp", createMcpRenderer(context));
 registerRoute("together", createTogetherRenderer(context));
 registerRoute("focus", createFocusRenderer(context));
 registerRoute("world", createWorldRenderer(context));
-placeholderRoutes.filter(route => !["worldbook","presets","wallet"].includes(route)).forEach(route => registerRoute(route, createPlaceholderRenderer(route)));
+placeholderRoutes.filter(route => !["worldbook","presets","wallet","x-social"].includes(route)).forEach(route => registerRoute(route, createPlaceholderRenderer(route)));
 registerRoute("wallet", createWalletRenderer(context));
 registerRoute("placeholder", container => { container.innerHTML = `<div class="empty"><strong>这个模块还在路上</strong><span>当前版本不会伪装成已经接入。</span></div>`; });
 
@@ -77,7 +79,7 @@ const initialHash = location.hash.slice(1);
 setPhoneAppearance(store.getState().appearance);
 applyAppIdentity(store.getState().appearance);
 applyChatAppearance(store.getState().chatAppearance);
-navigate(["chat", "contacts", "contact-manage", "relationship-map", "character-edit", "user-profile", "add-friend", "friend-requests", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "favorites", "memory-debug", "anonymous-box", "anonymous-letter", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
+navigate(["x-social", "chat", "contacts", "contact-manage", "relationship-map", "character-edit", "user-profile", "add-friend", "friend-requests", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "favorites", "memory-debug", "anonymous-box", "anonymous-letter", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
 setupIosRefinement(context);
 setupChatVoiceSettings(context);
 setupProactiveCalls(context);

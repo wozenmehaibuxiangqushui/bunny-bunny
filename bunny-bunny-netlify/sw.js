@@ -1,6 +1,7 @@
-const CACHE_NAME = "bunny-bunny-shell-v35";
+const CACHE_NAME = "bunny-bunny-shell-v36";
 const OFFLINE_URL = new URL("./index.html", self.registration.scope).href;
 const APP_SHELL = [
+ './js/apps/desktop-drag.js', './js/appearance-controls.js', './js/x-app.js', './js/x-model.js', './css/desktop-polish.css', './css/x-app.css',
   './css/apps/widget-collection.css', './js/apps/widget-collection.js',
   './css/apps/widget-surfaces.css', './js/apps/widget-surfaces.js',
   "./", "./index.html", "./manifest.webmanifest", "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/icon-maskable-512.png", "./apple-touch-icon.png",

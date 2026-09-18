@@ -41,6 +41,11 @@ export function closeSheet() {
 export function setPhoneAppearance(appearance) {
   const phone = document.querySelector("#phone-root");
   phone.dataset.theme = appearance.theme || "mono";
-  phone.style.setProperty("--wallpaper-image", appearance.wallpaper ? `url("${String(appearance.wallpaper).replace(/["\\]/g, "")}")` : "none");
-  phone.classList.toggle("has-wallpaper", Boolean(appearance.wallpaper));
+  const wallpaper=appearance.wallpapers?.[appearance.theme]??appearance.wallpaper;
+  phone.style.setProperty("--wallpaper-image", wallpaper ? `url(${JSON.stringify(String(wallpaper))})` : appearance.theme==='glass'?'radial-gradient(ellipse at 20% 18%,#b6ccce,transparent 55%),linear-gradient(155deg,#d9e3dd,#8a9ea5 65%,#526975)':'none');
+  phone.style.setProperty('--wallpaper-veil',1-Math.max(0,Math.min(1,appearance.wallpaperOpacity??1)));
+  phone.style.setProperty('--desktop-label-color',appearance.desktopLabelColor||'#222222');
+  phone.style.setProperty('--global-text-color',appearance.globalTextColor||'#222222');
+  phone.classList.toggle("has-wallpaper", Boolean(wallpaper));
+  let style=document.querySelector('#global-font-style');if(!style){style=document.createElement('style');style.id='global-font-style';document.head.appendChild(style)}const url=appearance.globalFontUrl||'';style.textContent=/^https?:\/\//i.test(url)?`@font-face{font-family:BunnyGlobal;src:url(${JSON.stringify(url)});font-display:swap}#phone-root{--bunny-font:BunnyGlobal,-apple-system,sans-serif}`:'';
 }

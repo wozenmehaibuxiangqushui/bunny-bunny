@@ -1,4 +1,5 @@
 import { personById } from "../core/store.js";
+import { createHomeDrag } from './desktop-drag.js';
 import { referenceWidgets, renderSurface, bindSurfaces } from './widget-surfaces.js';
 import { collectionWidgets, renderCollection, bindCollection, isCollection, openCollectionEditor, widgetImageUrl } from './widget-collection.js';
 import { escapeHtml, openSheet, closeSheet, showToast } from "../core/ui.js";
@@ -9,7 +10,7 @@ export const appRegistry={
   sms:{name:"短信",route:"sms",icon:"sms",tone:"mint"},phone:{name:"电话",route:"phone",icon:"phone",tone:"green"},worldbook:{name:"世界书",route:"worldbook",icon:"worldbook",tone:"paper"},presets:{name:"预设",route:"presets",icon:"presets",tone:"lilac"},
   games:{name:"游戏",route:"games",icon:"games",tone:"blue"},memos:{name:"备忘录",route:"memos",icon:"memos",tone:"yellow"},calendar:{name:"日历",route:"calendar",icon:"calendar",tone:"red"},wallet:{name:"钱包",route:"wallet",icon:"wallet",tone:"graphite"},
   focus:{name:"陪伴专注",route:"focus",icon:"focus",tone:"sand"},together:{name:"一起刷",route:"together",icon:"together",tone:"sky"},"phone-settings":{name:"设置",route:"phone-settings",icon:"settings",tone:"silver"},
-  "x-social":{name:"X",route:"",icon:"x",tone:"ink",placeholder:true},tiktok:{name:"TikTok",route:"",icon:"tiktok",tone:"ink",placeholder:true}
+  "x-social":{name:"X",route:"x-social",icon:"x",tone:"ink"},tiktok:{name:"TikTok",route:"",icon:"tiktok",tone:"ink",placeholder:true}
 };
 
 const HIDDEN_HOME_APPS=new Set(["api","bridge","mcp","data-settings"]);
@@ -30,14 +31,16 @@ const widgetCatalog=[
 ];
 
 export function createDesktopRenderer({store,navigate}){
-  let editMode=false,currentPage=0,drag=null,edgeTimer=0,edgeDirection=0,lastPages=[],disposeSurfaces=null,disposeCollection=null;
+  let editMode=false,currentPage=0,drag=null,edgeTimer=0,edgeDirection=0,lastPages=[],disposeSurfaces=null,disposeCollection=null,homeContainer=null;
+  const smoothDrag=createHomeDrag({store,getPage:()=>currentPage,getPages:()=>lastPages,getProfile:viewportProfile,setPage:p=>currentPage=p,render,getContainer:()=>homeContainer});
   function render(container){
+    homeContainer=container;
     disposeSurfaces?.();
     disposeCollection?.();
     ensureDesktopState();
     cleanStarterLayout();
     const state=store.getState(),profile=viewportProfile(),tokens=validLayout(state),pages=packPages(tokens,state,profile.cols,profile.rows),now=new Date(),dock=(state.desktopDock||DEFAULT_DOCK).filter(id=>appRegistry[id]).slice(0,4);
-    lastPages=pages;currentPage=Math.min(currentPage,pages.length-1);configureHeader(container,now);
+    if(editMode)pages.push([]);lastPages=pages;currentPage=Math.min(currentPage,pages.length-1);configureHeader(container,now);
     container.className=`app-view home-screen-v4 ${editMode?"home-editing":""}`;
     container.innerHTML=`
       <div class="desktop-pages" data-pages><div class="desktop-track" style="transform:translate3d(-${currentPage*100}%,0,0)">${pages.map((page,index)=>`<section class="desktop-page" data-page="${index}"><div class="home-grid" style="--home-cols:${profile.cols};--home-rows:${profile.rows}">${page.map(entry=>entryHtml(entry,state)).join("")}</div></section>`).join("")}</div></div>
@@ -45,6 +48,7 @@ export function createDesktopRenderer({store,navigate}){
       <nav class="home-dock" aria-label="固定应用栏">${dock.map(id=>dockTile(id,state)).join("")}</nav>
       <div class="edge-page-cue left" aria-hidden="true">‹</div><div class="edge-page-cue right" aria-hidden="true">›</div>`;
     bind(container,pages,profile);
+    if(editMode)container.querySelectorAll('[data-token],[data-dock-app]').forEach(node=>smoothDrag.bind(node));
     disposeSurfaces=bindSurfaces(container,{store,navigate,registry:appRegistry,editing:editMode});
     disposeCollection=bindCollection(container,{store,editing:editMode,editWidget:id=>openCustomWidget(container,id)});
   }
@@ -59,7 +63,7 @@ export function createDesktopRenderer({store,navigate}){
   ]}
   function validLayout(state){const seen=new Set(),valid=[],dock=new Set(state.desktopDock||DEFAULT_DOCK);for(const token of state.desktopLayout||[]){if(seen.has(token)||dock.has(token))continue;if(token.startsWith("widget:")&&!state.desktopWidgets.some(w=>`widget:${w.id}`===token))continue;if(token.startsWith("folder:")&&!state.desktopFolders.some(f=>`folder:${f.id}`===token))continue;if(!token.includes(":")&&!appRegistry[token])continue;seen.add(token);valid.push(token)}return valid}
   function viewportProfile(){const height=window.innerHeight,width=window.innerWidth;return{cols:4,rows:height<735?4:height<900?5:6,width,height}}
-  function packPages(tokens,state,cols,rows){const pages=[];let page=newPage();pages.push(page);for(const token of tokens){const span=tokenSpan(token,state,cols,rows);let spot=findSpot(page.cells,span,cols,rows);if(!spot){page=newPage();pages.push(page);spot=findSpot(page.cells,span,cols,rows)}occupy(page.cells,spot,span,cols);page.push({token,row:spot.row,col:spot.col,w:span.w,h:span.h})}return pages.length?pages:[newPage()];function newPage(){const list=[];list.cells=Array(cols*rows).fill(false);return list}}
+  function packPages(tokens,state,cols,rows){const pages=[];const ensure=p=>{while(pages.length<=p){const a=[];a.cells=Array(cols*rows).fill(false);pages.push(a)}return pages[p]};ensure(0);const pending=[];for(const token of tokens){const saved=state.desktopPlacements?.[token],span=tokenSpan(token,state,cols,rows);if(!saved){pending.push(token);continue}const page=ensure(Math.max(0,Math.min(40,saved.page||0))),spot={row:Math.max(0,Math.min(rows-span.h,saved.row||0)),col:Math.max(0,Math.min(cols-span.w,saved.col||0))};let free=true;for(let y=0;y<span.h;y++)for(let x=0;x<span.w;x++)if(page.cells[(spot.row+y)*cols+spot.col+x])free=false;if(!free){pending.push(token);continue}occupy(page.cells,spot,span,cols);page.push({token,...spot,w:span.w,h:span.h})}for(const token of pending){const span=tokenSpan(token,state,cols,rows);let p=0,spot;while(!(spot=findSpot(ensure(p).cells,span,cols,rows)))p++;const page=ensure(p);occupy(page.cells,spot,span,cols);page.push({token,...spot,w:span.w,h:span.h})}return pages}
   function tokenSpan(token,state,cols,rows){if(!token.startsWith("widget:"))return{w:1,h:1};const widget=state.desktopWidgets.find(w=>`widget:${w.id}`===token),[h,w]=normalizedWidgetSize(widget?.size).split("x").map(Number);return{w:Math.min(cols,w),h:Math.min(rows,h)}}
   function normalizedWidgetSize(size){return({small:"2x2",wide:"1x4","1x1":"1x1","2x2":"2x2","1x4":"1x4","2x4":"2x4","3x4":"3x4","4x2":"4x2","4x4":"4x4"})[size]||"2x2"}
   function findSpot(cells,span,cols,rows){for(let row=0;row<=rows-span.h;row++)for(let col=0;col<=cols-span.w;col++){let free=true;for(let y=0;y<span.h;y++)for(let x=0;x<span.w;x++)if(cells[(row+y)*cols+col+x])free=false;if(free)return{row,col}}return null}

@@ -12,11 +12,12 @@ export const referenceWidgets=[
  {type:'message',design:'ios',title:'聊天',content:'有空的时候 给我发个消息吧',size:'1x4'},
  {type:'modes',design:'ios',title:'me time',content:'留一点时间给自己',size:'1x4'},
  {type:'search',design:'ios',title:'搜索',content:'搜索应用',size:'1x4'},
- {type:'mode-stack',design:'ios',title:'专注模式',content:'Do Not Disturb\nSleep\nme time\nWork',size:'4x4'}
+ {type:'mode-stack',design:'ios',title:'专注模式',content:'Do Not Disturb\nSleep\nme time\nWork',size:'4x4'},
+ {type:'clock-gray',design:'ios',title:'灰色时间栏',content:'',size:'1x4'}
 ].map(x=>({...x,style:{background:'#202326',color:'#ffffff'}}));
 
 export function renderSurface(w){const title=esc(w.title||''),text=esc(w.content||''),art=w.image?`<img src="${esc(w.image)}" alt="">`:surfaceIcon('bunny');
- if(w.type==='clock')return `<div class="ref-clock"><time data-live-clock>${clock()}</time><span data-live-date>${date()}</span></div>`;
+ if(w.type==='clock'||w.type==='clock-gray')return `<div class="ref-clock ${w.type==='clock-gray'?'clock-gray':''}"><time data-live-clock>${clock()}</time><span data-live-date>${date()}</span></div>`;
  if(w.type==='music')return `<div class="ref-player"><header><div class="ref-cover">${art}</div><div><strong>${title}</strong><span>${text}</span></div><i>${surfaceIcon('waves')}</i></header><div class="ref-timeline"><small data-elapsed>0:00</small><input type="range" min="0" max="100" value="0" data-seek aria-label="播放进度"><small data-duration>0:00</small></div><nav><button data-star aria-label="收藏歌曲" aria-pressed="${!!w.favorite}">${surfaceIcon('star')}</button><button data-skip="-10" aria-label="后退十秒">${surfaceIcon('back')}</button><button data-play aria-label="播放">${surfaceIcon('play')}</button><button data-skip="10" aria-label="前进十秒">${surfaceIcon('next')}</button><button data-audio-source aria-label="设置音频地址">${surfaceIcon('music')}</button></nav><div class="ref-volume">${surfaceIcon('sound')}<input data-volume aria-label="音量" type="range" min="0" max="1" step=".01" value=".7">${surfaceIcon('sound')}</div></div>`;
  if(w.type==='message')return `<button class="ref-notification" data-notification><i>${art}<b>${surfaceIcon('bunny')}</b></i><span><strong>${title}</strong><span>${text}</span></span><small>通知</small></button>`;
  if(w.type==='search')return `<button class="ref-search" data-home-search>${surfaceIcon('search')}<span>${text||'搜索应用'}</span><i>⌕</i></button>`;

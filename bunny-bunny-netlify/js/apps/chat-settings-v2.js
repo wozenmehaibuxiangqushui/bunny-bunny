@@ -1,3 +1,4 @@
+import { mountChatPresetManager } from "../appearance-controls.js";
 import { personById } from "../core/store.js";
 import { escapeHtml, initialsAvatar, showToast, openSheet, closeSheet } from "../core/ui.js";
 import { ttsLanguageOptions } from "../tts-providers.js";
@@ -94,7 +95,7 @@ return (container,params={})=>{
  <div class="section-title"><h3>聊天背景</h3><span>自动保留历史，可删除</span></div>
  <section class="card stack">
   <div class="row"><label class="button secondary file-button">选择图片<input data-bg type="file" accept="image/*" hidden></label><label class="button secondary file-button">拍摄<input data-camera type="file" accept="image/*" capture="environment" hidden></label><button type="button" class="button secondary" data-bg-url>图床</button></div>
-  <div class="background-history">${a.backgroundHistory.length?a.backgroundHistory.map((bg,i)=>`<div class="background-tile" data-use-bg="${i}" style="background-image:url('${escapeHtml(bg)}')"><button type="button" data-delete-bg="${i}">×</button></div>`).join(""):'<p class="sub">上传后会显示在这里。</p>'}</div>
+  <label class="field"><span>聊天壁纸可见度</span><input name="backgroundOpacity" type="range" min="0" max="1" step=".01" value="${a.backgroundOpacity??1}"></label><div class="background-history">${a.backgroundHistory.length?a.backgroundHistory.map((bg,i)=>`<div class="background-tile" data-use-bg="${i}" style="background-image:url('${escapeHtml(bg)}')"><button type="button" data-delete-bg="${i}">×</button></div>`).join(""):'<p class="sub">上传后会显示在这里。</p>'}</div>
  </section>
  <section class="card">${toggle("hideUserAvatar","隐藏 USER 头像","连续消息的第二条起始终隐藏头像并与首条气泡对齐",a.hideUserAvatar)}</section>
  <div class="section-title" id="settings-data"><h3>好友与聊天数据</h3><span>危险操作均需二次确认</span></div>
@@ -121,6 +122,7 @@ return (container,params={})=>{
  container.querySelectorAll("[data-avatar-url]").forEach(b=>b.onclick=()=>urlAvatar(b.dataset.avatarUrl,personId,user.id,container,params));
  container.querySelector("[data-worldbook]").onclick=()=>navigate("worldbook");
  container.querySelectorAll("[data-bubble]").forEach(b=>b.onclick=()=>{store.update(s=>s.chatAppearance.bubblePreset=b.dataset.bubble);createChatSettingsRenderer({store,navigate})(container,params)});
+ mountChatPresetManager(container,store,()=>createChatSettingsRenderer({store,navigate})(container,params));
  container.querySelector("[data-preview]").onclick=()=>{applyChatAppearance(formAppearance(form,a));showToast("聊天 CSS 已预览")};
  container.querySelector("[data-save-ui]").onclick=()=>{const name=prompt("界面 CSS 预设名","我的主题");if(name)store.update(s=>s.chatAppearance.interfacePresets.push({name,css:form.elements.interfaceCss.value}));createChatSettingsRenderer({store,navigate})(container,params)};
  container.querySelector("[data-ui-list]").onchange=e=>{const x=a.interfacePresets[Number(e.target.value)];if(x)form.elements.interfaceCss.value=x.css};
@@ -149,7 +151,7 @@ function avatarRow(type,person,url){return`<div class="setting-row"><div class="
 function cityRow(key,label,city,proto,result){return`<div class="row"><label class="field"><span>${label} 城市名称</span><input name="${key}City" value="${escapeHtml(city||"")}"></label><label class="field"><span>对应原型城市</span><input name="${key}Prototype" value="${escapeHtml(proto||"")}"></label><button type="button" class="button secondary" data-weather="${key}">获取</button></div><small data-weather-result="${key}">${escapeHtml(result||"未获取天气")}</small>`}
 function toggle(name,label,small,on){return`<div class="setting-row"><div><span class="label">${label}</span><small>${small}</small></div><input class="switch" name="${name}" type="checkbox" ${on?"checked":""}></div>`}
 function opts(items,value){return items.map(x=>`<option ${x===value?"selected":""}>${x}</option>`).join("")}
-function formAppearance(form,a){return{...a,interfaceCss:form.elements.interfaceCss.value,bubbleCss:form.elements.bubbleCss.value,bubbleColor:form.elements.bubbleColor.value,bubbleScale:Number(form.elements.bubbleScale.value),fontSize:Number(form.elements.fontSize.value),fontUrl:form.elements.fontUrl.value}}
+function formAppearance(form,a){return{...a,backgroundOpacity:Number(form.elements.backgroundOpacity.value),interfaceCss:form.elements.interfaceCss.value,bubbleCss:form.elements.bubbleCss.value,bubbleColor:form.elements.bubbleColor.value,bubbleScale:Number(form.elements.bubbleScale.value),fontSize:Number(form.elements.fontSize.value),fontUrl:form.elements.fontUrl.value}}
 function readImage(file,done){if(!file)return;if(file.size>3*1024*1024)return showToast("请选择 3MB 以内图片");const r=new FileReader();r.onload=()=>done(r.result);r.readAsDataURL(file)}
 function readImagePromise(file){return new Promise((resolve,reject)=>{if(!file)return reject(Error("请选择图片"));if(!file.type.startsWith("image/"))return reject(Error(`${file.name} 不是图片`));if(file.size>8*1024*1024)return reject(Error(`${file.name} 超过 8MB`));const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(Error(`${file.name} 读取失败`));r.readAsDataURL(file)})}
 function parseStickerLines(text){const normalized=String(text||"").replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/gi,"$2");return normalized.split(/(?:\r?\n|[|,，])+/).map(row=>{const value=row.trim(),match=value.match(/^(.*?)\s*(?:[:：]\s*|\s+)(https?:\/\/\S+)\s*$/i);if(!match)return null;const description=match[1].replace(/^[-—]+|[-—]+$/g,"").trim()||"表情包",url=match[2].replace(/^\[|\]$/g,"");return{name:description.slice(0,28),description,url,tags:[description]}}).filter(Boolean)}
