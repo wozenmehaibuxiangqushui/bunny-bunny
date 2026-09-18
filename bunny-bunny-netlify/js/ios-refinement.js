@@ -54,18 +54,6 @@ export function setupIosRefinement({store,navigate}){
    const quick=document.querySelector("#quick-settings");
    const editing=screen.dataset.app==="desktop"&&/完成|✓/.test(quick.textContent);
    quick.classList.toggle("desktop-edit-action",editing);
-   if(screen.dataset.app==="desktop"){
-     const now=new Date();
-     const time=now.toLocaleTimeString("zh-CN",{hour:"2-digit",minute:"2-digit",hour12:false});
-     const title=document.querySelector("#header-title"),kicker=document.querySelector("#header-kicker");
-     if(title.textContent!==time)title.textContent=time;
-     const date=new Intl.DateTimeFormat("zh-CN",{month:"long",day:"numeric",weekday:"short"}).format(now);
-     if(kicker.textContent!==date)kicker.textContent=date;
-   }
-   document.querySelectorAll(".app-tile[data-app-id] .app-icon").forEach((el,i)=>{if(!el.dataset.iosIcon&&!el.classList.contains("folder-icon")){el.innerHTML=appIcon(el.closest(".app-tile").dataset.appId,i);el.dataset.iosIcon="1"}});
-   document.querySelectorAll("[data-bunny]").forEach(b=>{const strong=b.querySelector("strong");if(strong&&!strong.dataset.bunnyArt){strong.innerHTML=bunnySvg(b.dataset.bunny);strong.dataset.bunnyArt="1"}b.classList.toggle("selected",store.getState().appearance.bunnyIcon===b.dataset.bunny&&!/^https?:/.test(store.getState().appearance.appIcon||""))});
-   const iconButton=document.querySelector("[data-app-icon] .avatar");
-   if(iconButton&&!iconButton.dataset.bunnyArt&&!iconButton.querySelector("img")){iconButton.innerHTML=bunnySvg(store.getState().appearance.bunnyIcon||"line");iconButton.dataset.bunnyArt="1"}
    if(route.name==="phone-settings")enhancePhoneSettings();
    if(route.name==="chat-settings")enhanceChatSettings();
  }
@@ -113,8 +101,7 @@ export function setupIosRefinement({store,navigate}){
  function saveStickers(urls,files){const c=mediaContext;closeSheet();store.update(s=>urls.forEach((url,i)=>s.stickerLibraries.characters[c.personId].push({name:files[i]?.name||"图床表情",url,tags:["图片"]})));navigate("chat-settings",{personId:c.personId,conversationId:c.conversationId});showToast(`已添加 ${urls.length} 张图片`)}
  function setFavicon(url){const icon=document.querySelector('link[rel="icon"]');if(icon)icon.href=url}
  document.addEventListener("click",e=>{
-   const bunny=e.target.closest("[data-bunny]");if(bunny){e.preventDefault();e.stopImmediatePropagation();const kind=bunny.dataset.bunny,url=bunnyData(kind);store.update(s=>{s.appearance.bunnyIcon=kind;s.appearance.appIcon=url});setFavicon(url);navigate("phone-settings");showToast("已换成标准兔子图标");return}
-   const target=e.target.closest("[data-media-target],[data-app-icon],[data-avatar]");
+   const target=e.target.closest("[data-media-target],[data-avatar]");
    if(!target)return;
    e.preventDefault();e.stopImmediatePropagation();
    const route=getRoute(),personId=route.params.personId||"char-jun",state=store.getState();
@@ -123,8 +110,10 @@ export function setupIosRefinement({store,navigate}){
    else openPicker({target:target.dataset.mediaTarget,personId,conversationId:route.params.conversationId});
  },true);
  let swipe=null;
- screen.addEventListener("pointerdown",e=>{if(screen.dataset.app!=="desktop"&&e.clientX<38)swipe={x:e.clientX,y:e.clientY}}, {passive:true});
- screen.addEventListener("pointerup",e=>{if(!swipe)return;const dx=e.clientX-swipe.x,dy=Math.abs(e.clientY-swipe.y);swipe=null;if(dx>72&&dy<55){goBack();showToast("已返回上一层")}}, {passive:true});
+ screen.addEventListener("pointerdown",e=>{if(screen.dataset.app!=="desktop"&&e.clientX-screen.getBoundingClientRect().left<30&&!e.target.closest("input,textarea,select,[contenteditable=true]"))swipe={x:e.clientX,y:e.clientY}}, {passive:true});
+ screen.addEventListener("pointerup",e=>{if(!swipe)return;const dx=e.clientX-swipe.x,dy=Math.abs(e.clientY-swipe.y);swipe=null;if(dx>72&&dy<55){document.querySelector("#back-button").click()}}, {passive:true});
+ screen.addEventListener("pointercancel",()=>swipe=null,{passive:true});
  const observer=new MutationObserver(refresh);observer.observe(document.querySelector("#app-screen"),{subtree:true,childList:true,characterData:true});
  setInterval(refresh,30000);refresh();
 }
+

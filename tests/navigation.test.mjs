@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
+import vm from 'node:vm';
+const nodes=new Map(),node=id=>{if(!nodes.has(id))nodes.set(id,{classList:{toggle(){}},setAttribute(){},focus(){},dataset:{}});return nodes.get(id)};
+const context=vm.createContext({document:{querySelector:node},history:{replaceState(){}}});
+const file=existsSync('router.js')?'router.js':new URL('../bunny-bunny-netlify/js/core/router.js',import.meta.url);
+const mod=new vm.SourceTextModule(readFileSync(file,'utf8'),{context});await mod.link(()=>{});await mod.evaluate();const r=mod.namespace;
+for(const name of ['desktop','chat','chat-me','contacts','user-profile','conversation','call','chat-settings','api','worldbook','memory-debug'])r.registerRoute(name,()=>{});
+const name=()=>r.getRoute().name;
+r.navigate('chat-me');r.navigate('user-profile');r.goBack();assert.equal(name(),'chat-me');
+r.navigate('contacts');r.navigate('user-profile');r.goBack();assert.equal(name(),'contacts');
+r.navigate('conversation',{id:'conv-a'});r.navigate('chat-settings',{conversationId:'conv-a'});r.navigate('api');r.goBack();assert.equal(name(),'chat-settings');r.goBack();assert.equal(name(),'conversation');assert.equal(r.getRoute().params.id,'conv-a');
+r.navigate('call',{id:'conv-a'});r.navigate('conversation',{id:'conv-a'});r.goBack();assert.equal(name(),'chat');
+r.navigate('desktop');r.navigate('worldbook');r.goBack();assert.equal(name(),'desktop');
+console.log('PASS: profile ownership, nested API settings, call exit without history loop, desktop app parent');

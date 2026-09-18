@@ -1,3 +1,4 @@
+import { setupDeviceShell } from './device-shell.js';
 import { createStore } from "./core/store.js";
 import { createXRenderer } from './x-app.js';
 import { registerRoute, navigate } from "./core/router.js";
@@ -72,7 +73,7 @@ placeholderRoutes.filter(route => !["worldbook","presets","wallet","x-social"].i
 registerRoute("wallet", createWalletRenderer(context));
 registerRoute("placeholder", container => { container.innerHTML = `<div class="empty"><strong>这个模块还在路上</strong><span>当前版本不会伪装成已经接入。</span></div>`; });
 
-document.querySelector("#home-button").addEventListener("click", () => navigate("desktop", {}, { reset: true }));
+document.querySelector("#home-button").addEventListener("click", () => {if(document.querySelector("#app-screen").dataset.app==="call")document.querySelector("#back-button").click();navigate("desktop", {}, { reset: true })});
 document.querySelector("#app-view").addEventListener("scroll", event => document.querySelector("#app-header").classList.toggle("scrolled", event.target.scrollTop > 8));
 
 const initialHash = location.hash.slice(1);
@@ -81,6 +82,7 @@ applyAppIdentity(store.getState().appearance);
 applyChatAppearance(store.getState().chatAppearance);
 navigate(["x-social", "chat", "contacts", "contact-manage", "relationship-map", "character-edit", "user-profile", "add-friend", "friend-requests", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "favorites", "memory-debug", "anonymous-box", "anonymous-letter", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
 setupIosRefinement(context);
+setupDeviceShell(context);
 setupChatVoiceSettings(context);
 setupProactiveCalls(context);
 setupProactiveMessages(context);

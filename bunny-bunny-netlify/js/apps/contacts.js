@@ -1,3 +1,4 @@
+import { goBack } from '../core/router.js';
 import { escapeHtml, initialsAvatar, showToast, openSheet, closeSheet } from "../core/ui.js";
 import { clearCharacterMemory } from "../memory-engine.js";
 import { addMemoryEntry } from "../memory-engine.js";
@@ -46,7 +47,7 @@ export function createCharacterEditorRenderer({store,navigate}){
       ${type==="npc"?npcFields(base,state):charFields(base,state)}
       <footer class="archive-file-actions"><button type="button" class="round-file-button cancel" data-cancel>×</button>${existing?`<button type="button" class="round-file-button export-role" data-export-role aria-label="导出角色">${archiveToolIcon("export")}</button>`:"<span>保存后将作为隐藏人设发送给 AI</span>"}<button class="round-file-button save">✓</button></footer>
     </section></form>`;
-    container.querySelector("[data-cancel]").onclick=()=>navigate("contacts");
+    container.querySelector("[data-cancel]").onclick=goBack;
     container.querySelector("[data-avatar-pick]").onclick=()=>{const draft=roleFormData(container.querySelector("form"));pickAvatar(value=>render(container,{...params,draft:{...base,...draft,avatarUrl:value}}))};
     container.querySelector("[data-export-role]")?.addEventListener("click",()=>exportRoleChoice(existing,state.chatProfiles[existing.id]||{}));
     if(type==="npc")container.querySelector('[name="groupId"]').onchange=event=>{const draft=roleFormData(container.querySelector("form"));draft.groupId=event.target.value;render(container,{...params,draft:{...base,...draft}})};
@@ -56,7 +57,7 @@ export function createCharacterEditorRenderer({store,navigate}){
       submitting=true;e.currentTarget.querySelector(".save").disabled=true;const id=existing?.id||`${type}-${Date.now()}`,person={...base,...data,id,type,avatarUrl:avatar||base.avatarUrl||"",initials:existing?.initials||initials(data.name),online:existing?.online??true};
       person.persona=data.persona||[data.personality,data.appearance,data.familyBackground,data.hobbies].filter(Boolean).join("\n");if(type==="npc"){person.boundIdentityIds=data.boundIdentityIds||[];person.boundCharId=person.boundIdentityIds.find(identityId=>state.people.find(x=>x.id===identityId)?.type==="char")||""}
       store.update(s=>{const old=s.people.find(x=>x.id===id);if(old)Object.assign(old,person);else s.people.push(person);s.chatProfiles[id]={...profileSeed(person,person.avatarUrl),...(s.chatProfiles[id]||{}),avatarUrl:person.avatarUrl};s.stickerLibraries.characters[id]||=[];s.chatGroups.forEach(g=>g.personIds=g.personIds.filter(x=>x!==id));const group=s.chatGroups.find(g=>g.id===data.groupId);if(group&&!group.personIds.includes(id))group.personIds.push(id)});
-      roleSavedNotice(type,Boolean(existing),()=>navigate("contacts"));
+      roleSavedNotice(type,Boolean(existing),goBack);
     };
   };
 }

@@ -4,7 +4,7 @@ import { escapeHtml as esc, openSheet, closeSheet, showToast } from '../core/ui.
 const paths={play:'M8 5l12 7-12 7Z',pause:'M8 5v14M16 5v14',back:'M11 6l-8 6 8 6ZM21 6l-8 6 8 6Z',next:'M3 6l8 6-8 6ZM13 6l8 6-8 6Z',sound:'M3 9h4l5-4v14l-5-4H3ZM16 8q5 4 0 8M19 5q8 7 0 14',moon:'M20 15A9 9 0 0 1 9 3a9 9 0 1 0 11 12Z',search:'M16 16l5 5M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0',star:'m12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1Z',music:'M9 17V5l12-3v13M9 8l12-3M9 17c0 5-7 5-7 1s7-4 7-1M21 15c0 5-7 5-7 1s7-4 7-1',heart:'M12 21 3 12C-3 4 7-1 12 6c5-7 15-2 9 6Z',bed:'M3 20V8m18 12V8M3 16h18M5 12V5h14v7M8 8h3m2 0h3',work:'M3 7h18v14H3ZM8 7V3h8v4M3 12h18',bunny:'M7 12C-1-3 10-2 10 11M14 11c0-13 11-13 3 1M5 14c-3 10 17 10 14 0M9 16h.1m6 0h.1',waves:'M4 10v4m4-7v10m4-13v16m4-13v10m4-7v4'};
 export const surfaceIcon=name=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${paths[name]||paths.bunny}"/></svg>`;
 const clock=()=>new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});
-const date=()=>new Date().toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});
+const date=()=>{const d=new Date();return `${d.getMonth()+1}月${d.getDate()}日周${'日一二三四五六'[d.getDay()]}`};
 const time=value=>`${Math.floor((Number(value)||0)/60)}:${String(Math.floor((Number(value)||0)%60)).padStart(2,'0')}`;
 export const referenceWidgets=[
  {type:'clock',design:'ios',title:'时间',content:'今天也慢慢来',size:'1x4'},

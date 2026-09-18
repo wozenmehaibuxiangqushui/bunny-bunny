@@ -1,3 +1,4 @@
+import { mountChatTabLayout } from './device-shell.js';
 import { personById } from "./core/store.js";
 import { escapeHtml, initialsAvatar, showToast, updateIsland, openSheet, closeSheet } from "./core/ui.js";
 import { sendToModel } from "./integrations/ai-client.js";
@@ -25,6 +26,7 @@ export function createMomentsRenderer({store,navigate}){
     container.querySelector("[data-refresh-moments]").onclick=()=>forceRefresh(store,container,render,account.id);
     container.querySelectorAll("[data-moment-like]").forEach(button=>button.onclick=()=>toggleLike(store,button.dataset.momentLike,account,container,render));
     container.querySelectorAll("[data-moment-comment]").forEach(button=>button.onclick=()=>openComment(store,button.dataset.momentComment,account,container,render));
+    mountChatTabLayout(container);
     container.querySelectorAll("[data-chat-tab]").forEach(button=>button.onclick=()=>navigate(button.dataset.chatTab));
   };
 }

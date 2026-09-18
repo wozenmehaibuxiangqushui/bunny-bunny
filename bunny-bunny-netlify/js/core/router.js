@@ -5,6 +5,8 @@ export function registerRoute(name, renderer) { routes.set(name, renderer); }
 export function getRoute() { return current; }
 
 export function navigate(name, params = {}, options = {}) {
+  const owners={"user-profile":["chat-me","contacts"],"character-edit":["contacts","add-friend"],"chat-settings":["conversation","phone-settings"],api:["phone-settings","chat-settings"],worldbook:["desktop","phone-settings","chat-settings"],presets:["desktop","phone-settings","chat-settings"],wallet:["desktop","chat-me"],"memory-debug":["chat-settings"]};
+  if(!options.fromBack&&!params._parent){if(name===current.name&&current.params._parent)params={...params,_parent:current.params._parent};else if(owners[name]?.includes(current.name))params={...params,_parent:{name:current.name,params:{...current.params}}}}
   const renderer = routes.get(name) || routes.get("placeholder");
   current = { name, params };
   const view = document.querySelector("#app-view");
@@ -15,6 +17,7 @@ export function navigate(name, params = {}, options = {}) {
   document.querySelector("#header-kicker").textContent = options.kicker || "BUNNY OS";
   back.classList.toggle("hidden", name === "desktop");
   back.textContent = "‹";
+  back.setAttribute('aria-label','返回上一级');
   back.onclick = goBack;
   settings.classList.toggle("hidden", name !== "desktop");
   if (name !== "desktop") { settings.textContent = ""; settings.onclick = null; }
@@ -31,10 +34,11 @@ export function goBack() {
   navigate(parent.name, parent.params, { fromBack: true });
 }
 
-function parentRoute(route){
+export function parentRoute(route){
+  if(route.params?._parent)return route.params._parent;
   const id=route.params?.conversationId||route.params?.id;
   if(route.name==="conversation")return{name:"chat",params:{}};
-  if(route.name==="call"||route.name==="chat-settings")return{name:"conversation",params:{id}};
+  if(route.name==="call"||route.name==="chat-settings")return id?{name:"conversation",params:{id}}:{name:"chat",params:{}};
   if(route.name==="character-edit"||route.name==="user-profile")return{name:"contacts",params:{}};
   if(route.name==="contact-manage"||route.name==="relationship-map")return{name:"contacts",params:{}};
   if(route.name==="add-friend"||route.name==="friend-requests"||route.name==="chat-me"||route.name==="moments")return{name:"chat",params:{}};
@@ -42,7 +46,7 @@ function parentRoute(route){
   if(route.name==="anonymous-box")return{name:"chat-me",params:{}};
   if(route.name==="anonymous-letter")return{name:"anonymous-box",params:{}};
   if(route.name==="memory-debug")return{name:"chat-settings",params:{personId:route.params?.personId,conversationId:route.params?.conversationId}};
-  if(["data-settings","api","bridge","mcp","worldbook","presets"].includes(route.name))return{name:"phone-settings",params:{}};
+  if(["data-settings","api","bridge","mcp"].includes(route.name))return{name:"phone-settings",params:{}};
   return{name:"desktop",params:{}};
 }
 
