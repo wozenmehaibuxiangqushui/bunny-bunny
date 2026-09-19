@@ -1,4 +1,4 @@
-const CACHE_NAME = "bunny-bunny-shell-v38";
+const CACHE_NAME = "bunny-bunny-shell-v39";
 const OFFLINE_URL = new URL("./index.html", self.registration.scope).href;
 const APP_SHELL = [
  './js/chat-skins.js', './css/chat-skins.css',

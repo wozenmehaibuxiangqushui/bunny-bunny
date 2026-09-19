@@ -8,7 +8,7 @@ function putStyle(id,css){let el=document.getElementById(id);if(!el){el=document
 export function applyConversationSkin(a){const skin=normalizeSkin(a.bubblePreset);let css='';const scale=Math.max(.75,Math.min(1.4,Number(a.bubbleScale)||1));css+=`#phone-root #app-view .chat-layout-v3{--bubble-scale:${scale}}`;const size=Math.max(10,Math.min(26,Number(a.fontSize)||14));css+=`#phone-root #app-view .chat-layout-v3 .bubble-v3{font-size:${size}px!important}`;
  if(a.bubbleColor&&a.bubbleColor!=='#111'&&a.bubbleColor!=='#111111')css+=`#phone-root #app-view .chat-layout-v3 .message.user{--skin-bubble:${a.bubbleColor}}`;
  if(/^https?:\/\//i.test(a.fontUrl||''))css+=`@font-face{font-family:BunnyConversation;src:url(${JSON.stringify(a.fontUrl)});font-display:swap}#phone-root #app-view .chat-layout-v3{font-family:BunnyConversation,sans-serif!important}`;
- css+=scopedCss(a.interfaceCss,'#phone-root #app-view')+'\n'+scopedCss(a.bubbleCss,'#phone-root #phone-root #app-view');
+ css+=scopedCss(a.interfaceCss,'#phone-root .screen[data-app=conversation] #app-view')+'\n'+scopedCss(a.bubbleCss,'#phone-root#phone-root .screen[data-app=conversation] #app-view');
  // Repeating an ID increases specificity without requiring nested elements.
  css=css.replaceAll('#phone-root #phone-root','#phone-root#phone-root');putStyle('bunny-conversation-user-css',css);return skin;
 }

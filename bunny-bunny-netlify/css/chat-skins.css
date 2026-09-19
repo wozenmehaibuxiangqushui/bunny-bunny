@@ -5,11 +5,11 @@
 #phone-root .conversation-v3{padding:0!important;overflow:hidden!important}
 #phone-root .chat-layout-v3[data-chat-skin]{--skin-in:#eeeef0;--skin-out:#34363b;--skin-in-ink:#1f2025;--skin-out-ink:#fff;--skin-canvas:#fafafa;--skin-radius:1.25rem;background-color:var(--skin-canvas);height:100%;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;font-family:var(--bunny-font);gap:0}
 #phone-root .chat-layout-v3[data-chat-skin] .chat-stream-v3{padding:1.1rem 1rem 1.4rem;gap:.65rem;overflow-x:hidden;overflow-y:auto;min-height:0}
-#phone-root .chat-layout-v3[data-chat-skin] .message{--skin-bubble:var(--skin-in);--skin-ink:var(--skin-in-ink);display:flex!important;align-items:flex-start;gap:.55rem;margin:0!important;padding:0!important;overflow:visible}
+#phone-root .chat-layout-v3[data-chat-skin] .message{--skin-bubble:var(--skin-in);--skin-ink:var(--skin-in-ink);display:flex!important;flex-direction:row;align-items:flex-start;gap:.55rem;margin:0!important;padding:0!important;overflow:visible}
 #phone-root .chat-layout-v3[data-chat-skin] .message.user{--skin-bubble:var(--skin-out);--skin-ink:var(--skin-out-ink);flex-direction:row-reverse}
 #phone-root .chat-layout-v3[data-chat-skin] .message-body-v3{position:relative;width:fit-content;max-width:78%;min-width:0;overflow:visible;gap:.18rem}
 #phone-root .chat-layout-v3[data-chat-skin] .message:not(.special-message) .bubble-v3{position:relative;background:var(--skin-bubble)!important;color:var(--skin-ink)!important;border:0!important;border-radius:var(--skin-radius)!important;padding:calc(.62rem * var(--bubble-scale,1)) calc(.85rem * var(--bubble-scale,1))!important;line-height:1.48;box-shadow:none!important;overflow-wrap:anywhere;white-space:pre-wrap;transform:none!important;isolation:isolate}
-#phone-root .chat-layout-v3[data-chat-skin] .message-avatar-v3{width:2rem;height:2rem;flex:0 0 2rem;margin-top:.1rem}
+#phone-root .chat-layout-v3[data-chat-skin] .message-avatar-v3{width:2rem;height:2rem;flex:0 0 2rem;align-self:flex-start;margin-top:.1rem}
 #phone-root .chat-layout-v3[data-chat-skin] .message-avatar-v3 .avatar{width:100%;height:100%}
 #phone-root .chat-layout-v3[data-chat-skin] .message-body-v3>time{font-size:.56rem;color:#82848a;padding:.12rem .2rem}
 #phone-root .chat-layout-v3[data-chat-skin] .message-reaction-v3{position:absolute;right:-.4rem;top:-.9rem;z-index:3;display:grid;place-items:center;min-width:1.8rem;height:1.8rem;padding:.1rem .3rem;margin:0;border:2px solid var(--skin-canvas);border-radius:99px;background:var(--skin-out);box-shadow:0 2px 5px #00000012;font-size:1rem;line-height:1}

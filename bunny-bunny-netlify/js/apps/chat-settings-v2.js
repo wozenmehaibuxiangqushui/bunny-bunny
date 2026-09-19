@@ -73,7 +73,7 @@ return (container,params={})=>{
  </section>
  <div class="section-title" id="settings-appearance"><h3>界面 CSS</h3><span>可保存 / 切换预设</span></div>
  <section class="card stack">
-  <label class="field"><span>完整聊天界面 CSS</span><textarea class="css-editor" name="interfaceCss">${escapeHtml(a.interfaceCss||interfaceSample)}</textarea></label>
+  <label class="field"><span>完整聊天界面 CSS</span><textarea class="css-editor" name="interfaceCss" placeholder="${escapeHtml(interfaceSample)}">${escapeHtml(a.interfaceCss||"")}</textarea></label>
   <div class="row"><button type="button" class="button secondary" data-preview>预览</button><button type="button" class="button secondary" data-save-ui>保存预设</button><select data-ui-list><option value="">切换…</option>${a.interfacePresets.map((x,i)=>`<option value="${i}">${escapeHtml(x.name)}</option>`).join("")}</select></div>
  </section>
  <div class="section-title"><h3>气泡编辑器</h3><span>气泡 CSS 优先</span></div>
@@ -84,7 +84,7 @@ return (container,params={})=>{
   <label class="field"><span>字体大小</span><input name="fontSize" type="range" min="11" max="21" value="${a.fontSize||14}"></label>
   <label class="field"><span>字体 URL</span><input name="fontUrl" value="${escapeHtml(a.fontUrl||"")}" placeholder="https://…/font.woff2"></label>
   <div class="row"><button type="button" class="button secondary" data-save-font>保存字体预设</button><select data-font-list><option value="">切换…</option>${a.fontPresets.map((x,i)=>`<option value="${i}">${escapeHtml(x.name)}</option>`).join("")}</select></div>
-  <label class="field"><span>自定义气泡 CSS</span><textarea class="css-editor" name="bubbleCss">${escapeHtml(a.bubbleCss||bubbleSample)}</textarea></label>
+  <label class="field"><span>自定义气泡 CSS</span><textarea class="css-editor" name="bubbleCss" placeholder="${escapeHtml(bubbleSample)}">${escapeHtml(a.bubbleCss||"")}</textarea></label>
  </section>
  <div class="section-title"><h3>聊天背景</h3><span>自动保留历史，可删除</span></div>
  <section class="card stack">
