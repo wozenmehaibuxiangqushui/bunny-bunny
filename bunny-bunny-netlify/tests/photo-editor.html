@@ -1,0 +1,10 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Photo editor interaction check</title>
+<link rel="stylesheet" href="../css/chat-v3.css"><link rel="stylesheet" href="../css/chat-skins.css">
+<style>body{font:14px system-ui;background:#e8e9e9;margin:20px}main{max-width:400px;margin:auto;background:#fff;border-radius:24px;padding:16px}button{cursor:pointer}img{max-width:100%}canvas{width:100%}.photo-edit-panel{padding:8px}h1{font-size:18px}</style>
+<main><h1>图片图层交互检查</h1><p>独立测试，不读取或写入聊天数据。</p><section class="photo-studio"><div class="photo-canvas-stage"><canvas data-photo-canvas></canvas></div><button data-photo-edit>打开编辑</button><section data-photo-edit-panel class="photo-edit-panel"><div class="photo-color-row"><input aria-label="画笔颜色" type="color" data-brush-color value="#111111"><button data-clear-drawing aria-label="重置">↶</button><label>贴纸<input type="file" accept="image/*" data-photo-sticker></label></div><div class="photo-emoji-tray"><button data-photo-emoji="🐰">🐰</button><button data-photo-emoji="❤️">❤️</button></div></section><button data-export>检查导出图片</button><output data-result></output><img data-exported alt="导出结果" hidden></section></main>
+<script type="module">
+import {bindPhotoEditor} from '../js/photo-editor.js';
+const sheet=document.querySelector('main'),svg='<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#e4ded2"/><circle cx="640" cy="130" r="55" fill="#bbb5a8"/><path d="M0 520L300 200L650 600H0Z" fill="#7c8d86"/></svg>';
+const editor=bindPhotoEditor(sheet,'data:image/svg+xml,'+encodeURIComponent(svg),text=>sheet.querySelector('[data-result]').textContent=text);
+sheet.querySelector('[data-export]').onclick=async()=>{try{const blob=await editor.exportBlob(),image=sheet.querySelector('[data-exported]');if(image.src.startsWith('blob:'))URL.revokeObjectURL(image.src);image.src=URL.createObjectURL(blob);image.hidden=false;sheet.querySelector('[data-result]').textContent='PNG 已导出，不包含选择边框'}catch(error){sheet.querySelector('[data-result]').textContent=error.message}};
+</script></html>
