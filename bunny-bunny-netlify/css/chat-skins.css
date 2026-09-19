@@ -89,3 +89,19 @@
 @media(prefers-reduced-motion:reduce){.chat-layout-v3 *{animation:none!important;transition:none!important}}
 
 #phone-root .chat-layout-v3[data-chat-skin] .select-circle{flex:0 0 1.28rem;order:-1}#phone-root .select-mode .message.user .select-circle{order:3;margin-right:auto}#phone-root .select-mode .message-body-v3{max-width:68%}
+/* A single native-style header: back control shares the contact row. */
+#phone-root .screen[data-app=conversation] .app-header{height:var(--top-chrome)!important;min-height:var(--top-chrome)!important;padding:0!important;position:relative;overflow:visible;z-index:8}
+#phone-root .screen[data-app=conversation] #back-button{position:absolute;left:.65rem;top:calc(var(--top-chrome) + .45rem);width:2rem;height:2rem;background:transparent;box-shadow:none;border:0}
+#phone-root .chat-layout-v3[data-chat-skin]:not([data-chat-skin=imessage]) .chat-contact-bar{padding-left:3.1rem}
+#phone-root .screen[data-app=conversation]:has([data-chat-skin=imessage]){background:#fbfbfc}
+#phone-root .screen[data-app=conversation]:has([data-chat-skin=wechat]){background:#ededed}
+#phone-root .screen[data-app=conversation]:has([data-chat-skin=kakaotalk]){background:#b7c7d2}
+#phone-root .screen[data-app=conversation]:has([data-chat-skin=line]){background:#92aed1}
+#phone-root .screen[data-app=conversation]:has([data-chat-skin=cloud]){background:#fbfaf7}
+#phone-root[data-theme=glass] .screen[data-app=conversation]:has([data-chat-skin=imessage]){background:#dae3e9}
+#phone-root[data-theme=glass] .screen[data-app=conversation]:has([data-chat-skin=cloud]){background:#e3eae9}
+#phone-root .chat-layout-v3[data-chat-skin] .composer-shell-v3{background:transparent;border:0;box-shadow:none;backdrop-filter:none}
+#phone-root[data-theme=glass] .chat-layout-v3[data-chat-skin] .composer-v3{background:#ffffff50!important;box-shadow:none}
+#phone-root[data-theme=glass] .home-screen-v4 .app-icon:not(:has(>img)):before{background:linear-gradient(180deg,#ffffff25,transparent)!important;height:36%;opacity:.6}
+#phone-root[data-theme=glass] .home-screen-v4 .app-icon:not(:has(>img)):after{background:none!important}
+#phone-root[data-theme=glass] .home-screen-v4 .folder-icon i{background:#ffffff1f!important;border:.5px solid #ffffff40;box-shadow:none}
