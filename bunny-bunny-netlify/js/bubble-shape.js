@@ -9,6 +9,8 @@ export function bubblePath(width,height,radius,kind,tail){
 const active=new WeakMap();
 export function alignBubbleShapes(root){
   const old=active.get(root.parentElement);old?.disconnect();
+  // Let explicitly authored bubble CSS keep control of its own fill and silhouette.
+  if(/:is\([^)]*\.bubble-v3/.test(document.getElementById('bunny-conversation-user-css')?.textContent||''))return;
   const kind=root.dataset.chatSkin;if(!['imessage','wechat','kakaotalk','line'].includes(kind))return;
   const ns='http://www.w3.org/2000/svg',bubbles=[...root.querySelectorAll('.message:not(.special-message) .bubble-v3')];
   function update(bubble){const w=bubble.clientWidth,h=bubble.clientHeight;if(!w||!h)return;let svg=bubble.querySelector(':scope > .bubble-outline');if(!svg){svg=document.createElementNS(ns,'svg');svg.classList.add('bubble-outline');svg.setAttribute('aria-hidden','true');svg.append(document.createElementNS(ns,'path'));bubble.prepend(svg);bubble.classList.add('joined-tail')}
