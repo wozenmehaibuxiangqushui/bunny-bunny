@@ -1,3 +1,4 @@
+import { applyConversationSkin } from "./chat-skins.js";
 import { conversationById, personById } from "./core/store.js";
 import { escapeHtml, initialsAvatar, showToast, updateIsland, openSheet, closeSheet } from "./core/ui.js";
 import { sendToModel } from "./integrations/ai-client.js";
@@ -40,18 +41,19 @@ export function createConversationV3Renderer({ store, navigate }) {
     const user = personById(state, state.currentUserId);
     const profile = ensureTimeProfile(state.chatProfiles[person.id]||(state.chatProfiles[person.id]={}));
     const appearance = state.chatAppearance;
+    const skin = applyConversationSkin(appearance);
     if(conv.unread||state.messages[conv.id]?.some(x=>x.role==="char"&&!x.readAt))store.update(s=>{const target=conversationById(s,conv.id);if(target)target.unread=0;if(profile.readReceipts!==false)for(const message of s.messages[conv.id]||[])if(message.role==="char"&&!message.readAt)message.readAt=Date.now()});
     configureHeader();
     const messages = state.messages[conv.id] || [];
     const quoted = messages.find(message => message.id === ui.quoteId);
     container.className = `app-view conversation-v3 ${ui.selectMode ? "select-mode" : ""}`;
-    container.innerHTML = `<section class="chat-layout-v3 ${appearance.bubblePreset==='imessage'?'imessage-reference':''}" style="${backgroundStyle(appearance.background,appearance.backgroundOpacity)}">
+    container.innerHTML = `<section class="chat-layout-v3" data-chat-skin="${skin}" style="${backgroundStyle(appearance.background,appearance.backgroundOpacity)}">
       <header class="chat-contact-bar">
         <button class="chat-contact-avatar" data-profile-card aria-label="查看 ${escapeHtml(person.name)} 的资料">${initialsAvatar(person, profile)}</button>
         <div><strong>${escapeHtml(profile.remark || person.name)}</strong><span>${person.online ? "在线" : escapeHtml(person.note)}</span></div>
         <div class="chat-contact-actions"><button class="chat-time ${profile.timeAwarenessEnabled!==false?"active":"manual"}" data-time-awareness aria-label="时间感知：${escapeHtml(timeSummary(profile))}" title="${escapeHtml(timeSummary(profile))}">${clockIcon()}</button><button data-start-call="voice" aria-label="语音通话">${callIcon(false)}</button><button data-start-call="video" aria-label="视频通话">${callIcon(true)}</button><button class="chat-more" data-chat-settings aria-label="聊天设置">•••</button></div>
       </header>
-      <div class="chat-stream-v3" data-stream>${messages.map((message,index,list)=>messageView(message,index>0&&list[index-1].role===message.role,person,user,profile,appearance,messages,ui)).join("")}${ui.sending?typingView(person,profile):""}</div>
+      <div class="chat-stream-v3" data-stream>${messages.map((message,index,list)=>messageView(message,index>0&&list[index-1].role===message.role,person,user,profile,appearance,messages,ui,!list[index+1]||list[index+1].role!==message.role||list[index+1].recalled)).join("")}${ui.sending?typingView(person,profile):""}</div>
       ${ui.selectMode ? selectionBar(ui.selected.size) : composerView(quoted,ui.attachmentsOpen,ui.sending,ui.error)}
     </section>`;
     bind(container, params, conv, person, user, profile, messages);
@@ -246,7 +248,7 @@ export function createConversationV3Renderer({ store, navigate }) {
   return conversation;
 }
 
-function messageView(message,continuation,person,user,profile,appearance,messages,ui){
+function messageView(message,continuation,person,user,profile,appearance,messages,ui,groupEnd=true){
   if(message.role==="system")return `<article class="system-message-v3">${escapeHtml(message.text)}</article>`;
   if(message.recalled){const who=message.role==="user"?"你":escapeHtml(person.name),fresh=Date.now()-Number(message.recalledAt||0)<1600;return`<article class="recall-notice ${message.role} ${fresh?"recall-animate":""}"><button data-recalled-message="${message.id}">${who}撤回了一条信息</button></article>`}
   const isUser=message.role==="user",owner=isUser?user:person,avatarProfile=isUser?{avatarUrl:user.avatarUrl||""}:profile,hide=isUser&&appearance.hideUserAvatar;
@@ -254,7 +256,7 @@ function messageView(message,continuation,person,user,profile,appearance,message
   const select=ui.selectMode?`<button class="select-circle ${ui.selected.has(message.id)?"checked":""}" data-select-message="${message.id}" aria-label="选择消息"></button>`:"";
   const avatar=hide?"":`<div class="message-avatar-v3 ${continuation?"invisible":""}" ${isUser?"":"data-pat-avatar"}>${initialsAvatar(owner,avatarProfile)}</div>`;
   const special=message.type&&message.type!=="text"?"special-message":"",arriving=message.role==="char"&&message.arrivedWithPause&&Date.now()-Number(message.createdAt||0)<1800?"arriving":"";
-  return `<article class="message ${message.role} ${continuation?"continuation":""} ${special} ${arriving}" data-message-id="${message.id}">${select}${avatar}<div class="message-body-v3"><div class="bubble-v3">${quote?`<div class="inline-quote"><strong>${quote.role==="user"?escapeHtml(user.name):escapeHtml(person.name)}</strong><span>${escapeHtml(quote.text)}</span></div>`:""}${messageContent(message)}</div>${message.translation&&message.type!=="voice"?`<div class="message-translation">${escapeHtml(message.translation)}</div>`:""}${message.reaction?`<button class="message-reaction-v3">${message.reaction}</button>`:""}<time>${message.time}${message.edited?" · 已编辑":""}${message.readAt||message.charReadAt?'<em class="message-read">已读</em>':""}</time></div></article>`;
+  return `<article class="message ${message.role} ${continuation?"continuation":""} ${special} ${arriving} ${groupEnd?"group-end":""} ${message.reaction?"has-reaction":""}" data-message-id="${message.id}">${select}${avatar}<div class="message-body-v3"><div class="bubble-v3">${quote?`<div class="inline-quote"><strong>${quote.role==="user"?escapeHtml(user.name):escapeHtml(person.name)}</strong><span>${escapeHtml(quote.text)}</span></div>`:""}${messageContent(message)}</div>${message.translation&&message.type!=="voice"?`<div class="message-translation">${escapeHtml(message.translation)}</div>`:""}${message.reaction?`<button class="message-reaction-v3">${escapeHtml(message.reaction)}</button>`:""}<time>${message.time}${message.edited?" · 已编辑":""}${message.readAt||message.charReadAt?'<em class="message-read">已读</em>':""}</time></div></article>`;
 }
 function messageContent(message){
   if(message.type==="chat-record")return`<div class="chat-record-card"><strong>💬 ${escapeHtml(message.text)}</strong><span>${message.bundle?.length||0} 条消息</span><small>${(message.bundle||[]).slice(0,3).map(x=>escapeHtml(x.text)).join(" · ")}</small></div>`;
@@ -270,7 +272,7 @@ function messageContent(message){
   if(message.type&&message.type!=="text")return`<div class="typed-message"><span>${TYPE_META[message.type]?.[1]||"□"}</span><div><small>${TYPE_META[message.type]?.[0]||"消息"}</small><strong>${escapeHtml(message.text)}</strong></div></div>`;
   return escapeHtml(message.text)
 }
-function composerView(quote,open,sending,error){const actions=[["camera","camera","拍摄"],["album","image","照片"],["voice","mic","语音"],["text-image","text","文字图"],["redpacket","gift","红包"],["transfer","money","转账"],["sticker","smile","表情包"],["reroll","reroll","重 roll"],["call","phone","语音通话"],["video","video","视频通话"]];return `<div class="composer-shell-v3 ${open?"attachments-open":""}">${error?`<div class="composer-error"><span>${escapeHtml(error)}</span><button type="button" data-open-api>去配置模型</button></div>`:""}${quote?`<div class="composer-quote"><div><strong>回复</strong><span>${escapeHtml(quote.text)}</span></div><button data-cancel-quote aria-label="取消引用">×</button></div>`:""}<div class="folded-attachments"><div>${actions.map(x=>`<button type="button" data-fold-action="${x[0]}">${foldIcon(x[1])}<span>${x[2]}</span></button>`).join("")}</div></div><form class="composer-v3" data-composer><button type="button" data-plus aria-label="展开更多功能">${open?"×":"＋"}</button><textarea name="message" rows="1" placeholder="iMessage" aria-label="消息"></textarea><button type="button" class="send-icon" data-send-only aria-label="仅发送">${sendIcon()}</button><button type="button" class="ai-send-v3 ${sending?"sending":""}" data-send-ai aria-label="让 AI 回复当前聊天" ${sending?"disabled":""}>${sending?'<i></i>':sparkIcon()}</button></form></div>`}
+function composerView(quote,open,sending,error){const actions=[["camera","camera","拍摄"],["album","image","照片"],["voice","mic","语音"],["text-image","text","文字图"],["redpacket","gift","红包"],["transfer","money","转账"],["sticker","smile","表情包"],["reroll","reroll","重 roll"],["call","phone","语音通话"],["video","video","视频通话"]];return `<div class="composer-shell-v3 ${open?"attachments-open":""}">${error?`<div class="composer-error"><span>${escapeHtml(error)}</span><button type="button" data-open-api>去配置模型</button></div>`:""}${quote?`<div class="composer-quote"><div><strong>回复</strong><span>${escapeHtml(quote.text)}</span></div><button data-cancel-quote aria-label="取消引用">×</button></div>`:""}<div class="folded-attachments"><div>${actions.map(x=>`<button type="button" data-fold-action="${x[0]}">${foldIcon(x[1])}<span>${x[2]}</span></button>`).join("")}</div></div><form class="composer-v3" data-composer><button type="button" data-plus aria-label="展开更多功能">${open?"×":"＋"}</button><textarea name="message" rows="1" placeholder="发送消息…" aria-label="消息"></textarea><button type="button" class="send-icon" data-send-only aria-label="仅发送">${sendIcon()}</button><button type="button" class="ai-send-v3 ${sending?"sending":""}" data-send-ai aria-label="让 AI 回复当前聊天" ${sending?"disabled":""}>${sending?'<i></i>':sparkIcon()}</button></form></div>`}
 function selectionBar(count){return`<nav class="selection-toolbar"><button data-selection-delete ${count?"":"disabled"}>⌫<span>删除</span></button><strong>${count?`已选择 ${count} 条`:"选择消息"}</strong><button data-selection-forward ${count?"":"disabled"}>↗<span>转发</span></button></nav>`}
 function typingView(person,profile){return`<article class="message char ai-typing-message"><div class="message-avatar-v3">${initialsAvatar(person,profile)}</div><div class="message-body-v3"><div class="bubble-v3 ai-typing-bubble"><i></i><i></i><i></i></div><time>正在回复</time></div></article>`}
 function backgroundStyle(url,opacity=1){const veil=1-Math.max(0,Math.min(1,opacity));return url?`background-image:linear-gradient(rgba(246,246,244,${veil}),rgba(246,246,244,${veil})),url('${escapeHtml(url)}');background-size:cover;background-position:center`:""}

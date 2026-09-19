@@ -1,3 +1,4 @@
+import { applyConversationSkin, normalizeSkin } from "../chat-skins.js";
 import { mountChatPresetManager } from "../appearance-controls.js";
 import { personById } from "../core/store.js";
 import { escapeHtml, initialsAvatar, showToast, openSheet, closeSheet } from "../core/ui.js";
@@ -6,13 +7,6 @@ import { saveMediaBlob } from "../media-store.js";
 import { memoryProfile, clearCharacterMemory } from "../memory-engine.js";
 import { ensureAccountState, accountContext } from "../account-system.js";
 const moods=["自动","平静","开心","温柔","害羞","悲伤","生气","激动","疲惫","低语"];
-const bubbleThemes={
-imessage:".message .bubble{border-radius:1.15rem}.message.user .bubble{background:#111;color:#fff}",
-pop:".message .bubble{border:2px solid #111;border-radius:.3rem;box-shadow:3px 3px 0 #111}.message.user .bubble{background:#fff;color:#111}",
-line:".message .bubble{border:0;border-radius:1rem}.message.user .bubble{background:#b8e986;color:#111}",
-kakaotalk:".message .bubble{border:0;border-radius:.55rem}.message.user .bubble{background:#fee500;color:#111}",
-cloud:".message .bubble{border:0;border-radius:1.5rem;background:rgba(255,255,255,.72);backdrop-filter:blur(18px)}"
-};
 const interfaceSample=".chat-layout {\n  background: transparent;\n}\n.chat-stream {\n  padding-inline: .15rem;\n}\n.chat-person {\n  backdrop-filter: blur(16px);\n}";
 const bubbleSample=".message .bubble {\n  border-radius: 18px;\n  padding: 10px 13px;\n}\n.message.user .bubble {\n  background: #111111;\n  color: #ffffff;\n}";
 
@@ -83,7 +77,7 @@ return (container,params={})=>{
   <div class="row"><button type="button" class="button secondary" data-preview>预览</button><button type="button" class="button secondary" data-save-ui>保存预设</button><select data-ui-list><option value="">切换…</option>${a.interfacePresets.map((x,i)=>`<option value="${i}">${escapeHtml(x.name)}</option>`).join("")}</select></div>
  </section>
  <div class="section-title"><h3>气泡编辑器</h3><span>气泡 CSS 优先</span></div>
- <section class="bubble-presets">${[["imessage","iMessage"],["pop","POP"],["line","LINE"],["kakaotalk","KakaoTalk"],["cloud","Bunny Cloud"],["custom","自定义"]].map(x=>`<button type="button" class="bubble-choice ${a.bubblePreset===x[0]?"selected":""}" data-bubble="${x[0]}">${x[1]}</button>`).join("")}</section>
+ <section class="bubble-presets">${[["imessage","iMessage"],["wechat","微信"],["line","LINE"],["kakaotalk","KakaoTalk"],["cloud","Bunny Cloud"],["custom","自定义"]].map(x=>`<button type="button" class="bubble-choice ${normalizeSkin(a.bubblePreset)===x[0]?"selected":""}" data-bubble="${x[0]}">${x[1]}</button>`).join("")}</section>
  <section class="card stack">
   <label class="field color-row"><span>用户气泡颜色</span><input name="bubbleColor" type="color" value="${a.bubbleColor||"#111111"}"></label>
   <label class="field"><span>气泡大小 <output data-scale-out>${Math.round((a.bubbleScale||1)*100)}%</output></span><input name="bubbleScale" data-scale type="range" min=".75" max="1.35" step=".05" value="${a.bubbleScale||1}"></label>
@@ -159,4 +153,4 @@ function mergeStickers(target,items){for(const item of items)if(!target.some(x=>
 async function readDocxText(file){if(!file)throw Error("请选择 DOCX 文件");const bytes=new Uint8Array(await file.arrayBuffer()),view=new DataView(bytes.buffer);let eocd=-1;for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--)if(view.getUint32(i,true)===0x06054b50){eocd=i;break}if(eocd<0)throw Error("DOCX 文件结构无效");const entries=view.getUint16(eocd+10,true),central=view.getUint32(eocd+16,true),decoder=new TextDecoder();let offset=central,target=null;for(let i=0;i<entries;i++){if(view.getUint32(offset,true)!==0x02014b50)break;const method=view.getUint16(offset+10,true),size=view.getUint32(offset+20,true),nameLen=view.getUint16(offset+28,true),extraLen=view.getUint16(offset+30,true),commentLen=view.getUint16(offset+32,true),local=view.getUint32(offset+42,true),name=decoder.decode(bytes.slice(offset+46,offset+46+nameLen));if(name==="word/document.xml")target={method,size,local};offset+=46+nameLen+extraLen+commentLen}if(!target)throw Error("DOCX 中没有可读取的正文");const nameLen=view.getUint16(target.local+26,true),extraLen=view.getUint16(target.local+28,true),start=target.local+30+nameLen+extraLen,compressed=bytes.slice(start,start+target.size);let raw=compressed;if(target.method===8){if(typeof DecompressionStream==="undefined")throw Error("当前浏览器不支持直接解析 DOCX");raw=new Uint8Array(await new Response(new Blob([compressed]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer())}else if(target.method!==0)throw Error("不支持该 DOCX 压缩格式");const xml=new DOMParser().parseFromString(decoder.decode(raw),"application/xml");return[...xml.getElementsByTagNameNS("*","p")].map(p=>[...p.getElementsByTagNameNS("*","t")].map(x=>x.textContent).join("")).join("\n")}
 async function weather(type,form){const city=form.elements[`${type}Prototype`].value.trim()||form.elements[`${type}City`].value.trim(),out=form.querySelector(`[data-weather-result="${type}"]`);if(!city)return showToast("请先填写原型城市");out.textContent="正在获取真实天气…";try{const g=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=zh`).then(r=>r.json()),p=g.results?.[0];if(!p)throw Error("未找到城市");const d=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.latitude}&longitude=${p.longitude}&current=temperature_2m,weather_code&timezone=auto`).then(r=>r.json());out.textContent=`${p.name} · ${weatherName(d.current.weather_code)} · ${Math.round(d.current.temperature_2m)}°C`}catch(e){out.textContent=e.message;showToast("天气获取失败")}}
 function weatherName(c){if(c===0)return"晴";if(c<4)return"多云";if(c<50)return"雾";if(c<70)return"雨";if(c<80)return"雪";if(c<90)return"阵雨";return"雷雨"}
-export function applyChatAppearance(a){let style=document.querySelector("#bunny-chat-style");if(!style){style=document.createElement("style");style.id="bunny-chat-style";document.head.appendChild(style)}const theme=a.bubblePreset==="custom"?"":bubbleThemes[a.bubblePreset]||"",font=a.fontUrl?`@font-face{font-family:BunnyCustom;src:url("${a.fontUrl}")}.chat-layout{font-family:BunnyCustom,sans-serif}`:"";style.textContent=font+"\n"+(a.interfaceCss||"")+"\n"+theme+`\n.message .bubble{font-size:${a.fontSize||14}px;transform:scale(${a.bubbleScale||1});transform-origin:left bottom}.message.user .bubble{background:${a.bubbleColor||"#111"}}\n`+(a.bubbleCss||"")}
+export function applyChatAppearance(a){document.querySelector("#bunny-chat-style")?.remove();applyConversationSkin(a)}

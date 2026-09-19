@@ -22,6 +22,7 @@ export function navigate(name, params = {}, options = {}) {
   settings.classList.toggle("hidden", name !== "desktop");
   if (name !== "desktop") { settings.textContent = ""; settings.onclick = null; }
   screen.dataset.app = name;
+  delete view.dataset.listSkin;
   view.scrollTop = 0;
   view.innerHTML = "";
   renderer(view, params);

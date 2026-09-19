@@ -1,3 +1,4 @@
+import { applyListSkin, bindListSkinPicker } from "../chat-skins.js";
 import { mountChatTabLayout } from '../device-shell.js';
 import { conversationById, personById } from "../core/store.js";
 import { escapeHtml, initialsAvatar, showToast, updateIsland, openSheet, closeSheet } from "../core/ui.js";
@@ -12,9 +13,10 @@ export function createChatRenderers({ store, navigate }) {
     ensureDefaultGroup();
     container.className = "app-view chat-list-with-tabs";
     const state = ensureAccountState(store.getState()),accountConversations=conversationsForAccount(state);
+    applyListSkin(container,state);
     const pending=(state.friendRequests||[]).filter(x=>x.status==="pending").length;
     container.innerHTML = `
-      <div class="row between"><span class="pill"><span class="dot"></span> Bunny Chat</span><div class="chat-head-actions"><button class="icon-button notification-button" data-friend-requests aria-label="好友申请">${bellIcon()}${pending?`<i>${pending}</i>`:""}</button><button class="icon-button" data-list-plus aria-label="聊天功能">＋</button></div></div>
+      <div class="row between"><button class="chat-list-brand" data-list-style aria-label="聊天列表样式"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 1-8 8H5l-3 3V11a9 9 0 0 1 18 0Z"/><path d="M7 9h8M7 13h5"/></svg></button><div class="chat-head-actions"><button class="icon-button notification-button" data-friend-requests aria-label="好友申请">${bellIcon()}${pending?`<i>${pending}</i>`:""}</button><button class="icon-button" data-list-plus aria-label="聊天功能">＋</button></div></div>
       <div class="chat-group-strip ${groupEditing?"group-editing":""}"><button class="chat-group-chip ${activeGroup==="all"?"active":""}" data-group="all">全部</button>${state.chatGroups.map(group=>`<span class="chat-group-item"><button class="chat-group-chip ${activeGroup===group.id?"active":""}" data-group="${group.id}">${escapeHtml(group.name)} · ${group.personIds.length}</button><button class="group-delete-dot" data-delete-group="${group.id}" aria-label="删除${escapeHtml(group.name)}分组" ${group.id==="group-default"?"disabled":""}>−</button></span>`).join("")}<button class="chat-group-add" data-add-group aria-label="添加世界观">＋</button>${groupEditing?'<button class="chat-group-done" data-group-done aria-label="完成分组编辑">✓</button>':""}</div>
       <div class="world-rule">同一分组共享世界观并默认互相认识；不同分组彼此独立、互不认识。</div>
       <div class="section-title"><h3>联系人与会话</h3><span>${accountConversations.length} 个</span></div>
@@ -33,6 +35,7 @@ export function createChatRenderers({ store, navigate }) {
     container.querySelector("[data-add-group]").onclick=()=>addGroup(container);
     container.querySelector("[data-group-done]")?.addEventListener("click",()=>{groupEditing=false;list(container);showToast("世界观分组已保存")});
     bindChatTabs(container, navigate);
+    bindListSkinPicker(container,store,()=>list(container));
   }
 
   function ensureDefaultGroup(){const state=store.getState();if(state.chatGroups?.some(x=>x.id==="group-default"))return;store.update(s=>{s.chatGroups||=[];s.chatGroups.unshift({id:"group-default",name:"默认",worldId:s.currentWorldId||"",personIds:s.people.filter(p=>p.type!=="user"&&!p.groupId).map(p=>p.id)})})}
