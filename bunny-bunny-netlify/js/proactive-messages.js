@@ -1,4 +1,5 @@
 import { personById } from "./core/store.js";
+import { worldContextPrompt } from "./world-context.js";
 import { sendToModel } from "./integrations/ai-client.js";
 import { ensureAccountState, conversationsForAccount } from "./account-system.js";
 import { effectiveNow, buildTimeContext } from "./time-context.js";
@@ -25,7 +26,7 @@ export function setupProactiveMessages({store}){
         const world=state.worlds.find(x=>x.id===state.currentWorldId),timeContext=buildTimeContext(profile,{timezone:world?.timezone,lastMessageAt:last?.createdAt});
         const recent=messages.slice(-14).map(x=>`${x.role}:${x.text||x.description||x.type}`).join("\n"),cadence=personaCadence(person,profile),prompt=proactivePrompt({person,user,profile,recent,timeContext,due,pending,last,cadence});
         try{
-          const raw=await sendToModel(model,[{role:"user",text:prompt}],""),result=parseJson(raw),nextMinutes=clamp(Number(result?.nextMinutes)||randomWindow(cadence),12,720);
+          const raw=await sendToModel(model,[{role:"user",text:prompt}],worldContextPrompt(state,person.id)),result=parseJson(raw),nextMinutes=clamp(Number(result?.nextMinutes)||randomWindow(cadence),12,720);
           store.update(s=>{s.callRuntime.lastProactiveAt[conv.id]=Date.now();s.callRuntime.proactiveWindows[conv.id]={nextAt:Date.now()+nextMinutes*60000,reason:result?.busy?"busy":"persona"};if(due)delete s.callRuntime.pendingReplies[conv.id]});
           if(!result?.send)continue;
           const rows=(Array.isArray(result.messages)?result.messages:[{text:result.text,translation:result.translation}]).map(x=>({text:String(x?.text||"").trim(),translation:String(x?.translation||"").trim()})).filter(x=>x.text).slice(0,4);

@@ -1,3 +1,4 @@
+import { worldContextPrompt } from "./world-context.js";
 import { mountChatTabLayout } from './device-shell.js';
 import { personById } from "./core/store.js";
 import { escapeHtml, initialsAvatar, showToast, updateIsland, openSheet, closeSheet } from "./core/ui.js";
@@ -89,7 +90,7 @@ async function generateThreadReplies(store,postId){
 }
 async function momentActorContext(state,accountId,person){
   const conv=conversationsForAccount(state,accountId).find(x=>x.personId===person.id),recent=(state.messages[conv?.id]||[]).slice(-12),query=[...recent].reverse().find(x=>x.role==="user")?.text||"朋友圈近况",identity=accountContext(state,person.id,accountId),profile=memoryProfile(state,identity.memoryOwnerId);let selected=[];try{selected=(await retrieveMemoryContext(state,identity.memoryOwnerId,query)).selected.slice(0,8).map(x=>x.text||x.event).filter(Boolean)}catch{}
-  return{id:person.id,name:person.name,type:person.type,age:person.age||"",occupation:person.occupation||"",persona:String(person.personality||person.persona||person.note||"").slice(0,1800),groupId:friendWorldGroup(state,person.id),time:buildTimeContext(state.chatProfiles[person.id]||{},{timezone:state.worlds.find(x=>x.id===state.currentWorldId)?.timezone,lastMessageAt:recent.at(-1)?.createdAt}),coreMemory:String(profile.coreMemory||"").slice(0,1600),dynamicState:profile.dynamicState,retrievedMemory:selected.map(x=>String(x).slice(0,220)),recentChat:recent.map(x=>`${x.role}:${x.recalled?"[已撤回]":x.text||x.description||`[${x.type}]`}`.slice(0,320))}
+  return{worldContext:worldContextPrompt(state,person.id),id:person.id,name:person.name,type:person.type,age:person.age||"",occupation:person.occupation||"",persona:String(person.personality||person.persona||person.note||"").slice(0,1800),groupId:friendWorldGroup(state,person.id),time:buildTimeContext(state.chatProfiles[person.id]||{},{timezone:state.worlds.find(x=>x.id===state.currentWorldId)?.timezone,lastMessageAt:recent.at(-1)?.createdAt}),coreMemory:String(profile.coreMemory||"").slice(0,1600),dynamicState:profile.dynamicState,retrievedMemory:selected.map(x=>String(x).slice(0,220)),recentChat:recent.map(x=>`${x.role}:${x.recalled?"[已撤回]":x.text||x.description||`[${x.type}]`}`.slice(0,320))}
 }
 function friendRoster(state,accountId){const ids=new Set(accountFriends(state,accountId));return state.people.filter(x=>ids.has(x.id)&&(x.type==="char"||x.type==="npc")&&!x.blocked)}
 function availableGroups(state,accountId){const friends=friendRoster(state,accountId),map=new Map();for(const person of friends){const id=friendWorldGroup(state,person.id),name=groupName(state,id);if(!map.has(id))map.set(id,{id,name,count:0});map.get(id).count++}return[...map.values()].length?[...map.values()]:[{id:"group-default",name:"默认",count:0}]}

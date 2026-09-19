@@ -105,3 +105,9 @@
 #phone-root[data-theme=glass] .home-screen-v4 .app-icon:not(:has(>img)):before{background:linear-gradient(180deg,#ffffff25,transparent)!important;height:36%;opacity:.6}
 #phone-root[data-theme=glass] .home-screen-v4 .app-icon:not(:has(>img)):after{background:none!important}
 #phone-root[data-theme=glass] .home-screen-v4 .folder-icon i{background:#ffffff1f!important;border:.5px solid #ffffff40;box-shadow:none}
+/* References 7/8: thin frosted edges, quiet highlights, wallpaper visible through glass. */
+#phone-root[data-theme=glass] .home-screen-v4 .app-icon:not(:has(>img)){background:linear-gradient(145deg,#ffffff22,#c7cbd80d)!important;border-color:#ffffff70!important;box-shadow:inset 0 1px .5px #ffffffb0,inset 0 -1px .5px #20283926,0 3px 8px #2830420c!important;backdrop-filter:blur(9px) saturate(108%)!important}
+#phone-root[data-theme=glass] .home-screen-v4 .home-dock{background:linear-gradient(130deg,#ffffff42,#ffffff20)!important;border-color:#ffffffab!important;box-shadow:inset 0 1px 1px #ffffffc2,inset 0 -1px 1px #27304714,0 4px 14px #11111106!important;backdrop-filter:blur(18px) saturate(110%)!important}
+#phone-root[data-theme=glass] .home-screen-v4 .home-widget-v4:not(:has(.ref-clock,.ref-modes)){background:linear-gradient(135deg,#ffffff35,#818a9925)!important;border:1px solid #ffffff85!important;box-shadow:inset 0 1px .5px #ffffffbb,inset 0 -1px .5px #28304320,0 3px 10px #19283908!important;backdrop-filter:blur(18px) saturate(110%)}
+#phone-root[data-theme=glass] .home-screen-v4 .home-widget-v4:has(.clock-gray){background:linear-gradient(135deg,#ffffff32,#666e7b20)!important;border:1px solid #ffffff9c!important;box-shadow:inset 0 1px #ffffffac,0 3px 12px #26354408!important;backdrop-filter:blur(16px)!important}
+#phone-root .home-screen-v4 .ref-clock.clock-gray time{font-variant-numeric:tabular-nums;letter-spacing:-.06em;font-weight:650;font-size:clamp(1.9rem,9cqw,3.6rem)}

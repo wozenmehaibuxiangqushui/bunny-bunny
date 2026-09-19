@@ -5,19 +5,34 @@ import { addMemoryEntry } from "../memory-engine.js";
 import { ensureAccountState, activeAccount, accountRelation, accountContext, conversationsForAccount } from "../account-system.js";
 
 const PAGE_SIZE=6;
+function editWorldSummary(store,selectedId,done){
+  const groups=store.getState().chatGroups||[];
+  if(!groups.length)return showToast('请先在聊天列表创建世界观分组');
+  let id=groups.some(g=>g.id===selectedId)?selectedId:groups[0].id;
+  const drafts=new Map(groups.map(g=>[g.id,String(g.description||'')]));
+  openSheet(`<form class="world-summary-editor"><header><span>WORLD NOTES</span><h3>世界观简述</h3><p>时代、地点、社会规则与共同背景。角色会自然代入，世界书可继续补充细节。</p></header><label class="field"><span>选择世界观</span><select name="group">${groups.map(g=>`<option value="${escapeHtml(g.id)}" ${g.id===id?'selected':''}>${escapeHtml(g.name)}</option>`).join('')}</select></label><label class="field"><span>简述</span><textarea name="description" rows="8" maxlength="12000" placeholder="例如：现代首尔，故事围绕一家独立唱片店展开。人物遵循现实社会规则……">${escapeHtml(drafts.get(id))}</textarea></label><small>仅发送当前角色所属分组的简述，不混入其他世界观。</small><div class="sheet-split-actions"><button type="button" class="button secondary" data-sheet-close>取消</button><button class="button">保存简述</button></div></form>`,{onReady(sheet){
+    const form=sheet.querySelector('form'),area=form.elements.description;
+    form.elements.group.onchange=e=>{drafts.set(id,area.value);id=e.target.value;area.value=drafts.get(id)||''};
+    form.onsubmit=e=>{e.preventDefault();drafts.set(id,area.value);store.update(s=>{for(const group of s.chatGroups||[])if(drafts.has(group.id))group.description=drafts.get(group.id).trim()});closeSheet();done();showToast('世界观简述已保存，下次 AI 请求即生效')};
+  }});
+}
+import { worldGroupForPerson } from "../world-context.js";
 
 export function createContactsRenderer({store,navigate}){
-  let roleType="char",page=0;
+  let roleType="char",page=0,selectedGroup="all";
   return function render(container){
-    const state=store.getState(),user=state.people.find(x=>x.id===state.currentUserId),roles=state.people.filter(x=>x.type===roleType).sort(roleSort),pages=Math.max(1,Math.ceil(roles.length/PAGE_SIZE));
+    const state=store.getState(),user=state.people.find(x=>x.id===state.currentUserId),roles=state.people.filter(x=>x.type===roleType&&(selectedGroup==="all"||worldGroupForPerson(state,x.id)?.id===selectedGroup)).sort(roleSort),pages=Math.max(1,Math.ceil(roles.length/PAGE_SIZE));
     page=Math.min(page,pages-1);const visible=roles.slice(page*PAGE_SIZE,(page+1)*PAGE_SIZE);
     container.className="app-view role-archive-view";
     container.innerHTML=`<section class="role-archive">
       <header class="role-archive-head"><button class="role-user-chip" data-user-profile>${initialsAvatar(user,{avatarUrl:user.avatarUrl||""})}<span><small>MY USER</small><strong>${escapeHtml(user.chatName||user.name)}</strong></span></button><label class="role-type-picker"><select data-role-type><option value="char" ${roleType==="char"?"selected":""}>CHAR</option><option value="npc" ${roleType==="npc"?"selected":""}>配角 / NPC</option></select><span>⌄</span></label></header>
       <div class="archive-caption"><div><span>CHARACTER ARCHIVE</span><strong>${roleType==="char"?"主要角色":"支线人物"}</strong></div><div class="archive-caption-actions"><button data-relationship-map aria-label="关系手账">${archiveToolIcon("relation")}</button><button data-manage-roles aria-label="管理联系人">${archiveToolIcon("manage")}</button><button data-import-role aria-label="导入角色">${archiveToolIcon("import")}</button><button data-create-role aria-label="新建角色">${archiveToolIcon("plus")}</button></div></div>
+      <div class="contact-world-row"><label><span>世界观</span><select data-contact-world aria-label="联系人世界观"><option value="all">全部世界观</option>${(state.chatGroups||[]).map(g=>`<option value="${escapeHtml(g.id)}" ${selectedGroup===g.id?"selected":""}>${escapeHtml(g.name)}</option>`).join("")}</select></label><button type="button" data-world-summary>编辑世界观简述</button></div>
       <div class="polaroid-page" data-role-page>${visible.map((person,index)=>roleCard(person,state,index)).join("")}${emptyCards(visible.length,roleType)}</div>
       <nav class="archive-pagination"><button data-page-prev ${page===0?"disabled":""}>‹</button><div>${Array.from({length:pages},(_,i)=>`<button class="${i===page?"active":""}" data-page="${i}"></button>`).join("")}</div><button data-page-next ${page===pages-1?"disabled":""}>›</button></nav>
     </section>`;
+    container.querySelector("[data-contact-world]").onchange=e=>{selectedGroup=e.target.value;page=0;render(container)};
+    container.querySelector("[data-world-summary]").onclick=()=>editWorldSummary(store,selectedGroup,()=>render(container));
     container.querySelector("[data-user-profile]").onclick=()=>navigate("user-profile");
     container.querySelector("[data-role-type]").onchange=e=>{roleType=e.target.value;page=0;render(container)};
     container.querySelectorAll("[data-create-role]").forEach(x=>x.onclick=()=>navigate("character-edit",{type:roleType}));

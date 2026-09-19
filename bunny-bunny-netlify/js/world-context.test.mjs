@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+const {worldContextPrompt,worldGroupForPerson}=await import('data:text/javascript;base64,'+Buffer.from(await readFile(new URL('./world-context.js',import.meta.url))).toString('base64'));
+const state={people:[{id:'a',groupId:'one'},{id:'b',groupId:'two'},{id:'legacy'},{id:'none'}],chatGroups:[{id:'one',name:'世界一',description:'独立唱片店',personIds:['a','legacy']},{id:'two',name:'世界二',description:'月球基地',personIds:['b']}]};
+assert.match(worldContextPrompt(state,'a'),/独立唱片店/);
+assert.doesNotMatch(worldContextPrompt(state,'a'),/月球基地/);
+assert.match(worldContextPrompt(state,'b'),/月球基地/);
+assert.equal(worldGroupForPerson(state,'legacy').id,'one');
+assert.equal(worldContextPrompt(state,'none'),'');
+state.chatGroups[0].description='新的背景';
+assert.match(worldContextPrompt(state,'a'),/新的背景/);
+assert.doesNotMatch(worldContextPrompt(state,'a'),/独立唱片店/);
+state.chatGroups[0].description='';
+assert.doesNotThrow(()=>worldContextPrompt(state,'a'));
+console.log('World context: group isolation, legacy membership, update and empty-state tests passed.');
