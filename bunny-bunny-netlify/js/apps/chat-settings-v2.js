@@ -88,7 +88,7 @@ return (container,params={})=>{
  <div class="section-title"><h3>气泡编辑器</h3><span>气泡 CSS 优先</span></div>
  <section class="bubble-presets">${[["imessage","iMessage"],["wechat","微信"],["line","LINE"],["kakaotalk","KakaoTalk"],["cloud","Bunny Cloud"],["custom","自定义"]].map(x=>`<button type="button" class="bubble-choice ${normalizeSkin(a.bubblePreset)===x[0]?"selected":""}" data-bubble="${x[0]}">${x[1]}</button>`).join("")}</section>
  <section class="card stack">
-  <label class="field color-row"><span>用户气泡颜色</span><input name="bubbleColor" type="color" value="${a.bubbleColor||"#111111"}"></label>
+  <label class="field color-row"><span>自定义样式的用户气泡颜色</span><input name="bubbleColor" type="color" value="${a.bubbleColor||"#111111"}"></label>
   <label class="field"><span>气泡大小 <output data-scale-out>${Math.round((a.bubbleScale||1)*100)}%</output></span><input name="bubbleScale" data-scale type="range" min=".75" max="1.35" step=".05" value="${a.bubbleScale||1}"></label>
   <label class="field"><span>字体大小</span><input name="fontSize" type="range" min="11" max="21" value="${a.fontSize||14}"></label>
   <label class="field"><span>字体 URL</span><input name="fontUrl" value="${escapeHtml(a.fontUrl||"")}" placeholder="https://…/font.woff2"></label>
@@ -130,7 +130,7 @@ return (container,params={})=>{
  container.querySelectorAll("[data-avatar]").forEach(b=>b.onclick=()=>chooseAvatar(b.dataset.avatar,personId,user.id,container,params));
  container.querySelectorAll("[data-avatar-url]").forEach(b=>b.onclick=()=>urlAvatar(b.dataset.avatarUrl,personId,user.id,container,params));
  container.querySelector("[data-worldbook]").onclick=()=>navigate("worldbook");
- container.querySelectorAll("[data-bubble]").forEach(b=>b.onclick=()=>{store.update(s=>s.chatAppearance.bubblePreset=b.dataset.bubble);createChatSettingsRenderer({store,navigate})(container,params)});
+ container.querySelectorAll("[data-bubble]").forEach(b=>b.onclick=()=>{store.update(s=>Object.assign(s.chatAppearance,formAppearance(form,a),{bubblePreset:b.dataset.bubble}));createChatSettingsRenderer({store,navigate})(container,params)});
  mountChatPresetManager(container,store,()=>createChatSettingsRenderer({store,navigate})(container,params));
  container.querySelector("[data-preview]").onclick=()=>{applyChatAppearance(formAppearance(form,a));showToast("聊天 CSS 已预览")};
  container.querySelector("[data-save-ui]").onclick=()=>{const name=prompt("界面 CSS 预设名","我的主题");if(name)store.update(s=>s.chatAppearance.interfacePresets.push({name,css:form.elements.interfaceCss.value}));createChatSettingsRenderer({store,navigate})(container,params)};
