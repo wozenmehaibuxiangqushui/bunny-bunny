@@ -2,7 +2,7 @@
 export function bubblePath(width,height,radius,kind,tail){
   const w=Math.max(1,width),h=Math.max(1,height),r=Math.min(radius,h/2,w/2);
   let d=`M${r},0 H${w-r} Q${w},0 ${w},${r} V${h-r} Q${w},${h} ${w-r},${h} H${r}`;
-  if(tail&&kind==='imessage')d+=` Q6,${h} -6,${h-1} Q1,${h-3} 0,${Math.max(r,h-14)} V${r}`;
+  if(tail&&kind==='imessage')d+=` C${Math.min(8,r/2)},${h} -1,${h-1} -6,${h-2} C-1,${h-5} 0,${h-9} 0,${Math.max(r,h-14)} V${r}`;
   else {d+=` Q0,${h} 0,${h-r}`;if(tail){const y=Math.max(r+5,Math.min(18,h/2));d+=` V${y+5} L-6,${y} L0,${y-5}`}d+=` V${r}`}
   return d+` Q0,0 ${r},0 Z`;
 }

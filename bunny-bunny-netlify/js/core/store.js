@@ -78,8 +78,10 @@ export const seedState = {
   apiDraft: { provider: "OpenAI", name: "OpenAI 默认", baseUrl: "https://api.openai.com/v1", apiKey: "", persistKey: true, model: "", models: [] },
   mediaApis: {
     minimax: { baseUrl: "https://api.minimax.io/v1", apiKey: "", groupId: "", model: "speech-02-hd", voiceId: "" },
-    image: { enabled: false, provider: "OpenAI Images", baseUrl: "https://api.openai.com/v1", apiKey: "", model: "gpt-image-1", size: "1024x1024", globalPositivePrompt: "", globalNegativePrompt: "", responseFormat: "b64_json", quality: "auto" }
+    image: { enabled: false, channels: { chat:true, moments:false, x:false, tiktok:false, forum:false, shop:false, sms:false }, provider: "OpenAI Images", baseUrl: "https://api.openai.com/v1", apiKey: "", model: "gpt-image-1", size: "1024x1024", globalPositivePrompt: "", globalNegativePrompt: "", responseFormat: "b64_json", quality: "auto" }
   },
+  schedulePlans: {},
+  scheduleDays: {},
   momentsSettings: { backgrounds: {}, lastAutoAt: {}, lastRefreshAt: {} },
   moments: [
     { id: "p1", personId: "char-jun", text: "闭店前最后一张唱片。窗外刚好开始下雨。", time: "20分钟前", likes: ["尹夏凛", "朴秀安"], comments: [{ name: "朴秀安", text: "又在等某个人吧。" }] },
@@ -108,6 +110,9 @@ function mergeState(base, saved) {
   return {
     ...base, ...saved,
     appearance: { ...base.appearance, ...(saved.appearance || {}) },
+    schedulePlans: { ...base.schedulePlans, ...(saved.schedulePlans||{}) },
+    scheduleDays: { ...base.scheduleDays, ...(saved.scheduleDays||{}) },
+    mediaApis: { ...base.mediaApis, ...(saved.mediaApis||{}), image: { ...base.mediaApis.image, ...(saved.mediaApis?.image||{}), channels: { ...base.mediaApis.image.channels, ...(saved.mediaApis?.image?.channels||{}) } } },
     appCustomizations: { ...base.appCustomizations, ...(saved.appCustomizations || {}) },
     chatAppearance: { ...base.chatAppearance, ...(saved.chatAppearance || {}) },
     dataSettings: { ...base.dataSettings, ...(saved.dataSettings || {}) },

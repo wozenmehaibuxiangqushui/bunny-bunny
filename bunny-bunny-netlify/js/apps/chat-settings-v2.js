@@ -6,13 +6,15 @@ import { ttsLanguageOptions } from "../tts-providers.js";
 import { saveMediaBlob } from "../media-store.js";
 import { memoryProfile, clearCharacterMemory } from "../memory-engine.js";
 import { ensureAccountState, accountContext } from "../account-system.js";
+import { ROUTINE_CHOICES, ensureDailySchedule, saveSchedulePlan } from '../schedule-engine.js';
 const moods=["自动","平静","开心","温柔","害羞","悲伤","生气","激动","疲惫","低语"];
 const interfaceSample=".chat-layout {\n  background: transparent;\n}\n.chat-stream {\n  padding-inline: .15rem;\n}\n.chat-person {\n  backdrop-filter: blur(16px);\n}";
 const bubbleSample=".message .bubble {\n  border-radius: 18px;\n  padding: 10px 13px;\n}\n.message.user .bubble {\n  background: #111111;\n  color: #ffffff;\n}";
 
 export function createChatSettingsRenderer({store,navigate}){
 return (container,params={})=>{
- const personId=params.personId||"char-jun",state=ensureAccountState(store.getState()),person=personById(state,personId),user=personById(state,state.currentUserId),p=state.chatProfiles[personId],a=state.chatAppearance,langs=ttsLanguageOptions(state),memoryOwnerId=accountContext(state,personId,user.id).memoryOwnerId,mem=memoryProfile(state,memoryOwnerId);
+ container.className='app-view chat-settings-view';
+ const personId=params.personId||"char-jun",state=ensureAccountState(store.getState()),person=personById(state,personId),user=personById(state,state.currentUserId),p=state.chatProfiles[personId],a=state.chatAppearance,langs=ttsLanguageOptions(state),memoryOwnerId=accountContext(state,personId,user.id).memoryOwnerId,mem=memoryProfile(state,memoryOwnerId),plan=state.schedulePlans?.[personId]||{routine:'worker',fixed:[],temporary:[]};
  container.innerHTML=`<form class="stack organized-chat-settings" data-form><nav class="settings-jump"><button type="button" data-jump="identity">身份</button><button type="button" data-jump="voice">语音</button><button type="button" data-jump="interaction">互动</button><button type="button" data-jump="appearance">外观</button><button type="button" data-jump="data">数据</button></nav>
  <section class="card">
   ${avatarRow("char",person,p.avatarUrl)}
@@ -46,6 +48,13 @@ return (container,params={})=>{
   <label class="field"><span>安静时段</span><input name="quietHours" value="${escapeHtml(p.quietHours||"")}"></label>
   <div class="pat-copy-settings"><label class="field"><span>我拍 CHAR 时的文案</span><input name="patText" value="${escapeHtml(p.patText||`你拍了拍${person.name}`)}" placeholder="你拍了拍 CHAR"></label><label class="field"><span>CHAR 拍我时的文案</span><input name="patUserText" value="${escapeHtml(p.patUserText||`${person.name}拍了拍你`)}" placeholder="CHAR 拍了拍你"></label><small>双击聊天头像触发；两条文案分别保存到当前角色。</small></div>
   <div class="sticker-library-settings"><button class="button secondary" type="button" data-char-sticker-import="global"><span>CHAR 通用库</span><small>${state.stickerLibraries.global?.length||0} 张 · 所有角色可用</small></button><button class="button secondary" type="button" data-char-sticker-import="exclusive"><span>${escapeHtml(person.name)} 专属库</span><small>${state.stickerLibraries.characters?.[personId]?.length||0} 张 · 仅当前角色可用</small></button></div>
+ </section>
+ <div class="section-title"><h3>日常行程</h3><span>只公开当前状态</span></div>
+ <section class="card stack schedule-settings"><p class="callout">每天首次互动生成并缓存一份行程。聊天、来电、主动消息和朋友圈共用它；设置只修改作息规则与约定，完整日程不会展示给角色。</p>
+   <label class="field"><span>作息模板</span><select name="scheduleRoutine">${ROUTINE_CHOICES.map(([id,label])=>`<option value="${id}" ${plan.routine===id?'selected':''}>${label}</option>`).join('')}</select></label>
+   <label class="field"><span>每周固定日程</span><textarea name="scheduleFixed" rows="4" placeholder="每行：星期三 19:00-21:00 加班 @唱片店">${escapeHtml((plan.fixed||[]).map(x=>`星期${'日一二三四五六'[x.weekdays?.[0]??0]} ${x.start}-${x.end} ${x.title}${x.place?` @${x.place}`:''}`).join('\n'))}</textarea></label>
+   <label class="field"><span>临时约定</span><textarea name="scheduleTemporary" rows="4" placeholder="每行：2026-09-25 20:00-21:00 一起吃晚饭 @街角餐厅">${escapeHtml((plan.temporary||[]).filter(x=>x.source==='user').map(x=>`${x.date} ${x.start}-${x.end} ${x.title}${x.place?` @${x.place}`:''}`).join('\n'))}</textarea></label>
+   <button type="button" class="button secondary" data-schedule-save>保存日程规则</button><small>聊天中提到具体日期与时间的约定，也会写入该日的临时日程；未设模型时按模板确定状态。</small>
  </section>
  <div class="section-title"><h3>记忆与关系成长</h3><span>本机分层记忆库</span></div>
  <section class="card stack memory-settings-card">
@@ -111,6 +120,12 @@ return (container,params={})=>{
  container.querySelector("[data-image-reference-url]").onclick=()=>{const url=prompt("参考脸图床 URL","https://");if(!/^https?:\/\//.test(url||""))return;store.update(s=>s.chatProfiles[personId].imageReferenceFace=url);createChatSettingsRenderer({store,navigate})(container,params)};
  form.elements.voiceSpeed.oninput=e=>container.querySelector("[data-speed-out]").value=Number(e.target.value).toFixed(1)+"×";
  form.elements.bubbleScale.oninput=e=>container.querySelector("[data-scale-out]").value=Math.round(e.target.value*100)+"%";
+ container.querySelector('[data-schedule-save]').onclick=()=>{
+   const parseLines=(source,kind)=>String(source||'').split(/\r?\n/).map(line=>{const fixed=line.match(/^星期([日一二三四五六])\s+(\d{1,2}:\d{2})-(\d{1,2}:\d{2})\s+(.+)$/),temporary=line.match(/^(\d{4}-\d{2}-\d{2})\s+(\d{1,2}:\d{2})-(\d{1,2}:\d{2})\s+(.+)$/),found=kind==='fixed'?fixed:temporary;if(!found)return null;const [title,place='']=found[4].split(/\s+@/);return {id:crypto.randomUUID(),...(kind==='fixed'?{weekdays:['日一二三四五六'.indexOf(found[1])]}:{date:found[1]}),start:found[2],end:found[3],title:title.trim(),place:place.trim(),status:kind==='fixed'?'忙碌中':'有约定',availability:'busy',canReply:false,source:'user'}}).filter(Boolean);
+   const fixed=parseLines(form.elements.scheduleFixed.value,'fixed'),temporary=parseLines(form.elements.scheduleTemporary.value,'temporary');
+   if(fixed.length!==form.elements.scheduleFixed.value.split(/\r?\n/).filter(x=>x.trim()).length||temporary.length!==form.elements.scheduleTemporary.value.split(/\r?\n/).filter(x=>x.trim()).length)return showToast('日程格式有误，请按每行示例填写');
+   saveSchedulePlan(store,personId,{routine:form.elements.scheduleRoutine.value,fixed,temporary:[...(store.getState().schedulePlans?.[personId]?.temporary||[]).filter(x=>x.source!=='user'),...temporary]});ensureDailySchedule(store,personId);showToast('行程规则已保存，今日状态已更新');
+ };
  container.querySelectorAll("[data-weather]").forEach(b=>b.onclick=()=>weather(b.dataset.weather,form));
  container.querySelectorAll("[data-avatar]").forEach(b=>b.onclick=()=>chooseAvatar(b.dataset.avatar,personId,user.id,container,params));
  container.querySelectorAll("[data-avatar-url]").forEach(b=>b.onclick=()=>urlAvatar(b.dataset.avatarUrl,personId,user.id,container,params));

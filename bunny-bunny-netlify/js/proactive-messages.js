@@ -3,6 +3,7 @@ import { worldContextPrompt } from "./world-context.js";
 import { sendToModel } from "./integrations/ai-client.js";
 import { ensureAccountState, conversationsForAccount } from "./account-system.js";
 import { effectiveNow, buildTimeContext } from "./time-context.js";
+import { currentSchedule, ensureDailySchedule, enrichDailySchedule, schedulePrompt } from './schedule-engine.js';
 
 export function setupProactiveMessages({store}){
   let running=false;
@@ -18,13 +19,16 @@ export function setupProactiveMessages({store}){
         if(!profile.proactive||inQuietHours(profile.quietHours,effectiveNow(profile)))continue;
         const person=personById(state,conv.personId),user=personById(state,state.currentUserId);
         if(!person||!user)continue;
+        ensureDailySchedule(store,person.id);void enrichDailySchedule(store,person.id);
+        const schedule=currentSchedule(store,person.id);
+        if(schedule&&!schedule.canReply){store.update(s=>{s.callRuntime.proactiveWindows[conv.id]={nextAt:Date.now()+Math.max(10,Math.min(90,(Number(schedule.end.slice(0,2))*60+Number(schedule.end.slice(3)))-(Number(schedule.start.slice(0,2))*60+Number(schedule.start.slice(3)))))*60000,reason:schedule.status}});continue}
         const messages=state.messages[conv.id]||[],last=messages.at(-1),due=Boolean(pending&&Number(pending.dueAt)<=now),window=state.callRuntime?.proactiveWindows?.[conv.id];
         if(!due&&window&&now<Number(window.nextAt||0))continue;
         if(!due&&!eligibleForSpontaneous(last,now))continue;
         const model=state.modelProfiles.find(x=>x.id===state.activeModelProfileId);
         if(!model?.apiKey||!model.model)break;
         const world=state.worlds.find(x=>x.id===state.currentWorldId),timeContext=buildTimeContext(profile,{timezone:world?.timezone,lastMessageAt:last?.createdAt});
-        const recent=messages.slice(-14).map(x=>`${x.role}:${x.text||x.description||x.type}`).join("\n"),cadence=personaCadence(person,profile),prompt=proactivePrompt({person,user,profile,recent,timeContext,due,pending,last,cadence});
+        const recent=messages.slice(-14).map(x=>`${x.role}:${x.text||x.description||x.type}`).join("\n"),cadence=personaCadence(person,profile),prompt=proactivePrompt({person,user,profile,recent,timeContext,due,pending,last,cadence})+'\n'+schedulePrompt(store,person.id);
         try{
           const raw=await sendToModel(model,[{role:"user",text:prompt}],worldContextPrompt(state,person.id)),result=parseJson(raw),nextMinutes=clamp(Number(result?.nextMinutes)||randomWindow(cadence),12,720);
           store.update(s=>{s.callRuntime.lastProactiveAt[conv.id]=Date.now();s.callRuntime.proactiveWindows[conv.id]={nextAt:Date.now()+nextMinutes*60000,reason:result?.busy?"busy":"persona"};if(due)delete s.callRuntime.pendingReplies[conv.id]});

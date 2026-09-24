@@ -1,0 +1,24 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import vm from 'node:vm';
+
+const context=vm.createContext({Date,Intl,Math,JSON,Map,Set,Promise,console});
+const module=new vm.SourceTextModule(readFileSync(new URL('./schedule-engine.js',import.meta.url),'utf8'),{context});
+await module.link(async()=>new vm.SyntheticModule(['sendToModel'],function(){this.setExport('sendToModel',async()=>'{"details":[]}');},{context}));
+await module.evaluate();
+const engine=module.namespace;
+const state={people:[{id:'char-1',name:'小兔',occupation:'学生',city:'首尔'}],worlds:[{id:'world',timezone:'Asia/Seoul'}],currentWorldId:'world',schedulePlans:{'char-1':{routine:'student',fixed:[{weekdays:[4],start:'19:00',end:'21:00',title:'每周四夜课',status:'上课中',availability:'busy',canReply:false}],temporary:[]}},scheduleDays:{}};
+const store={getState:()=>state,update(fn){fn(state)}};
+const day=new Date('2026-09-24T11:30:00Z');
+const first=engine.ensureDailySchedule(store,'char-1',day);
+assert.equal(first.date,'2026-09-24');
+assert.equal(engine.ensureDailySchedule(store,'char-1',day),first,'same day must reuse the canonical plan');
+assert.equal(engine.currentSchedule(store,'char-1',day).title,'每周四夜课');
+assert.equal(engine.currentSchedule(store,'char-1',day).canReply,false);
+assert.equal(engine.recordScheduleCommitment(store,'char-1','明天面试',day),true);
+const tomorrow=engine.ensureDailySchedule(store,'char-1',new Date('2026-09-25T03:00:00Z'));
+assert.equal(tomorrow.blocks.some(x=>x.title==='明天面试'&&x.start==='10:00'),true);
+assert.equal(engine.recordScheduleCommitment(store,'char-1','明天面试',day),true);
+assert.equal(state.schedulePlans['char-1'].temporary.length,1,'same commitment must not duplicate');
+assert.equal(engine.recordScheduleCommitment(store,'char-1','明天面试吗？',day),false);
+console.log('Schedule: cached day, weekly override, busy status, commitment writeback and deduplication passed.');
