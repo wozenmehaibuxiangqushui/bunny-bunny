@@ -1,0 +1,69 @@
+/* Reactions are loose emoji, without the old pill or thought-tail decoration. */
+#phone-root .chat-layout-v3[data-chat-skin] .message-reaction-v3{
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  min-width:0!important;height:auto!important;padding:0!important;
+  top:-.8rem!important;font-size:1.35rem!important;line-height:1!important;
+  filter:drop-shadow(0 1px 2px #0005)
+}
+#phone-root .chat-layout-v3[data-chat-skin] .message-reaction-v3::after{content:none!important;display:none!important}
+.echo-menu-symbol{display:inline-grid;place-items:center;flex:0 0 1.15rem;width:1.15rem;font-size:1.3rem;font-weight:400}
+
+/* Echo fills the conversation with bubble echoes and independently moving letters. */
+#phone-root .chat-layout-v3{position:relative}
+#phone-root .chat-layout-v3 .echo-scene{position:absolute;inset:0;z-index:18;overflow:hidden;pointer-events:none;isolation:isolate;background:radial-gradient(circle at 50% 46%,#ffffff20,transparent 75%)}
+#phone-root .chat-layout-v3 .echo-ghost{
+  position:absolute;top:var(--echo-y);left:var(--echo-x);width:var(--echo-w);max-height:3.2rem;
+  overflow:hidden;overflow-wrap:anywhere;padding:.5rem .7rem;border-radius:1.1rem;
+  background:var(--echo-fill,#1685f8);color:var(--echo-ink,#fff);box-shadow:0 6px 20px #0002;
+  font:600 .72rem/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;
+  opacity:0;transform-origin:center;animation:bunny-echo-bubble 2.15s var(--echo-delay) cubic-bezier(.17,.68,.2,1) both
+}
+#phone-root .chat-layout-v3 .echo-glyph{
+  position:absolute;left:var(--echo-x);top:var(--echo-y);display:block;color:var(--echo-accent,#166fcf);
+  font:750 clamp(1.2rem,7vw,2.15rem)/1 -apple-system,BlinkMacSystemFont,sans-serif;
+  text-shadow:0 2px 12px #1116;opacity:0;
+  animation:bunny-echo-letter 1.75s var(--echo-delay) cubic-bezier(.16,.8,.2,1) both
+}
+@keyframes bunny-echo-bubble{
+  0%{opacity:0;transform:translate3d(0,0,0) scale(.58);filter:blur(0)}
+  18%{opacity:.92}
+  55%{opacity:.74;transform:translate3d(var(--echo-dx),var(--echo-dy),0) scale(1.08)}
+  100%{opacity:0;transform:translate3d(var(--echo-dx),var(--echo-dy),0) scale(1.42)}
+}
+@keyframes bunny-echo-letter{
+  0%{opacity:0;transform:translate3d(0,0,0) rotate(0) scale(.3)}
+  24%{opacity:.9}
+  75%{opacity:.72}
+  100%{opacity:0;transform:translate3d(var(--echo-dx),var(--echo-dy),0) rotate(var(--echo-turn)) scale(1.65)}
+}
+
+/* Hidden behind the composer plus menu. The cloud holds fictional inner voice. */
+.inner-voice-sheet{display:grid;justify-items:center;gap:.65rem;padding:.25rem .6rem 1.3rem}
+.inner-voice-sheet>.sheet-title{width:100%;align-self:stretch}
+.inner-voice-note{margin:0;color:var(--muted,#6d7480);font-size:.68rem;line-height:1.6;text-align:center}
+.inner-voice-cloud{
+  position:relative;isolation:isolate;display:grid;place-items:center;min-height:9.5rem;width:min(100%,20rem);
+  margin:1rem auto 1.8rem;padding:2rem 2.2rem;border:1px solid #dee5ec;
+  border-radius:45% 55% 47% 53% / 48% 43% 57% 52%;
+  background:linear-gradient(155deg,#fff,#eff5fb);box-shadow:0 12px 32px #30476119,inset 0 1px #fff;
+  color:#303c4e;text-align:center
+}
+.inner-voice-cloud::before{
+  content:'';position:absolute;z-index:-1;inset:-.65rem -1rem;
+  background:radial-gradient(circle at 12% 36%,#f8fbff 0 1.45rem,transparent 1.5rem),
+    radial-gradient(circle at 30% 3%,#f9fcff 0 1.5rem,transparent 1.55rem),
+    radial-gradient(circle at 72% 5%,#f8fbff 0 1.65rem,transparent 1.7rem),
+    radial-gradient(circle at 96% 42%,#f4f8fd 0 1.5rem,transparent 1.55rem),
+    radial-gradient(circle at 75% 94%,#f1f6fb 0 1.35rem,transparent 1.4rem);
+  pointer-events:none
+}
+.inner-voice-cloud::after{
+  content:'';position:absolute;left:1.05rem;bottom:-1.45rem;width:.75rem;height:.75rem;
+  border-radius:50%;background:#f4f8fd;box-shadow:-.78rem .8rem 0 -.18rem #f4f8fd;pointer-events:none
+}
+.inner-voice-cloud p{margin:0;font:500 .88rem/1.8 "Songti SC",serif;overflow-wrap:anywhere}
+.inner-voice-cloud.has-thought p{font-size:.94rem}
+.inner-voice-date{min-height:.9rem;color:#98a0ac;font-size:.6rem}
+.inner-voice-generate{min-width:10rem}
+.inner-voice-status{min-height:1.2rem;margin:0;color:#677589;font-size:.64rem;text-align:center}
+@media(prefers-reduced-motion:reduce){#phone-root .chat-layout-v3 .echo-scene{display:none!important}}

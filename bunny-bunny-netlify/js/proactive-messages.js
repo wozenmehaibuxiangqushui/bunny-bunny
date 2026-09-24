@@ -16,13 +16,15 @@ export function setupProactiveMessages({store}){
       store.update(s=>{s.callRuntime={...(s.callRuntime||{}),lastMessageCheck:now,lastProactiveAt:{...(s.callRuntime?.lastProactiveAt||{})},pendingReplies:{...(s.callRuntime?.pendingReplies||{})},proactiveWindows:{...(s.callRuntime?.proactiveWindows||{})}}});
       for(const conv of conversationsForAccount(state)){
         const profile=state.chatProfiles[conv.personId]||{},pending=state.callRuntime?.pendingReplies?.[conv.id];
-        if(!profile.proactive||inQuietHours(profile.quietHours,effectiveNow(profile)))continue;
+        if((!profile.proactive&&!pending)||inQuietHours(profile.quietHours,effectiveNow(profile)))continue;
         const person=personById(state,conv.personId),user=personById(state,state.currentUserId);
         if(!person||!user)continue;
         ensureDailySchedule(store,person.id);void enrichDailySchedule(store,person.id);
         const schedule=currentSchedule(store,person.id);
         if(schedule&&!schedule.canReply){store.update(s=>{s.callRuntime.proactiveWindows[conv.id]={nextAt:Date.now()+Math.max(10,Math.min(90,(Number(schedule.end.slice(0,2))*60+Number(schedule.end.slice(3)))-(Number(schedule.start.slice(0,2))*60+Number(schedule.start.slice(3)))))*60000,reason:schedule.status}});continue}
         const messages=state.messages[conv.id]||[],last=messages.at(-1),due=Boolean(pending&&Number(pending.dueAt)<=now),window=state.callRuntime?.proactiveWindows?.[conv.id];
+        if(!profile.proactive&&!due)continue;
+        if(due&&messages.some(row=>row.deliveryJobId===`${conv.id}:${pending.createdAt}`)){store.update(s=>{delete s.callRuntime.pendingReplies[conv.id]});continue}
         if(!due&&window&&now<Number(window.nextAt||0))continue;
         if(!due&&!eligibleForSpontaneous(last,now))continue;
         const model=state.modelProfiles.find(x=>x.id===state.activeModelProfileId);
@@ -31,16 +33,17 @@ export function setupProactiveMessages({store}){
         const recent=messages.slice(-14).map(x=>`${x.role}:${x.text||x.description||x.type}`).join("\n"),cadence=personaCadence(person,profile),prompt=proactivePrompt({person,user,profile,recent,timeContext,due,pending,last,cadence})+'\n'+schedulePrompt(store,person.id);
         try{
           const raw=await sendToModel(model,[{role:"user",text:prompt}],worldContextPrompt(state,person.id)),result=parseJson(raw),nextMinutes=clamp(Number(result?.nextMinutes)||randomWindow(cadence),12,720);
-          store.update(s=>{s.callRuntime.lastProactiveAt[conv.id]=Date.now();s.callRuntime.proactiveWindows[conv.id]={nextAt:Date.now()+nextMinutes*60000,reason:result?.busy?"busy":"persona"};if(due)delete s.callRuntime.pendingReplies[conv.id]});
-          if(!result?.send)continue;
+          store.update(s=>{s.callRuntime.lastProactiveAt[conv.id]=Date.now();s.callRuntime.proactiveWindows[conv.id]={nextAt:Date.now()+nextMinutes*60000,reason:result?.busy?"busy":"persona"}});
+          if(!result?.send){if(due)store.update(s=>{s.callRuntime.pendingReplies[conv.id].dueAt=Date.now()+Math.max(10,nextMinutes)*60000});continue}
           const rows=(Array.isArray(result.messages)?result.messages:[{text:result.text,translation:result.translation}]).map(x=>({text:String(x?.text||"").trim(),translation:String(x?.translation||"").trim()})).filter(x=>x.text).slice(0,4);
           if(!rows.length)continue;
           for(let index=0;index<rows.length;index++){
             if(index)await wait(420+Math.min(1100,rows[index].text.length*24));
             const row=rows[index],time=timeNow(),messageId=crypto.randomUUID();
-            store.update(s=>{(s.messages[conv.id]||(s.messages[conv.id]=[])).push({id:messageId,role:"char",type:"text",text:row.text,translation:row.translation,time,createdAt:Date.now(),arrivedWithPause:true});const target=s.conversations.find(x=>x.id===conv.id);if(target){target.preview=row.text;target.time=time;target.unread=Number(target.unread||0)+1}});
+            store.update(s=>{(s.messages[conv.id]||(s.messages[conv.id]=[])).push({id:messageId,deliveryJobId:due?`${conv.id}:${pending.createdAt}`:undefined,role:"char",type:"text",text:row.text,translation:row.translation,time,createdAt:Date.now(),arrivedWithPause:true});const target=s.conversations.find(x=>x.id===conv.id);if(target){target.preview=row.text;target.time=time;target.unread=Number(target.unread||0)+1}});
           }
           if(result.pat)store.update(s=>(s.messages[conv.id]||(s.messages[conv.id]=[])).push({id:crypto.randomUUID(),role:"system",type:"pat",text:profile.patUserText||`${person.name}拍了拍你`,time:timeNow(),createdAt:Date.now()}));
+          if(due)store.update(s=>{delete s.callRuntime.pendingReplies[conv.id]});
         }catch{}
         break;
       }

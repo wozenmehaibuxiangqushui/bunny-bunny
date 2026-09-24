@@ -1,7 +1,7 @@
-const CACHE_NAME = "bunny-bunny-shell-v48";
+const CACHE_NAME = "bunny-bunny-shell-v49";
 const OFFLINE_URL = new URL("./index.html", self.registration.scope).href;
 const APP_SHELL = [
- "./js/photo-editor.js", "./js/bubble-shape.js", "./js/schedule-engine.js", "./css/chat-refresh.css", "./css/chat-bubble-fidelity.css",
+ "./js/photo-editor.js", "./js/bubble-shape.js", "./js/schedule-engine.js", "./js/inner-voice.js", "./css/chat-refresh.css", "./css/chat-bubble-fidelity.css", "./css/chat-interactions.css",
  "./js/world-context.js",
  './js/chat-skins.js', './css/chat-skins.css',
  './js/device-shell.js', './css/device-shell.css',
