@@ -40,7 +40,7 @@ export function createConversationV3Renderer({ store, navigate }) {
   function conversation(container, params = {}) {
     const state = store.getState();
     const conv = conversationById(state, params.id || "conv-jun");
-    if (!conv) return navigate("chat");
+    if (!conv || (conv.userAccountId && conv.userAccountId !== state.currentUserId)) return navigate("chat");
     if(ui.conversationId!==conv.id){ui.conversationId=conv.id;ui.quoteId="";ui.selectMode=false;ui.selected.clear();ui.attachmentsOpen=false;ui.echoNext=false}
     const person = personById(state, conv.personId);
     const user = personById(state, state.currentUserId);

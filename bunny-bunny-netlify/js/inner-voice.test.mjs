@@ -17,15 +17,17 @@ const state = {
   modelProfiles: [{ id: 'model', apiKey: 'local-test-key', model: 'mock' }], activeModelProfileId: 'model'
 };
 const store = { getState: () => state, update(fn) { fn(state); } };
-const conv = { id: 'chat' }, person = { id: 'char', name: '阿兔' };
+const conv = { id: 'chat', userAccountId: 'user-a' }, person = { id: 'char', name: '阿兔' };
 const first = await voice.generateInnerVoice(store, conv, person);
 assert.equal(calls, 1);
 assert.equal((await voice.generateInnerVoice(store, conv, person)).id, first.id, 'same message uses saved aside');
 state.currentUserId = 'user-b';
 assert.equal(voice.savedInnerVoices(state, conv).length, 0, 'another USER cannot read this aside');
-await voice.generateInnerVoice(store, conv, person);
+await assert.rejects(() => voice.generateInnerVoice(store, conv, person), /请切换/);
+const otherConv = { ...conv, userAccountId: 'user-b' };
+await voice.generateInnerVoice(store, otherConv, person);
 assert.equal(calls, 2, 'another USER gets an isolated aside');
 state.currentWorldId = 'world-b';
-assert.equal(voice.savedInnerVoices(state, conv).length, 0, 'another world cannot read this aside');
+assert.equal(voice.savedInnerVoices(state, otherConv).length, 0, 'another world cannot read this aside');
 assert.throws(() => voice.parseInnerVoice('{"reasoning":"private"}'), /心声缺少文字/);
 console.log('Inner voice: explicit generation, cached anchor and account/world isolation passed.');

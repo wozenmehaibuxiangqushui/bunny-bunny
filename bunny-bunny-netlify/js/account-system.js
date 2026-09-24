@@ -19,5 +19,13 @@ export function accountFriends(state,accountId=state.activeUserAccountId){ensure
 export function isFriendForAccount(state,personId,accountId=state.activeUserAccountId){return accountFriends(state,accountId).includes(personId)}
 export function conversationsForAccount(state,accountId=state.activeUserAccountId){ensureAccountState(state);return(state.conversations||[]).filter(x=>x.userAccountId===accountId)}
 export function switchAccount(state,accountId){ensureAccountState(state);if(!state.people.some(x=>x.id===accountId&&x.type==="user"))return false;state.activeUserAccountId=accountId;state.currentUserId=accountId;return true}
-export function accountContext(state,personId,accountId=state.activeUserAccountId){const relation=accountRelation(state,accountId),account=state.people.find(x=>x.id===accountId),related=state.people.find(x=>x.id===relation.relatedTo),disclosed=Boolean(relation.disclosedTo?.[personId]);if(relation.type==="main")return{memoryOwnerId:personId,prompt:`当前正在聊天的是 USER 的主账号 ${account?.chatName||account?.name}。`};if(relation.type==="alt"){return{memoryOwnerId:personId,prompt:disclosed?`当前账号 ${account?.chatName||account?.name} 是 ${related?.chatName||related?.name||"USER"} 的小号，CHAR 明确知道这一点，可以自然连接双方已有记忆，但不要反复强调小号身份。`:`当前账号 ${account?.chatName||account?.name} 实际属于 ${related?.chatName||related?.name||"USER"}，因此底层记忆仍连续；但 CHAR 不知道这是小号，在 CHAR 的视角里对方是陌生账号。不得无依据认出 USER、不得泄露旧记忆，只允许旧记忆在潜意识层影响熟悉感，直到对方主动暴露或出现足够证据。`}}return{memoryOwnerId:`${personId}::${accountId}`,prompt:`当前账号 ${account?.chatName||account?.name} 与其他 USER 账号没有设定关系。把它当作独立的人，不能调用其他账号的私人经历。`}}
+export function accountContext(state,personId,accountId=state.activeUserAccountId){
+  const relation=accountRelation(state,accountId),account=state.people.find(x=>x.id===accountId),related=state.people.find(x=>x.id===relation.relatedTo),disclosed=Boolean(relation.disclosedTo?.[personId]);
+  if(relation.type==="main")return{memoryOwnerId:personId,prompt:`当前正在聊天的是 USER 的主账号 ${account?.chatName||account?.name}。`};
+  const memoryOwnerId=`${personId}::${accountId}`;
+  if(relation.type==="alt")return{memoryOwnerId,prompt:disclosed
+    ?`当前账号 ${account?.chatName||account?.name} 已向 CHAR 说明是 ${related?.chatName||related?.name||"USER"} 的小号。可以承认身份关联；只使用本账号的对话和明确获知的事实，不自动读取另一账号的私人记忆。`
+    :`当前账号 ${account?.chatName||account?.name} 在 CHAR 视角里是独立的陌生账号。不要猜测身份关联，也不要使用其他账号的经历、关系或私人记忆。`};
+  return{memoryOwnerId,prompt:`当前账号 ${account?.chatName||account?.name} 与其他 USER 账号没有设定关系。把它当作独立的人，不能调用其他账号的私人经历。`};
+}
 export function friendWorldGroup(state,personId){const person=state.people.find(x=>x.id===personId);return person?.groupId||state.chatGroups.find(g=>(g.personIds||[]).includes(personId))?.id||"group-default"}

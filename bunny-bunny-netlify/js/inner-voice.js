@@ -1,10 +1,11 @@
 import { sendToModel } from './integrations/ai-client.js';
 
 export function innerVoiceScope(state, conversation) {
-  return `${conversation.worldId || state.currentWorldId || 'default'}:${conversation.userAccountId || state.currentUserId || state.activeUserAccountId}:${conversation.id}`;
+  return `${conversation.worldId || state.currentWorldId || 'default'}:${state.currentUserId || state.activeUserAccountId || 'default'}:${conversation.id}`;
 }
 
 export function savedInnerVoices(state, conversation) {
+  if (conversation.userAccountId && conversation.userAccountId !== (state.currentUserId || state.activeUserAccountId)) return [];
   const scope = innerVoiceScope(state, conversation);
   return (state.innerVoiceRecords || []).filter(row => row.scope === scope).sort((a, b) => b.createdAt - a.createdAt);
 }
@@ -23,6 +24,7 @@ export function parseInnerVoice(raw) {
 
 export async function generateInnerVoice(store, conversation, person) {
   const state = store.getState();
+  if (conversation.userAccountId && conversation.userAccountId !== (state.currentUserId || state.activeUserAccountId)) throw Error('请切换到这段聊天所属的账号');
   const scope = innerVoiceScope(state, conversation);
   const recent = (state.messages[conversation.id] || []).filter(row => !row.recalled && row.role !== 'system').slice(-8);
   const anchor = [...recent].reverse().find(row => row.role === 'char');
