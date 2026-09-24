@@ -1,7 +1,7 @@
 import { personById } from "./core/store.js";
 import { worldContextPrompt } from "./world-context.js";
 import { sendToModel } from "./integrations/ai-client.js";
-import { ensureAccountState, conversationsForAccount } from "./account-system.js";
+import { ensureAccountState, conversationsForAccount, accountFriends } from "./account-system.js";
 import { effectiveNow, buildTimeContext } from "./time-context.js";
 import { currentSchedule, ensureDailySchedule, enrichDailySchedule, schedulePrompt } from './schedule-engine.js';
 
@@ -19,6 +19,7 @@ export function setupProactiveMessages({store}){
         if((!profile.proactive&&!pending)||inQuietHours(profile.quietHours,effectiveNow(profile)))continue;
         const person=personById(state,conv.personId),user=personById(state,state.currentUserId);
         if(!person||!user)continue;
+        if(person.type==='npc'&&!accountFriends(state,state.currentUserId).includes(person.id))continue;
         ensureDailySchedule(store,person.id);void enrichDailySchedule(store,person.id);
         const schedule=currentSchedule(store,person.id);
         if(schedule&&!schedule.canReply){store.update(s=>{s.callRuntime.proactiveWindows[conv.id]={nextAt:Date.now()+Math.max(10,Math.min(90,(Number(schedule.end.slice(0,2))*60+Number(schedule.end.slice(3)))-(Number(schedule.start.slice(0,2))*60+Number(schedule.start.slice(3)))))*60000,reason:schedule.status}});continue}
@@ -30,7 +31,7 @@ export function setupProactiveMessages({store}){
         const model=state.modelProfiles.find(x=>x.id===state.activeModelProfileId);
         if(!model?.apiKey||!model.model)break;
         const world=state.worlds.find(x=>x.id===state.currentWorldId),timeContext=buildTimeContext(profile,{timezone:world?.timezone,lastMessageAt:last?.createdAt});
-        const recent=messages.slice(-14).map(x=>`${x.role}:${x.text||x.description||x.type}`).join("\n"),cadence=personaCadence(person,profile),prompt=proactivePrompt({person,user,profile,recent,timeContext,due,pending,last,cadence})+'\n'+schedulePrompt(store,person.id);
+        const recent=messages.slice(-14).map(x=>`${x.role}:${x.text||x.description||x.type}`).join("\n"),groupRecent=(state.groupThreads||[]).filter(thread=>thread.accountId===state.currentUserId&&thread.memberIds.includes(person.id)).flatMap(thread=>(state.groupMessages?.[thread.id]||[]).slice(-5).map(row=>`${thread.name}｜${state.people.find(x=>x.id===row.speakerId)?.name||'成员'}：${row.text}`)).slice(-8).join('\n'),cadence=personaCadence(person,profile),prompt=proactivePrompt({person,user,profile,recent,groupRecent,timeContext,due,pending,last,cadence})+'\n'+schedulePrompt(store,person.id);
         try{
           const raw=await sendToModel(model,[{role:"user",text:prompt}],worldContextPrompt(state,person.id)),result=parseJson(raw),nextMinutes=clamp(Number(result?.nextMinutes)||randomWindow(cadence),12,720);
           store.update(s=>{s.callRuntime.lastProactiveAt[conv.id]=Date.now();s.callRuntime.proactiveWindows[conv.id]={nextAt:Date.now()+nextMinutes*60000,reason:result?.busy?"busy":"persona"}});
@@ -53,7 +54,7 @@ export function setupProactiveMessages({store}){
   setTimeout(check,5000);
 }
 
-function proactivePrompt({person,user,profile,recent,timeContext,due,pending,last,cadence}){return `你是 ${person.name}，正在真实的手机聊天中判断是否主动联系 ${user.name}。
+function proactivePrompt({person,user,profile,recent,groupRecent,timeContext,due,pending,last,cadence}){return `你是 ${person.name}，正在真实的手机聊天中判断是否主动联系 ${user.name}。
 【人物设定】
 ${person.persona||person.personality||person.note||"未设定"}
 职业/身份：${person.occupation||"未设定"}；年龄：${person.age||"未设定"}；当前状态：${person.note||"未设定"}；关系：${profile.relationship||"未设定"}。
@@ -66,6 +67,7 @@ ${timeContext}
 ${due?`你此前因忙碌暂缓了回复，现在已到约定回复时间（原因：${pending?.reason||"busy"}）。如果仍忙可简短说明，否则要自然接上 USER 最后的消息。`:`这是一次自主联系判断。${last?.role==="char"?"USER 还没有回你；只有符合人设才可轻微追问，不要施压。":"如果没有自然的联系理由，选择不发。"}`}
 最近对话：
 ${recent||"暂无"}
+${groupRecent?`你共同在场的群聊最近说过：\n${groupRecent}\n如要提起群里话题，只能引用这些确实发生的内容。`:''}
 只返回严格 JSON：{"send":true,"busy":false,"messages":[{"text":"符合本人的线上短消息","translation":"外语的中文翻译或空字符串"}],"pat":false,"nextMinutes":90}。不发时 messages 为 []。nextMinutes 是你根据人设和行程认为下次值得再判断的时间（12—720）。`}
 function eligibleForSpontaneous(last,now){if(!last)return true;const age=now-Number(last.createdAt||0);if(last.role==="user")return age>8*60*1000;if(last.role==="char"&&last.readAt)return age>15*60*1000;return age>40*60*1000}
 function personaCadence(person,profile){const text=`${person.personality||""} ${person.persona||""} ${person.note||""} ${person.occupation||""}`.toLowerCase();let center=130;if(/(活泼|黏人|爱撒娇|外向|话多|分享欲|幼稚)/.test(text))center-=60;if(/(沉静|克制|成熟|独立|慢热|寡言)/.test(text))center+=90;if(/(医生|护士|警察|刑警|教师|学生|律师|演员|艺人|程序员)/.test(text))center+=55;if(Number(person.age)&&Number(person.age)<20)center-=20;if(/(恋人|暧昧|挚友|亲密)/.test(String(profile.relationship||"")))center-=25;center=clamp(center,30,360);return{min:Math.max(12,Math.round(center*.45)),max:Math.round(center*1.8)}}

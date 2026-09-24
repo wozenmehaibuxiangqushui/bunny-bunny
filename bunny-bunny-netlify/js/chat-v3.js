@@ -1,6 +1,6 @@
 import { bindPhotoEditor } from "./photo-editor.js";
 import { alignBubbleShapes } from "./bubble-shape.js";
-import { generateInnerVoice, savedInnerVoices } from './inner-voice.js';
+import { generateInnerVoice, savedInnerVoices, innerVoiceActivityDue } from './inner-voice.js';
 import { worldContextPrompt } from "./world-context.js";
 import { applyConversationSkin } from "./chat-skins.js";
 import { conversationById, personById } from "./core/store.js";
@@ -18,6 +18,7 @@ import { generateImage } from "./image-client.js";
 import { ensureTimeProfile, buildTimeContext, timeSummary, localDateValue, localTimeValue } from "./time-context.js";
 import { compileWorldbook, compilePreset } from "./apps/prompt-library.js";
 import { currentSchedule, nextReplyAt, ensureDailySchedule, enrichDailySchedule, publicScheduleStatus, recordScheduleCommitment, schedulePrompt } from './schedule-engine.js';
+import { appendWorldEvent, changeRelationship, entityWorld, knownWorldEvents } from './world-engine.js';
 
 const DEFAULT_REACTIONS = ["❤️", "👍", "👎", "😂", "‼️", "❓"];
 const EMOJI_GROUPS = {
@@ -35,7 +36,7 @@ const TYPE_META = {
 };
 
 export function createConversationV3Renderer({ store, navigate }) {
-  const ui = { conversationId:"", quoteId: "", selectMode: false, selected: new Set(), attachmentsOpen:false, sending:false, echoNext:false, error:"" };
+  const ui = { conversationId:"", quoteId: "", selectMode: false, selected: new Set(), attachmentsOpen:false, sending:false, echoNext:false, voiceGenerating:false, error:"" };
 
   function conversation(container, params = {}) {
     const state = store.getState();
@@ -45,6 +46,7 @@ export function createConversationV3Renderer({ store, navigate }) {
     const person = personById(state, conv.personId);
     const user = personById(state, state.currentUserId);
     const profile = ensureTimeProfile(state.chatProfiles[person.id]||(state.chatProfiles[person.id]={}));
+    const newThought=savedInnerVoices(state,conv).find(row=>row.activity&&!row.seenAt);
     const appearance = state.chatAppearance;
     const skin = applyConversationSkin(appearance);
     ensureDailySchedule(store,person.id);void enrichDailySchedule(store,person.id);
@@ -55,7 +57,7 @@ export function createConversationV3Renderer({ store, navigate }) {
     container.className = `app-view conversation-v3 ${ui.selectMode ? "select-mode" : ""}`;
     container.innerHTML = `<section class="chat-layout-v3" data-chat-skin="${skin}" style="${backgroundStyle(appearance.background,appearance.backgroundOpacity)}">
       <header class="chat-contact-bar">
-        <button class="chat-contact-avatar" data-profile-card aria-label="查看 ${escapeHtml(person.name)} 的资料">${initialsAvatar(person, profile)}</button>
+        <button class="chat-contact-avatar" data-profile-card aria-label="查看 ${escapeHtml(person.name)} 的资料">${initialsAvatar(person, profile)}</button>${newThought?'<button type="button" class="inner-voice-alert" data-voice-activity aria-label="查看新的心声">•••</button>':''}
         <div><strong>${escapeHtml(profile.remark || person.name)}</strong><span>${escapeHtml(publicScheduleStatus(store,person.id))}</span></div>
         <div class="chat-contact-actions"><button class="chat-time ${profile.timeAwarenessEnabled!==false?"active":"manual"}" data-time-awareness aria-label="时间感知：${escapeHtml(timeSummary(profile))}" title="${escapeHtml(timeSummary(profile))}">${clockIcon()}</button><button data-start-call="voice" aria-label="语音通话">${callIcon(false)}</button><button data-start-call="video" aria-label="视频通话">${callIcon(true)}</button><button class="chat-more" data-chat-settings aria-label="聊天设置">•••</button></div>
       </header>
@@ -91,6 +93,7 @@ export function createConversationV3Renderer({ store, navigate }) {
     let singleTimer;
     topAvatar.onclick=()=>{if(topAvatar.__bunnyDoubleTappedUntil>Date.now())return;clearTimeout(singleTimer);singleTimer=setTimeout(()=>showProfile(person,profile),280)};
     bindDoubleTap(topAvatar,()=>{clearTimeout(singleTimer);pat(person,profile,conv,container,params)});
+    container.querySelector('[data-voice-activity]')?.addEventListener('click',()=>openInnerVoiceSheet(conv,person));
     container.querySelectorAll("[data-pat-avatar]").forEach(avatar=>bindDoubleTap(avatar,()=>pat(person,profile,conv,container,params)));
     container.querySelectorAll(".message.char .bubble-v3").forEach(bubble=>bindLongPress(bubble,()=>openMessageMenu(bubble.closest(".message").dataset.messageId,conv,person,container,params)));
     container.querySelectorAll(".message.user .bubble-v3").forEach(bubble=>bindLongPress(bubble,()=>openUserMessageMenu(bubble.closest(".message").dataset.messageId,conv,person,container,params)));
@@ -152,8 +155,8 @@ export function createConversationV3Renderer({ store, navigate }) {
       const commonStickers=(current.stickerLibraries?.global||[]).map(x=>({...x,scope:"CHAR 通用"})),exclusiveStickers=(current.stickerLibraries?.characters?.[person.id]||[]).map(x=>({...x,scope:"角色专属"})),charStickers=[...exclusiveStickers,...commonStickers];
       const stickerGuide=charStickers.length?`当前 CHAR 可用表情包（只能按描述选择）：\n${charStickers.map((x,i)=>`${i+1}. [${x.scope}] ${x.name||"表情"}｜${x.description||(x.tags||[]).join("、")||"无描述"}`).join("\n")}`:"当前 CHAR 没有可用表情包，不要输出 sticker；仍可在开启偷表情时收藏 USER 发来的表情。";
       ensureTtsState(current);
-      ensureAccountState(current);const user=personById(current,current.currentUserId),identity=accountContext(current,person.id,user.id),boundChar=person.boundCharId?personById(current,person.boundCharId):null,boundIdentities=[...new Set([...(person.boundIdentityIds||[]),...(person.boundCharId?[person.boundCharId]:[])])].map(id=>personById(current,id)).filter(Boolean),history=current.messages[conv.id]||[],lastUser=[...history].reverse().find(x=>x.role==="user"&&!x.recalled),lastMessage=[...history].reverse().find(x=>x.createdAt),memory=await retrieveMemoryContext(current,identity.memoryOwnerId,lastUser?.text||lastUser?.description||""),world=current.worlds.find(x=>x.id===current.currentWorldId);
-      const imageEnabled=Boolean(current.mediaApis?.image?.enabled&&current.mediaApis.image.channels?.chat!==false&&profile.imageGenerationEnabled),timeContext=buildTimeContext(profile,{timezone:world?.timezone,lastMessageAt:lastMessage?.createdAt}),worldbookPrompts=books.map(book=>compileWorldbook(book,lastUser?.text||lastUser?.description||"")).filter(Boolean),preset=compilePreset(p),prompt=[preset.systemPrompt,worldContextPrompt(current,person.id),...worldbookPrompts,buildInternalChatPrompt({person,user,boundChar,boundIdentities,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:imageEnabled}),timeContext,schedulePrompt(store,person.id),`【当前账号身份规则】\n${identity.prompt}`,memory.promptBlock,options.instruction].filter(Boolean).join("\n\n"),promptBundle={system:prompt,prefixMessages:preset.prefixMessages};
+      ensureAccountState(current);const user=personById(current,current.currentUserId),identity=accountContext(current,person.id,user.id),boundChar=person.boundCharId?personById(current,person.boundCharId):null,boundIdentities=[...new Set([...(person.boundIdentityIds||[]),...(person.boundCharId?[person.boundCharId]:[])])].map(id=>personById(current,id)).filter(Boolean),history=current.messages[conv.id]||[],lastUser=[...history].reverse().find(x=>x.role==="user"&&!x.recalled),lastMessage=[...history].reverse().find(x=>x.createdAt),memory=await retrieveMemoryContext(current,identity.memoryOwnerId,lastUser?.text||lastUser?.description||""),worldId=entityWorld(current,person.id),world=current.worlds.find(x=>x.id===worldId),knownEvents=knownWorldEvents(current,person.id,worldId,6).map(row=>row.payload.summary||row.payload.text).filter(Boolean);
+      const imageEnabled=Boolean(current.mediaApis?.image?.enabled&&current.mediaApis.image.channels?.chat!==false&&profile.imageGenerationEnabled),timeContext=buildTimeContext(profile,{timezone:world?.timezone,lastMessageAt:lastMessage?.createdAt}),worldbookPrompts=books.map(book=>compileWorldbook(book,lastUser?.text||lastUser?.description||"")).filter(Boolean),preset=compilePreset(p),prompt=[preset.systemPrompt,worldContextPrompt(current,person.id),knownEvents.length?`【你亲历或公开可知的近期世界事件】\n${knownEvents.join('\n')}`:'',...worldbookPrompts,buildInternalChatPrompt({person,user,boundChar,boundIdentities,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:imageEnabled}),timeContext,schedulePrompt(store,person.id),`【当前账号身份规则】\n${identity.prompt}`,memory.promptBlock,options.instruction].filter(Boolean).join("\n\n"),promptBundle={system:prompt,prefixMessages:preset.prefixMessages};
       const avatarContext=profile.visionEnabled&&user.avatarUrl?[{id:"user-current-avatar",role:"user",type:"image",src:user.avatarUrl,text:"USER 当前头像",description:"这是 USER 当前正在使用的头像。你可以识别它，但不要机械复述。"}]:[];
       store.update(s=>{for(const message of s.messages[conv.id]||[])if(message.role==="user"&&!message.charReadAt)message.charReadAt=Date.now()});
       const modelMessages=[...avatarContext,...current.messages[conv.id].map(m=>profile.visionEnabled?m:{...m,src:""})];
@@ -175,7 +178,12 @@ export function createConversationV3Renderer({ store, navigate }) {
         const kind=action.kind==="redpacket"&&action.amount>520?"transfer":action.kind,messageId=id();store.update(s=>s.messages[conv.id].push({id:messageId,responseBatchId,role:"char",type:kind,text:action.note||(kind==="redpacket"?"大吉大利":"转账给你"),amount:action.amount,time:timeNow()}));walletCredit(store,{amount:action.amount,kind,title:`收到 ${person.name} 的${kind==="redpacket"?"红包":"转账"}`,conversationId:conv.id,messageId,note:action.note})
       }
       activeRender(container,params);
-      scheduleMemoryMaintenance({store,personId:identity.memoryOwnerId,model,messages:store.getState().messages[conv.id]||[]});
+      if(parsed.messages.length){const event=appendWorldEvent(store,{id:`chat-batch:${responseBatchId}`,worldId,actorIds:[user.id,person.id],witnessIds:[user.id,person.id],kind:'private-chat',payload:{summary:`${person.name} 与 ${user.name} 聊到：${(lastUser?.text||'').slice(0,80)}`,public:false},source:'chat'});changeRelationship(store,{a:user.id,b:person.id,worldId,deltaAffinity:1,reasonEventId:event.id})}
+      scheduleMemoryMaintenance({store,personId:person.id,ownerId:identity.memoryOwnerId,conversationId:conv.id,accountId:user.id,model,messages:store.getState().messages[conv.id]||[]});
+      if(!ui.voiceGenerating&&innerVoiceActivityDue(store.getState(),conv)){
+        ui.voiceGenerating=true;
+        void generateInnerVoice(store,conv,person,{activity:true}).then(()=>{if(ui.conversationId===conv.id&&container.isConnected)activeRender(container,params)}).catch(error=>console.warn('Bunny inner voice activity skipped',error)).finally(()=>{ui.voiceGenerating=false});
+      }
       if(profile.voiceGenerationMode==="auto"){const voices=(store.getState().messages[conv.id]||[]).filter(x=>x.responseBatchId===responseBatchId&&x.type==="voice"&&!x.audioMediaId);for(const message of voices)await cacheVoiceMessage(message,profile).catch(error=>showToast(error.message))}
       if(profile.autoPlayVoice&&parsed.messages.length){const spoken=parsed.messages.map(x=>x.text).join("。"),tone=parsed.messages.find(x=>x.tone)?.tone||"";synthesizeSpeech(resolveTtsConfig(store.getState(),profile),spoken,{tone}).catch(error=>showToast(error.message))}
     }catch(error){ui.error=readableAiError(error);showToast(ui.error)}finally{ui.sending=false;updateIsland("bunny 正在陪你",false);activeRender(container,params)}
@@ -234,7 +242,8 @@ export function createConversationV3Renderer({ store, navigate }) {
   }
   function openInnerVoiceSheet(conv,person){
     const recent=savedInnerVoices(store.getState(),conv),latest=recent[0];
-    openSheet(`<section class="inner-voice-sheet"><div class="sheet-title"><div><small>UNSENT WORDS</small><h3>${escapeHtml(person.name)} 的心声</h3></div><button type="button" class="button ghost" data-sheet-close>关闭</button></div><p class="inner-voice-note">这是一段虚构的角色内心独白。只有你主动请求时才生成，不会自动出现在聊天里。</p><div class="inner-voice-cloud ${latest?'has-thought':''}"><p data-inner-voice-text>${escapeHtml(latest?.thought||'那些没说出口的话，会在这里慢慢浮现。')}</p></div><small class="inner-voice-date" data-inner-voice-date>${latest?new Date(latest.createdAt).toLocaleString('zh-CN'):''}</small><button type="button" class="button inner-voice-generate" data-generate-inner-voice>${latest?'查看此刻心声':'生成此刻心声'}</button><p class="inner-voice-status" data-inner-voice-status role="status"></p></section>`,{onReady(sheet){const button=sheet.querySelector('[data-generate-inner-voice]'),status=sheet.querySelector('[data-inner-voice-status]');button.onclick=async()=>{button.disabled=true;button.textContent='正在捕捉心声…';status.textContent='';try{const row=await generateInnerVoice(store,conv,person);if(!sheet.isConnected)return;sheet.querySelector('[data-inner-voice-text]').textContent=row.thought;sheet.querySelector('.inner-voice-cloud').classList.add('has-thought');sheet.querySelector('[data-inner-voice-date]').textContent=new Date(row.createdAt).toLocaleString('zh-CN');button.textContent='心声已保存';status.textContent='这段心声只属于当前账号与这段聊天。'}catch(error){if(!sheet.isConnected)return;status.textContent=error.message;button.textContent='重试生成';button.disabled=false}}}});
+    if(latest&&!latest.seenAt){store.update(s=>{const row=(s.innerVoiceRecords||[]).find(x=>x.id===latest.id);if(row)row.seenAt=Date.now()});document.querySelector('[data-voice-activity]')?.remove()}
+    openSheet(`<section class="inner-voice-sheet"><div class="sheet-title"><div><small>UNSENT WORDS</small><h3>${escapeHtml(person.name)} 的心声</h3></div><button type="button" class="button ghost" data-sheet-close>关闭</button></div><p class="inner-voice-note">一段只给你看的虚构内心独白。聊天几轮后偶尔出现，也可手动看看此刻。</p><div class="inner-voice-cloud ${latest?'has-thought':''}"><p data-inner-voice-text>${escapeHtml(latest?.thought||'那些没说出口的话，会在这里慢慢浮现。')}</p></div><small class="inner-voice-date" data-inner-voice-date>${latest?new Date(latest.createdAt).toLocaleString('zh-CN'):''}</small><button type="button" class="button inner-voice-generate" data-generate-inner-voice>${latest?'看看此刻有没有新心声':'生成此刻心声'}</button><p class="inner-voice-status" data-inner-voice-status role="status"></p></section>`,{onReady(sheet){const button=sheet.querySelector('[data-generate-inner-voice]'),status=sheet.querySelector('[data-inner-voice-status]');button.onclick=async()=>{button.disabled=true;button.textContent='正在捕捉心声…';status.textContent='';try{const row=await generateInnerVoice(store,conv,person);if(!sheet.isConnected)return;sheet.querySelector('[data-inner-voice-text]').textContent=row.thought;sheet.querySelector('.inner-voice-cloud').classList.add('has-thought');sheet.querySelector('[data-inner-voice-date]').textContent=new Date(row.createdAt).toLocaleString('zh-CN');button.textContent='心声已保存';status.textContent='这段心声只属于当前账号与这段聊天。'}catch(error){if(!sheet.isConnected)return;status.textContent=error.message;button.textContent='重试生成';button.disabled=false}}}});
   }
   function sendRich(conv,data,container,params,askAi=false){sendRichBatch(conv,[data],container,params,askAi)}
   function sendRichBatch(conv,rows,container,params,askAi=false){store.update(s=>{for(const data of rows)s.messages[conv.id].push({id:id(),role:"user",time:timeNow(),createdAt:Date.now(),...data});const target=s.conversations.find(item=>item.id===conv.id),last=rows.at(-1);if(target){target.preview=previewFor(last);target.time=timeNow()}});ui.attachmentsOpen=false;ui.error="";if(askAi)ui.sending=true;activeRender(container,params);if(askAi){const state=store.getState(),person=personById(state,conv.personId);requestAiReply(conv,person,state.chatProfiles[person.id],container,params)}}
@@ -316,13 +325,16 @@ export function playEcho(message){
   const scene=document.createElement('div');scene.className='echo-scene';scene.setAttribute('aria-hidden','true');screen.append(scene);
   const base=bubble.getBoundingClientRect(),surface=screen.getBoundingClientRect(),w=surface.width,h=surface.height;
   const x=base.left-surface.left,y=base.top-surface.top,words=bubble.textContent.trim().slice(0,110);
-  const sent=message.classList.contains('user');
-  scene.style.setProperty('--echo-fill',sent?'#1685f8':'#58697b');
-  scene.style.setProperty('--echo-ink','#fff');
-  scene.style.setProperty('--echo-accent',sent?'#166fcf':'#405166');
+  const sent=message.classList.contains('user'),style=getComputedStyle(bubble);
+  scene.style.setProperty('--echo-accent',style.color);
+  scene.style.setProperty('--echo-font',style.fontFamily);
   const ghostWidth=Math.min(base.width,w*.44);
   for(let i=0;i<12;i++){
-    const ghost=document.createElement('div');ghost.className='echo-ghost';ghost.textContent=words;
+    const ghost=document.createElement('article');ghost.className=`echo-ghost message ${sent?'user':'char'} group-end`;
+    const body=document.createElement('div');body.className='message-body-v3';
+    const copy=document.createElement('div');copy.className='bubble-v3';copy.textContent=words;
+    for(const key of ['background','background-color','background-image','color','border','border-radius','font-family','font-size','font-weight','letter-spacing','line-height','padding','box-shadow','text-shadow'])copy.style.setProperty(key,style.getPropertyValue(key));
+    body.append(copy);ghost.append(body);
     const targetX=((i%2)+.5)*w/2-x-ghostWidth/2,targetY=(Math.floor(i/2)+.5)*h/6-y-base.height/2;
     ghost.style.setProperty('--echo-x',`${x}px`);ghost.style.setProperty('--echo-y',`${y}px`);
     ghost.style.setProperty('--echo-w',`${ghostWidth}px`);ghost.style.setProperty('--echo-dx',`${targetX}px`);

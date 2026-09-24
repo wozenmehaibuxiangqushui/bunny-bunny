@@ -4,7 +4,7 @@ export const seedState = {
   currentWorldId: "world-seoul",
   currentUserId: "user-me",
   activeUserAccountId: "user-me",
-  worlds: [{ id: "world-seoul", name: "首尔 · 平行日常", timezone: "Asia/Seoul" }],
+  worlds: [{ id: "world-seoul", name: "首尔 · 平行日常", timezone: "Asia/Seoul" },{id:"world-tokyo",name:"东京支线",timezone:"Asia/Tokyo"}],
   people: [
     { id: "user-me", type: "user", name: "林小满", chatName: "manni", initials: "ME", height: "165cm", phone: "", location: "上海", note: "慢热，喜欢旧电影与雨天", signature: "今天也要把日常过得轻一点。", appearance: "", familyBackground: "", personality: "慢热、细腻，熟悉后会有很多小话", tmi: "喜欢旧电影、雨天和深夜便利店", city: "上海", cityPrototype: "Shanghai", accounts: [{ id: "acc-main", name: "manni", primary: true }] },
     { id: "char-jun", type: "char", name: "韩叙俊", initials: "HJ", age: "24", occupation: "唱片店店员", personality: "沉静克制，熟悉后偶尔毒舌，聊天喜欢短句", note: "在唱片店整理新到的黑胶", signature: "雨停之前，都算借来的时间。", city: "首尔", cityPrototype: "Seoul", groupId: "group-seoul", online: true },
@@ -65,7 +65,7 @@ export const seedState = {
     { id: "preset-natural", name: "自然聊天", prompt: "保持自然、简洁、有生活感的对话。" },
     { id: "preset-story", name: "沉浸叙事", prompt: "使用细腻但克制的沉浸式表达。" }
   ],
-  chatAppearance: { interfaceCss: "", interfacePresets: [], bubblePreset: "imessage", bubbleCss: "", bubbleColor: "#111111", bubbleScale: 1, fontSize: 14, fontUrl: "", fontPresets: [], background: "", backgroundHistory: [], hideUserAvatar: false, recentReactions: ["❤️","👍","👎","😂","‼️","❓"] },
+  chatAppearance: { interfaceCss: "", interfacePresets: [], bubblePreset: "imessage", bubbleCss: "", bubbleColor: "#111111", bubbleScale: 1, bubbleRadius: 0, fontSize: 14, fontUrl: "", fontPresets: [], background: "", backgroundHistory: [], hideUserAvatar: false, recentReactions: ["❤️","👍","👎","😂","‼️","❓"] },
   dataSettings: { autoBackup: false, cloudType: "", cloudEndpoint: "", lastBackup: "", imageQuality: 0.78, estimatedBytes: 0, storageWarning: "", lastPersistedAt: "" },
   desktopOrder: ["chat", "contacts", "moments", "phone", "sms", "calendar", "memos", "worldbook", "presets", "wallet", "focus", "together", "forum", "delivery", "shop", "flea", "games", "x-social", "tiktok", "phone-settings"],
   desktopLayout: [],
@@ -82,6 +82,7 @@ export const seedState = {
   },
   schedulePlans: {},
   scheduleDays: {},
+  worldLog: [], relationEdges: {}, worldTicks: {}, deliveryJobs: [], groupThreads: [], groupMessages: {}, diaryEntries: [],
   momentsSettings: { backgrounds: {}, lastAutoAt: {}, lastRefreshAt: {} },
   moments: [
     { id: "p1", personId: "char-jun", text: "闭店前最后一张唱片。窗外刚好开始下雨。", time: "20分钟前", likes: ["尹夏凛", "朴秀安"], comments: [{ name: "朴秀安", text: "又在等某个人吧。" }] },

@@ -29,5 +29,8 @@ await voice.generateInnerVoice(store, otherConv, person);
 assert.equal(calls, 2, 'another USER gets an isolated aside');
 state.currentWorldId = 'world-b';
 assert.equal(voice.savedInnerVoices(state, otherConv).length, 0, 'another world cannot read this aside');
+assert.equal(voice.innerVoiceActivityDue(state,otherConv),false,'no activity before enough USER turns');
+for(let i=0;i<6;i++)state.messages.chat.push({id:`u${i}`,role:'user',text:`新的话题第${i}句`,createdAt:i+2});
+assert.equal(voice.innerVoiceActivityDue(state,otherConv),true,'activity appears after several real turns');
 assert.throws(() => voice.parseInnerVoice('{"reasoning":"private"}'), /心声缺少文字/);
 console.log('Inner voice: explicit generation, cached anchor and account/world isolation passed.');
