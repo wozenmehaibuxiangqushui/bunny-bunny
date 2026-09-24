@@ -148,7 +148,7 @@ export function createStore() {
   const persist=()=>{
     saveTimer=0;idleHandle=0;
     try{
-      const serialized=JSON.stringify(state,function(key,value){if((key==="src"&&this?.mediaId)||(key==="audioUrl"&&this?.audioMediaId)||(key==="videoBackground"&&this?.videoBackgroundMediaId)||(key==="userVideoPortrait"&&this?.userVideoPortraitMediaId)||(key==="imageReferenceFace"&&this?.imageReferenceFaceMediaId)){if(typeof value==="string"&&value.startsWith("blob:"))return""}return value});
+      const serialized=JSON.stringify(state,function(key,value){if((key==="src"&&this?.mediaId)||(key==="image"&&this?.imageMediaId)||(key==="audioUrl"&&this?.audioMediaId)||(key==="videoBackground"&&this?.videoBackgroundMediaId)||(key==="userVideoPortrait"&&this?.userVideoPortraitMediaId)||(key==="imageReferenceFace"&&this?.imageReferenceFaceMediaId)){if(typeof value==="string"&&value.startsWith("blob:"))return""}return value});
       state.dataSettings.estimatedBytes=new Blob([serialized]).size;
       localStorage.setItem(STORAGE_KEY,serialized);
       state.dataSettings.storageWarning="";

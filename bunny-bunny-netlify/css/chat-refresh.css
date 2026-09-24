@@ -129,3 +129,10 @@
 .schedule-settings textarea{line-height:1.6;font-size:.82rem;resize:vertical}.schedule-settings small{line-height:1.6;color:var(--muted,#7c8289)}
 @media(max-width:350px){#phone-root .chat-layout-v3[data-chat-skin=imessage] .chat-contact-actions{right:.2rem;gap:0}#phone-root .chat-layout-v3[data-chat-skin=imessage] .chat-contact-actions button{flex-basis:1.6rem;width:1.6rem!important}#phone-root .chat-layout-v3[data-chat-skin=imessage] .chat-contact-avatar{left:calc(49% - 1.2rem);width:2.4rem!important;height:2.4rem!important}}
 @media(prefers-reduced-motion:reduce){.echo-ghost,.moment-image-loading i{animation:none!important}.echo-scene{display:none}}
+
+/* Secondary time/status labels stay readable at phone widths. */
+#phone-root .chat-layout-v3[data-chat-skin] .chat-contact-bar>div:not(.chat-contact-actions)>span{display:block!important;margin-top:.06rem;max-width:100%;font-size:.58rem;color:inherit;opacity:.58;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#phone-root .chat-layout-v3[data-chat-skin=imessage] .chat-contact-bar>div:not(.chat-contact-actions){top:2.9rem}
+#phone-root .chat-layout-v3:is([data-chat-skin=kakaotalk],[data-chat-skin=line]) .message-body-v3>time{position:static!important;display:block;width:auto!important;min-width:0;max-width:100%;padding:.17rem .22rem 0;font-size:.57rem!important;line-height:1.2;white-space:nowrap!important;text-align:left;color:#304151a3}
+#phone-root .chat-layout-v3:is([data-chat-skin=kakaotalk],[data-chat-skin=line]) .message.user .message-body-v3>time{text-align:right}
+.moment-image-retry{display:grid;place-items:center;width:100%;min-height:8rem;margin:.4rem 0;border:1px dashed #77838970;border-radius:.95rem;background:#e9eceb;color:#536069;font-size:.73rem}
