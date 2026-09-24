@@ -33,6 +33,13 @@ import { createMomentsRenderer, setupMomentsAutomation } from "./moments-v2.js";
 import { createRelationshipNotebookRenderer } from "./relationship-notebook.js";
 
 const store = createStore();
+const previewSkin = new URLSearchParams(location.search).get('preview-skin');
+if (['imessage','wechat','kakaotalk','line'].includes(previewSkin)) {
+  store.update(state => {
+    state.chatAppearance.bubblePreset = previewSkin;
+    state.chatListAppearance = { ...state.chatListAppearance, skin: previewSkin };
+  });
+}
 ensureAccountState(store.getState());
 await hydrateMediaState(store.getState());
 playLaunchAnimation();
