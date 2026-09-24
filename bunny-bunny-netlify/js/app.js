@@ -80,7 +80,7 @@ const initialHash = location.hash.slice(1);
 setPhoneAppearance(store.getState().appearance);
 applyAppIdentity(store.getState().appearance);
 applyChatAppearance(store.getState().chatAppearance);
-navigate(["x-social", "chat", "contacts", "contact-manage", "relationship-map", "character-edit", "user-profile", "add-friend", "friend-requests", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "favorites", "memory-debug", "anonymous-box", "anonymous-letter", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
+navigate(["x-social", "chat", "conversation", "contacts", "contact-manage", "relationship-map", "character-edit", "user-profile", "add-friend", "friend-requests", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "favorites", "memory-debug", "anonymous-box", "anonymous-letter", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
 setupIosRefinement(context);
 setupDeviceShell(context);
 setupChatVoiceSettings(context);

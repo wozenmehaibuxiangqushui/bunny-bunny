@@ -1,23 +1,19 @@
-// One filled outline per bubble avoids a double-opacity seam where glass tails join.
-export function bubblePath(width,height,radius,kind,tail,{continuation=false,groupEnd=true}={}){
-  const w=Math.max(1,width),h=Math.max(1,height),r=Math.min(radius,h/2,w/2);
-  const isIMessage=kind==='imessage',isCompact=kind==='kakaotalk'||kind==='line';
-  const topLeft=isIMessage&&continuation?Math.min(5,r):isCompact&&tail?Math.min(7,r):r;
-  const bottomLeft=isIMessage&&!groupEnd?Math.min(5,r):r;
-  let d=`M${topLeft},0 H${w-r} Q${w},0 ${w},${r} V${h-r} Q${w},${h} ${w-r},${h} H${bottomLeft}`;
-  if(tail&&isIMessage){
-    // One continuous filled path keeps the curved terminal tail seamless, even on glass.
-    d+=` C${Math.min(9,bottomLeft/2)},${h} 0,${h-2} -7,${h-2} C-1,${h-5} 0,${h-9} 0,${h-13} V${topLeft}`;
-  }else{
-    d+=` Q0,${h} 0,${h-bottomLeft}`;
-    if(tail){
-      // LINE and KakaoTalk put a short tail beside the first message in a run.
-      const y=Math.min(h-bottomLeft-4,Math.max(topLeft+5,12));
-      d+=` V${y+5} Q-2,${y+2} -7,${y} Q-3,${y-1} 0,${y-5}`;
-    }
-    d+=` V${topLeft}`;
+// Draw the body and the tail in one path so there is no overlap seam on photos or glass.
+export function bubblePath(width,height,radius,kind,tail){
+  const w=Math.max(1,width),h=Math.max(1,height);
+  const preferred=kind==='wechat'?5:kind==='kakaotalk'?14:kind==='line'?18:radius;
+  const r=Math.min(preferred,h/2,w/2);
+  let d=`M${r},0 H${w-r} Q${w},0 ${w},${r} V${h-r} Q${w},${h} ${w-r},${h} H${r}`;
+  if(kind==='imessage'&&tail){
+    // The iMessage tail curves below the last capsule in a run.
+    d+=` C${Math.min(10,r/2)},${h} 2,${h+3} -8,${h+8} C-2,${h+2} 0,${h-2} 0,${h-11} V${r}`;
+    return d+` Q0,0 ${r},0 Z`;
   }
-  return d+` Q0,0 ${topLeft},0 Z`;
+  d+=` Q0,${h} 0,${h-r}`;
+  if(tail&&kind==='line')return d+` V16 Q-4,2 -10,0 H${r} Z`;
+  if(tail&&kind==='kakaotalk')return d+` V15 Q-3,2 -7,1 H${r} Z`;
+  if(tail&&kind==='wechat')d+=` V15 L-7,11 L0,8`;
+  return d+` V${r} Q0,0 ${r},0 Z`;
 }
 const active=new WeakMap();
 export function alignBubbleShapes(root){
@@ -28,8 +24,10 @@ export function alignBubbleShapes(root){
   const ns='http://www.w3.org/2000/svg',bubbles=[...root.querySelectorAll('.message:not(.special-message) .bubble-v3')];
   function update(bubble){const w=bubble.clientWidth,h=bubble.clientHeight;if(!w||!h)return;let svg=bubble.querySelector(':scope > .bubble-outline');if(!svg){svg=document.createElementNS(ns,'svg');svg.classList.add('bubble-outline');svg.setAttribute('aria-hidden','true');svg.append(document.createElementNS(ns,'path'));bubble.prepend(svg);bubble.classList.add('joined-tail')}
     const message=bubble.closest('.message'),tail=kind==='imessage'?message.classList.contains('group-end'):kind==='wechat'||!message.classList.contains('continuation');
-    svg.setAttribute('viewBox',`-8 0 ${w+16} ${h}`);svg.setAttribute('preserveAspectRatio','none');const path=svg.firstChild;
-    path.setAttribute('d',bubblePath(w,h,parseFloat(getComputedStyle(bubble).borderTopLeftRadius)||16,kind,tail,{continuation:message.classList.contains('continuation'),groupEnd:message.classList.contains('group-end')}));path.setAttribute('transform',message.classList.contains('user')?`translate(${w} 0) scale(-1 1)`:'');
+    // Equal CSS and SVG padding keeps the outline at the bubble's actual pixel edge.
+    svg.style.left='-10px';svg.style.top='0';svg.style.width='calc(100% + 20px)';svg.style.height='calc(100% + 10px)';
+    svg.setAttribute('viewBox',`-10 0 ${w+20} ${h+10}`);svg.setAttribute('preserveAspectRatio','none');const path=svg.firstChild;
+    path.setAttribute('d',bubblePath(w,h,parseFloat(getComputedStyle(bubble).borderTopLeftRadius)||16,kind,tail));path.setAttribute('transform',message.classList.contains('user')?`translate(${w} 0) scale(-1 1)`:'');
   }
   const observer=new ResizeObserver(entries=>{if(!root.isConnected){observer.disconnect();return}for(const entry of entries)update(entry.target)});
   active.set(root.parentElement,observer);for(const bubble of bubbles){update(bubble);observer.observe(bubble)}

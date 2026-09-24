@@ -130,7 +130,7 @@ return (container,params={})=>{
  container.querySelectorAll("[data-avatar]").forEach(b=>b.onclick=()=>chooseAvatar(b.dataset.avatar,personId,user.id,container,params));
  container.querySelectorAll("[data-avatar-url]").forEach(b=>b.onclick=()=>urlAvatar(b.dataset.avatarUrl,personId,user.id,container,params));
  container.querySelector("[data-worldbook]").onclick=()=>navigate("worldbook");
- container.querySelectorAll("[data-bubble]").forEach(b=>b.onclick=()=>{store.update(s=>Object.assign(s.chatAppearance,formAppearance(form,a),{bubblePreset:b.dataset.bubble}));createChatSettingsRenderer({store,navigate})(container,params)});
+ container.querySelectorAll("[data-bubble]").forEach(b=>b.onclick=()=>{store.update(s=>{Object.assign(s.chatAppearance,formAppearance(form,a),{bubblePreset:b.dataset.bubble});if(b.dataset.bubble!=="custom")s.chatListAppearance={...s.chatListAppearance,skin:b.dataset.bubble}});createChatSettingsRenderer({store,navigate})(container,params)});
  mountChatPresetManager(container,store,()=>createChatSettingsRenderer({store,navigate})(container,params));
  container.querySelector("[data-preview]").onclick=()=>{applyChatAppearance(formAppearance(form,a));showToast("聊天 CSS 已预览")};
  container.querySelector("[data-save-ui]").onclick=()=>{const name=prompt("界面 CSS 预设名","我的主题");if(name)store.update(s=>s.chatAppearance.interfacePresets.push({name,css:form.elements.interfaceCss.value}));createChatSettingsRenderer({store,navigate})(container,params)};

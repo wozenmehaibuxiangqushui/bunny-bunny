@@ -61,6 +61,10 @@ export function createConversationV3Renderer({ store, navigate }) {
       <div class="chat-stream-v3" data-stream>${messages.map((message,index,list)=>messageView(message,index>0&&list[index-1].role===message.role,person,user,profile,appearance,messages,ui,!list[index+1]||list[index+1].role!==message.role||list[index+1].recalled)).join("")}${ui.sending?typingView(person,profile):""}</div>
       ${ui.selectMode ? selectionBar(ui.selected.size) : composerView(quoted,ui.attachmentsOpen,ui.sending,ui.error,ui.echoNext)}
     </section>`;
+    // Resolve the end of each visible sender run after recalled/system rows are
+    // omitted. The shape and timestamp must agree about the same last bubble.
+    const visibleRows=[...container.querySelectorAll('.chat-stream-v3 > .message')];
+    visibleRows.forEach((row,index)=>row.classList.toggle('group-end',!visibleRows[index+1]?.classList.contains('continuation')));
     bind(container, params, conv, person, user, profile, messages);
     alignBubbleShapes(container.querySelector('[data-chat-skin]'));
     requestAnimationFrame(() => { const stream=container.querySelector("[data-stream]"); if(stream)stream.scrollTop=stream.scrollHeight; });

@@ -36,3 +36,69 @@
   left:auto;right:calc(100% + .35rem);text-align:right!important;justify-content:flex-end;
 }
 #phone-root .chat-layout-v3:is([data-chat-skin=kakaotalk],[data-chat-skin=line]) .message-body-v3>time .message-read{font-size:.48rem;color:#475663aa}
+
+/* A bubble has exactly one painted surface. The SVG owns the body and its tip. */
+#phone-root .chat-layout-v3[data-chat-skin] .message:not(.special-message) .bubble-v3.joined-tail{isolation:isolate;overflow:visible!important}
+#phone-root .chat-layout-v3[data-chat-skin] .bubble-v3.joined-tail .bubble-outline{filter:none!important;z-index:-1!important}
+#phone-root .chat-layout-v3[data-chat-skin] .bubble-v3.joined-tail::before,
+#phone-root .chat-layout-v3[data-chat-skin] .bubble-v3.joined-tail::after{content:none!important;display:none!important}
+
+/* iMessage keeps a rounded capsule on every line; only the last line gets a
+   downward, curved tail. The extra room below the SVG prevents clipping. */
+#phone-root .chat-layout-v3[data-chat-skin=imessage] .message:not(.special-message) .bubble-v3.joined-tail{border-radius:1.5rem!important}
+#phone-root .chat-layout-v3[data-chat-skin=imessage] .message.continuation{margin-top:-.43rem!important}
+#phone-root .chat-layout-v3[data-chat-skin=imessage] .message.group-end{margin-bottom:.3rem!important}
+
+/* LINE and KakaoTalk both have a small top-corner nib. They are different in
+   radius, color and room spacing, while consecutive bubbles stay rounded. */
+#phone-root .chat-layout-v3[data-chat-skin=line]{--skin-canvas:#91add6;--skin-out:#68e87b;--skin-in:#fff;--skin-out-ink:#17251a;--skin-in-ink:#1c2328}
+#phone-root[data-theme=glass] .chat-layout-v3[data-chat-skin=line]{--skin-canvas:#91add6;--skin-out:#68e87b;--skin-in:#fff;--skin-out-ink:#17251a;--skin-in-ink:#1c2328}
+#phone-root .chat-layout-v3[data-chat-skin=line] .message.continuation{margin-top:-.35rem!important}
+#phone-root .chat-layout-v3[data-chat-skin=line] .message-body-v3{max-width:73%}
+#phone-root .chat-layout-v3[data-chat-skin=kakaotalk]{--skin-canvas:#b4c8d8;--skin-out:#ffe400;--skin-in:#fff;--skin-out-ink:#27251a;--skin-in-ink:#252525}
+#phone-root[data-theme=glass] .chat-layout-v3[data-chat-skin=kakaotalk]{--skin-canvas:#b4c8d8;--skin-out:#ffe400;--skin-in:#fff;--skin-out-ink:#27251a;--skin-in-ink:#252525}
+#phone-root .screen[data-app=conversation]:has([data-chat-skin=kakaotalk]){background:#b4c8d8!important}
+#phone-root .screen[data-app=conversation]:has([data-chat-skin=line]){background:#91add6!important}
+#phone-root .chat-layout-v3[data-chat-skin=kakaotalk] .message.continuation{margin-top:-.3rem!important}
+#phone-root .chat-layout-v3[data-chat-skin=kakaotalk] .message-sender-v3{font-weight:400;color:#384652}
+#phone-root .chat-layout-v3[data-chat-skin=kakaotalk] .chat-stream-v3{gap:.74rem}
+#phone-root .chat-layout-v3[data-chat-skin=wechat] .message:not(.special-message) .bubble-v3.joined-tail{border-radius:.31rem!important;padding:.58rem .74rem!important}
+
+/* KakaoTalk conversation list from the supplied reference. */
+#phone-root #app-view[data-list-skin=kakaotalk]{--list-accent:#22252a;background:#fff!important;color:#202226!important}
+#phone-root[data-theme=glass] #app-view[data-list-skin=kakaotalk]{background:#fff!important;color:#202226!important}
+#phone-root .screen:has(#app-view[data-list-skin=kakaotalk]){background:#fff!important}
+#phone-root .screen:has(#app-view[data-list-skin=kakaotalk])>.app-header{height:var(--top-chrome)!important;min-height:var(--top-chrome)!important;padding:0!important;background:#fff!important}
+#phone-root .screen:has(#app-view[data-list-skin=kakaotalk])>.app-header>*{visibility:hidden!important}
+#phone-root:has(#app-view[data-list-skin=kakaotalk]) .dynamic-island{display:none!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-tab-scroll{padding:.8rem 1.05rem 1rem!important;background:#fff!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-list-top{min-height:2.7rem;margin:0 0 1rem;align-items:center}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-list-title{margin:0;font-size:1.52rem;line-height:1.1;font-weight:760;letter-spacing:-.035em;color:#181a1d}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-head-actions{gap:.03rem}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-head-actions .icon-button{width:2.1rem;height:2.1rem;min-width:2.1rem;padding:.38rem;color:#202226;background:transparent!important;border:0!important;box-shadow:none!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-head-actions svg{width:1.34rem;height:1.34rem;stroke-width:1.8}
+#phone-root #app-view[data-list-skin=kakaotalk] .notification-button i{background:#f16637;border:0;min-width:.34rem;height:.34rem;font-size:0;top:.11rem;right:.2rem}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-filter-bar{display:flex;align-items:center;gap:.42rem;margin:0 0 .83rem}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-filter-bar button{display:grid;place-items:center;flex:0 0 auto;height:2.52rem;border:1px solid #dcdde1;border-radius:99px;background:#fff;color:#25282e;box-shadow:none}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-filter-bar button.active{background:#202226;border-color:#202226;color:#fff}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-filter-bar .kakao-filter-all{padding:0 .88rem;font-size:.79rem;font-weight:660}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-filter-bar .kakao-filter-icon{width:2.52rem;padding:.5rem}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-filter-bar svg{width:1.35rem;height:1.35rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-group-strip.hidden{display:none!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-group-strip{margin:0 0 .8rem!important;padding:.12rem 0 .3rem!important;gap:.4rem!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-group-chip{min-width:2.55rem;height:2.55rem;padding:.38rem .7rem!important;border:1px solid #dedfe2!important;border-radius:99px!important;background:#fff!important;color:#393d44!important;font-size:.72rem!important;font-weight:650;white-space:nowrap}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-group-chip.active{background:#1f2125!important;color:#fff!important;border-color:#1f2125!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .chat-group-add{width:2.55rem;height:2.55rem;background:#fff!important;border:1px solid #dedfe2!important;color:#30343a!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .conversation{min-height:4.45rem;padding:.65rem 0!important;gap:.7rem;border:0!important;background:transparent!important;box-shadow:none!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .conversation .avatar-button{padding:0!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .conversation .avatar{width:3.05rem!important;height:3.05rem!important;border-radius:1.08rem!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .conversation .meta strong{font-size:.98rem!important;font-weight:660!important;color:#202226!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .conversation .meta span{font-size:.75rem!important;color:#8c8e93!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .conversation .eyebrow{font-size:.65rem!important;color:#96989d!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-list-search{display:block;margin:0 0 .65rem}.kakao-list-search.hidden{display:none!important}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-list-search span{position:absolute;clip:rect(0 0 0 0)}
+#phone-root #app-view[data-list-skin=kakaotalk] .kakao-list-search input{width:100%;height:2.4rem;padding:0 .8rem;border:0;border-radius:.6rem;background:#f3f4f5;color:#202226}
+#phone-root #app-view[data-list-skin=kakaotalk]>.kakao-list-tabs{grid-template-columns:repeat(4,1fr)!important;justify-content:space-around;background:#fafbfc!important;border-top:1px solid #e9eaec!important;backdrop-filter:none!important}
+#phone-root #app-view[data-list-skin=kakaotalk]>.kakao-list-tabs button{flex:1;min-height:2.6rem;background:transparent!important;color:#aeb1b5!important;border:0!important}
+#phone-root #app-view[data-list-skin=kakaotalk]>.kakao-list-tabs button.active{color:#292d35!important}
+#phone-root #app-view[data-list-skin=kakaotalk]>.kakao-list-tabs svg{width:1.45rem;height:1.45rem;fill:currentColor;stroke:currentColor;stroke-width:1.6}
