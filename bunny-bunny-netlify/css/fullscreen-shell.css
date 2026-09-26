@@ -4,8 +4,8 @@
 #phone-root .screen>.home-indicator-wrap .home-indicator{pointer-events:auto;width:8rem;height:.28rem;min-height:0;border-radius:99px;box-shadow:0 0 0 1px #7772}
 #phone-root #back-button,#phone-root .group-chat-head>[data-group-back]{display:none!important}
 #phone-root .x-title>[data-x-back],#phone-root .tt-light-header>[data-tt-back],#phone-root .tt-dm-head>[data-tt-back],#phone-root .tt-live-room header>[data-tt-back],#phone-root .diary-page>[data-diary-back]{display:none!important}
-#phone-root .screen[data-app]:not([data-app=desktop]):not([data-app=tiktok]) .app-header{height:var(--top-chrome)!important;min-height:var(--top-chrome)!important;padding:0!important;box-shadow:none!important;border:0!important}
-#phone-root .screen[data-app]:not([data-app=desktop]):not([data-app=tiktok]) .app-header>*{visibility:hidden!important}
+#phone-root .screen:is([data-app=chat],[data-app=chat-me],[data-app=conversation],[data-app=group-chat],[data-app=contacts],[data-app=x-social],[data-app=forum],[data-app=moments],[data-app=call],[data-app=character-diary]) .app-header{height:var(--top-chrome)!important;min-height:var(--top-chrome)!important;padding:0!important;box-shadow:none!important;border:0!important}
+#phone-root .screen:is([data-app=chat],[data-app=chat-me],[data-app=conversation],[data-app=group-chat],[data-app=contacts],[data-app=x-social],[data-app=forum],[data-app=moments],[data-app=call],[data-app=character-diary]) .app-header>*{visibility:hidden!important}
 #phone-root .app-view{min-height:0}
 #phone-root .chat-tab-layout>.chat-tabs,#phone-root .tt-nav{padding-bottom:calc(.4rem + var(--safe-bottom,0px))!important;min-height:calc(3.8rem + var(--safe-bottom,0px))!important}
 #phone-root .group-composer,#phone-root .composer{padding-bottom:calc(.9rem + var(--safe-bottom,0px))!important}
