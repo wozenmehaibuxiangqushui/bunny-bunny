@@ -6,6 +6,7 @@ import { ensureTikTok,tikPost,tikComment,tikToggle,tikFollow,tikFollowers,tikRec
   tikRankFeed,tikVisible,tikDm,tikLiveMessage } from './tiktok-model.js';
 import { refreshTikTok,respondToTikTokPost,replyToTikTokComment,replyToTikTokDm,
   generateTikTokLiveMoment,tikAutoDue } from './tiktok-engine.js';
+import { postGroupMessage } from './group-model.js';
 
 const icons={
   home:'M4 11 12 4l8 7v9H4z',search:'M20 20l-5-5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0',
@@ -520,7 +521,7 @@ export function createTikTokRenderer({store,navigate}){
   function share(postId){
     const post=t().posts.find(p=>p.id===postId);if(!post)return;
     const friends=state().conversations.filter(c=>c.userAccountId===me()&&
-      friendWorldGroup(state(),c.personId)===t().groupId);
+      friendWorldGroup(state(),c.personId)===t().groupId),groups=(state().groupThreads||[]).filter(g=>g.accountId===me()&&!g.archived&&g.worldId===state().chatGroups.find(x=>x.id===t().groupId)?.worldId);
     openSheet(`<div class="tt-share-sheet"><h3>分享这段内容</h3><p>${esc(post.title)}</p>
       <div class="tt-share-actions"><button data-tik-repost>${icon('refresh')}<span>${owned('reposts').has(postId)?'取消转发':'转发'}</span></button>
         <button data-tik-copy>${icon('share')}<span>复制简介</span></button>
@@ -528,7 +529,7 @@ export function createTikTokRenderer({store,navigate}){
       <h4>发送 TikTok 私信</h4><div class="tt-share-peers">${people().filter(id=>id!==me()).slice(0,12).map(id=>
         `<button data-tik-send-dm="${id}">${avatar(id)}<small>${esc(profile(id).name)}</small></button>`).join('')}</div>
       <h4>分享到聊天</h4><div class="tt-share-peers">${friends.map(c=>
-        `<button data-tik-send-chat="${c.id}">${avatar(c.personId)}<small>${esc(profile(c.personId).name)}</small></button>`).join('')||
+        `<button data-tik-send-chat="${c.id}">${avatar(c.personId)}<small>${esc(profile(c.personId).name)}</small></button>`).join('')+groups.map(g=>`<button data-tik-send-group="${esc(g.id)}"><span class="tt-group-avatar">群</span><small>${esc(g.name)}</small></button>`).join('')||
         '<p>当前世界还没有可分享的聊天。</p>'}</div></div>`,{onReady(sheet){
       sheet.querySelector('[data-tik-repost]').onclick=()=>{store.update(s=>tikToggle(s,'reposts',postId,me()));
         closeSheet();render(containerRef)};
@@ -550,6 +551,7 @@ export function createTikTokRenderer({store,navigate}){
             sourceTikTokPostId:postId,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),
             createdAt:Date.now()});conv.preview=text;conv.time=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
         closeSheet();showToast('已分享到聊天')});
+      sheet.querySelectorAll('[data-tik-send-group]').forEach(button=>button.onclick=()=>{const row=postGroupMessage(store,button.dataset.tikSendGroup,{speakerId:me(),text:`《${post.title}》 ${post.caption}`.slice(0,500),type:'shared-post',sourceId:postId});if(!row)return showToast('群聊已失效');closeSheet();showToast('已分享到群聊')});
     }});
   }
   function accountPicker(){

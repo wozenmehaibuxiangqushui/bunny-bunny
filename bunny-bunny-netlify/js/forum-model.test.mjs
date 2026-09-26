@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import { seedState } from './core/store.js';
+import { ensureForum,forumAlias,forumActors,forumPost,forumReply,forumVisible,forumToggle } from './forum-model.js';
+
+const state=structuredClone(seedState);
+ensureForum(state);
+const seoul=forumActors(state,'world-seoul').map(p=>p.id);
+assert(seoul.includes('char-jun'));
+assert(!seoul.includes('npc-soo'));
+const post=forumPost(state,{authorId:'char-jun',worldId:'world-seoul',text:'雨停了，唱片店门口还有人在等。'});
+assert.equal(forumVisible(state,'world-seoul').length,1);
+assert.equal(forumVisible(state,'world-tokyo').length,0);
+assert.throws(()=>forumPost(state,{authorId:'npc-soo',worldId:'world-seoul',text:'跨世界内容'}),/世界不匹配/);
+assert.equal(forumAlias('char-jun','world-seoul'),forumAlias('char-jun','world-seoul'));
+forumReply(state,{postId:post.id,authorId:'user-me',text:'我就在附近。'});
+assert.throws(()=>forumReply(state,{postId:post.id,authorId:'npc-soo',text:'我也在'}),/世界不匹配/);
+forumToggle(state,post.id,'likes','user-me');
+assert.deepEqual(state.forum.posts[0].likes,['user-me']);
+forumToggle(state,post.id,'likes','user-me');
+assert.deepEqual(state.forum.posts[0].likes,[]);
+console.log('Forum: world visibility, anonymous alias, reply identity and reactions passed.');

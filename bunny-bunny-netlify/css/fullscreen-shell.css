@@ -1,0 +1,15 @@
+/* The system gesture bar floats over every app instead of taking a grid row. */
+#phone-root .screen{position:relative;grid-template-rows:auto minmax(0,1fr) 0!important}
+#phone-root .screen>.home-indicator-wrap{position:absolute!important;z-index:35;left:0;right:0;bottom:0;height:calc(1.15rem + var(--safe-bottom,0px))!important;padding:0 0 var(--safe-bottom,0px)!important;display:grid;place-items:center;background:transparent!important;pointer-events:none}
+#phone-root .screen>.home-indicator-wrap .home-indicator{pointer-events:auto;width:8rem;height:.28rem;min-height:0;border-radius:99px;box-shadow:0 0 0 1px #7772}
+#phone-root #back-button,#phone-root .group-chat-head>[data-group-back]{display:none!important}
+#phone-root .x-title>[data-x-back],#phone-root .tt-light-header>[data-tt-back],#phone-root .tt-dm-head>[data-tt-back],#phone-root .tt-live-room header>[data-tt-back],#phone-root .diary-page>[data-diary-back]{display:none!important}
+#phone-root .screen[data-app]:not([data-app=desktop]):not([data-app=tiktok]) .app-header{height:var(--top-chrome)!important;min-height:var(--top-chrome)!important;padding:0!important;box-shadow:none!important;border:0!important}
+#phone-root .screen[data-app]:not([data-app=desktop]):not([data-app=tiktok]) .app-header>*{visibility:hidden!important}
+#phone-root .app-view{min-height:0}
+#phone-root .chat-tab-layout>.chat-tabs,#phone-root .tt-nav{padding-bottom:calc(.4rem + var(--safe-bottom,0px))!important;min-height:calc(3.8rem + var(--safe-bottom,0px))!important}
+#phone-root .group-composer,#phone-root .composer{padding-bottom:calc(.9rem + var(--safe-bottom,0px))!important}
+#phone-root .group-chat-head{min-height:3.25rem;padding-left:1rem}
+#phone-root .screen[data-app=group-chat] .app-header{background:#f6fafbe6!important}
+#phone-root .screen[data-app=forum] .app-header{background:#f8f7f4!important}
+@media(prefers-reduced-motion:reduce){#phone-root .screen{scroll-behavior:auto!important}}

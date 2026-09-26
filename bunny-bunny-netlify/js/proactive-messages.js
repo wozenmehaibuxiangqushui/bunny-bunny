@@ -41,7 +41,7 @@ export function setupProactiveMessages({store}){
           for(let index=0;index<rows.length;index++){
             if(index)await wait(420+Math.min(1100,rows[index].text.length*24));
             const row=rows[index],time=timeNow(),messageId=crypto.randomUUID();
-            store.update(s=>{(s.messages[conv.id]||(s.messages[conv.id]=[])).push({id:messageId,deliveryJobId:due?`${conv.id}:${pending.createdAt}`:undefined,role:"char",type:"text",text:row.text,translation:row.translation,time,createdAt:Date.now(),arrivedWithPause:true});const target=s.conversations.find(x=>x.id===conv.id);if(target){target.preview=row.text;target.time=time;target.unread=Number(target.unread||0)+1}});
+            store.update(s=>{(s.messages[conv.id]||(s.messages[conv.id]=[])).push({id:messageId,deliveryJobId:due?`${conv.id}:${pending.createdAt}`:undefined,role:"char",type:"text",text:row.text,translation:row.translation,time,createdAt:Date.now(),arrivedWithPause:true});const target=s.conversations.find(x=>x.id===conv.id);if(target){target.preview=row.text;target.time=time;target.unread=Number(target.unread||0)+1;target.hiddenFromList=false}});
           }
           if(result.pat)store.update(s=>(s.messages[conv.id]||(s.messages[conv.id]=[])).push({id:crypto.randomUUID(),role:"system",type:"pat",text:profile.patUserText||`${person.name}拍了拍你`,time:timeNow(),createdAt:Date.now()}));
           if(due)store.update(s=>{delete s.callRuntime.pendingReplies[conv.id]});

@@ -19,11 +19,11 @@ export function createGroupThread(store,{name,memberIds,accountId,worldId}) {
 
 export function postGroupMessage(store,threadId,{speakerId,text,type='text',amount=0,sourceId='',messageId=''}) {
   const state=ensureWorldEngine(store.getState()),thread=state.groupThreads.find(row=>row.id===threadId);
-  if(!thread||!thread.memberIds.includes(speakerId)||thread.accountId!==state.currentUserId)return null;
+  if(!thread||!thread.memberIds.includes(speakerId)||thread.accountId!==state.currentUserId||(speakerId!==thread.accountId&&thread.mutedMemberIds?.includes(speakerId)))return null;
   const content=String(text||'').trim().slice(0,1200);if(!content)return null;
   if(messageId && state.groupMessages[threadId]?.some(row=>row.id===messageId))return state.groupMessages[threadId].find(row=>row.id===messageId);
   const message={id:messageId||crypto.randomUUID(),speakerId,text:content,type,amount,sourceId,createdAt:Date.now(),status:'sent'};
-  store.update(s=>{s.groupMessages[threadId].push(message);const item=s.groupThreads.find(row=>row.id===threadId);item.lastActivityAt=message.createdAt;if(speakerId!==item.accountId)item.unread++});
+  store.update(s=>{s.groupMessages[threadId].push(message);const item=s.groupThreads.find(row=>row.id===threadId);item.lastActivityAt=message.createdAt;if(speakerId!==item.accountId){item.unread++;item.archived=false}});
   const event=appendWorldEvent(store,{id:`group-message:${message.id}`,worldId:thread.worldId,actorIds:[speakerId],witnessIds:thread.memberIds,kind:'group-message',payload:{threadId,text:content,type,public:false},source:'group-chat'});
   const speaker=state.people.find(row=>row.id===speakerId);for(const id of thread.memberIds.filter(id=>id!==thread.accountId)){const ownerId=accountContext(state,id,thread.accountId).memoryOwnerId;void addMemoryEntry(ownerId,{kind:'episodic',category:'daily_event',layer:content.includes(`@${state.people.find(row=>row.id===id)?.name}`)?'retrieval':'temporary',text:`${thread.name} 群里，${speaker?.name||'成员'}说：${content.slice(0,180)}`,importance:2,confidence:1,visibility:'group',sourceIds:[message.id],worldId:thread.worldId,accountId:thread.accountId,source:'group-chat',eventId:event.id}).catch(()=>{})}
   if(speakerId===thread.accountId)for(const id of thread.memberIds.filter(id=>id!==speakerId))changeRelationship(store,{a:speakerId,b:id,worldId:thread.worldId,deltaAffinity:1,reasonEventId:event.id});
@@ -40,7 +40,7 @@ function parseGroupReply(raw,allowed) {
 export async function generateGroupReplies(store,threadId) {
   const state=ensureWorldEngine(store.getState()),thread=state.groupThreads.find(row=>row.id===threadId),model=state.modelProfiles.find(row=>row.id===state.activeModelProfileId);
   if(!thread||!model?.apiKey||!model?.model)return [];
-  const lastText=(state.groupMessages[threadId]||[]).at(-1)?.text||'',available=availableGroupSpeakers(store,thread).sort((a,b)=>Number(lastText.includes(`@${b.name}`))-Number(lastText.includes(`@${a.name}`))).slice(0,4),allowed=new Set(available.map(row=>row.id));if(!allowed.size)return [];
+  const lastText=(state.groupMessages[threadId]||[]).at(-1)?.text||'',available=availableGroupSpeakers(store,thread).filter(row=>!thread.mutedMemberIds?.includes(row.id)).sort((a,b)=>Number(lastText.includes(`@${b.name}`))-Number(lastText.includes(`@${a.name}`))).slice(0,4),allowed=new Set(available.map(row=>row.id));if(!allowed.size)return [];
   const recent=(state.groupMessages[threadId]||[]).slice(-16),people=available.map(row=>({id:row.id,name:row.name,persona:row.persona||row.personality||row.note||'',relation:relationEdge(state,thread.accountId,row.id,thread.worldId).label}));
   const publicFacts=knownWorldEvents(state,thread.accountId,thread.worldId,8).filter(row=>row.witnessIds.every(id=>thread.memberIds.includes(id))||row.payload.public).map(row=>row.payload.summary||row.payload.text).filter(Boolean);
   const context={group:{name:thread.name,announcement:thread.announcement},speakers:people,recent:recent.map(row=>({speaker:state.people.find(person=>person.id===row.speakerId)?.name,text:row.text})),knownFacts:publicFacts};
@@ -75,7 +75,7 @@ export async function deliverWorldJobs(store,now=Date.now()) {
         const system=`你是 ${sender.name}。人物设定：${sender.persona||sender.personality||sender.note||''}。你刚从「${thread.name}」群聊出来，私下给 USER 发一条自然短消息。必须接住刚才群里的具体话，不要重复群消息，不要突然告白或像客服追问；可以解释、打趣、提醒或分享一点私下看法。只输出消息正文，最多 80 字。`;
         const raw=String(await sendToModel(model,[{role:'user',text:JSON.stringify({recent,source:source.text})}],system)).trim().replace(/^['"“]|['"”]$/g,'').slice(0,160);
         if(!raw)throw Error('empty followup');
-        store.update(s=>{const target=s.deliveryJobs.find(row=>row.id===job.id);if(!target||target.status!=='pending'||s.messages[conv.id]?.some(row=>row.deliveryJobId===job.id))return;const id=crypto.randomUUID(),at=Date.now();(s.messages[conv.id]||=[]).push({id,deliveryJobId:job.id,sourceGroupId:thread.id,role:'char',type:'text',text:raw,createdAt:at,time:new Date(at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false})});const c=s.conversations.find(row=>row.id===conv.id);c.preview=raw;c.time=new Date(at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});c.unread=(c.unread||0)+1;target.status='delivered';target.deliveredAt=at});
+        store.update(s=>{const target=s.deliveryJobs.find(row=>row.id===job.id);if(!target||target.status!=='pending'||s.messages[conv.id]?.some(row=>row.deliveryJobId===job.id))return;const id=crypto.randomUUID(),at=Date.now();(s.messages[conv.id]||=[]).push({id,deliveryJobId:job.id,sourceGroupId:thread.id,role:'char',type:'text',text:raw,createdAt:at,time:new Date(at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false})});const c=s.conversations.find(row=>row.id===conv.id);c.preview=raw;c.time=new Date(at).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',hour12:false});c.unread=(c.unread||0)+1;c.hiddenFromList=false;target.status='delivered';target.deliveredAt=at});
       }catch(error){store.update(s=>{const row=s.deliveryJobs.find(x=>x.id===job.id);if(row){row.attempts=(row.attempts||0)+1;row.dueAt=Date.now()+Math.min(60,row.attempts*5)*60_000}})}
     }
   } finally {processing=false}
