@@ -88,7 +88,7 @@ export function xReputation(s,id) {
 export function xAssignAvatar(x,profile) {
   const pool=x.avatarPool||[];if(!pool.length)return profile;
   const use=pool.filter(item=>!item.assignedTo);
-  const chosen=(use.length?use:pool)[x.generationHistory.length%Math.max(1,(use.length?use:pool).length)];
+  const candidates=use.length?use:pool,chosen=candidates[Math.floor(Math.random()*candidates.length)];
   if(chosen){profile.avatarAssetId=chosen.id;chosen.assignedTo=profile.id}
   return profile;
 }
