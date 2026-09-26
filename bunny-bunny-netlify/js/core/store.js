@@ -67,7 +67,7 @@ export const seedState = {
   ],
   chatAppearance: { interfaceCss: "", interfacePresets: [], bubblePreset: "imessage", bubbleCss: "", bubbleColor: "#111111", bubbleScale: 1, bubbleRadius: 0, fontSize: 14, fontUrl: "", fontPresets: [], background: "", backgroundHistory: [], hideUserAvatar: false, recentReactions: ["❤️","👍","👎","😂","‼️","❓"] },
   dataSettings: { autoBackup: false, cloudType: "", cloudEndpoint: "", lastBackup: "", imageQuality: 0.78, estimatedBytes: 0, storageWarning: "", lastPersistedAt: "" },
-  desktopOrder: ["chat", "contacts", "moments", "phone", "sms", "calendar", "memos", "worldbook", "presets", "wallet", "focus", "together", "forum", "delivery", "shop", "flea", "games", "x-social", "tiktok", "phone-settings"],
+  desktopOrder: ["chat", "contacts", "moments", "phone", "sms", "calendar", "memos", "worldbook", "presets", "wallet", "focus", "couple", "offline", "forum", "delivery", "shop", "flea", "games", "x-social", "tiktok", "phone-settings"],
   desktopLayout: [],
   desktopLayoutInitialized: false,
   desktopWidgetDesignVersion: 3,

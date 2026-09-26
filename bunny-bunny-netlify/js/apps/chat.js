@@ -25,7 +25,7 @@ export function createChatRenderers({ store, navigate }) {
     container.innerHTML = `<section class="chat-layout">
       <div class="chat-person row between"><button class="avatar-button" data-profile-card>${initialsAvatar(person, profile)}</button><div class="meta"><strong>${escapeHtml(profile.remark || person.name)}</strong><span>${escapeHtml(person.note)}</span></div><button class="icon-button" data-chat-settings aria-label="聊天设置">•••</button></div>
       <div class="chat-stream" data-stream>${state.messages[conv.id].map(message => messageBubble(message)).join("")}</div>
-      <div><div class="plus-tray hidden" data-plus-tray>${["图片","拍摄","语音","位置","红包","转账","文件","一起刷","表情包"].map((label,index)=>`<button data-extra="${label}"><span>${["▧","◉","♫","⌖","礼","¥","□","▷","☺"][index]}</span>${label}</button>`).join("")}</div>
+      <div><div class="plus-tray hidden" data-plus-tray>${["图片","拍摄","语音","位置","红包","转账","文件","表情包"].map((label,index)=>`<button data-extra="${label}"><span>${["▧","◉","♫","⌖","礼","¥","□","☺"][index]}</span>${label}</button>`).join("")}</div>
       <form class="composer"><button type="button" class="icon-button" data-plus aria-label="更多功能">＋</button><textarea name="message" rows="1" placeholder="说点什么…" aria-label="消息"></textarea><button type="button" class="send secondary-send" data-send-only aria-label="仅发送">↑</button><button class="send ai-send" aria-label="发送给 AI">AI</button></form></div>
     </section>`;
     const form = container.querySelector("form");

@@ -13,7 +13,7 @@ export function forumPost(state,{authorId,worldId,text,board='tree',topic='',ano
   if(!content)throw Error('写点内容再发布');
   if(!state.people.some(p=>p.id===authorId))throw Error('账号已不存在');
   if(authorId!==state.currentUserId&&!forumActors(state,worldId).some(p=>p.id===authorId))throw Error('角色与世界不匹配');
-  const row={id:crypto.randomUUID(),worldId,authorId,text:content,board:board==='topic'?'topic':'tree',topic:String(topic||'').trim().slice(0,32),anonymous:Boolean(anonymous),createdAt:Date.now(),likes:[],bookmarks:[],guesses:{}};
+  const row={id:crypto.randomUUID(),worldId,authorId,text:content,board:['topic','timeline'].includes(board)?board:'tree',topic:String(topic||'').trim().slice(0,32),anonymous:Boolean(anonymous),createdAt:Date.now(),likes:[],bookmarks:[],guesses:{}};
   db.posts.push(row);return row;
 }
 export function forumReply(state,{postId,authorId,text}){const db=ensureForum(state),post=db.posts.find(p=>p.id===postId&&!p.deleted),content=String(text||'').trim().slice(0,480);if(!post)throw Error('帖子不存在');if(!content)throw Error('回复不能为空');if(authorId!==state.currentUserId&&!forumActors(state,post.worldId).some(p=>p.id===authorId))throw Error('回复角色与世界不匹配');const row={id:crypto.randomUUID(),postId,authorId,text:content,createdAt:Date.now(),likes:[]};db.replies.push(row);return row}

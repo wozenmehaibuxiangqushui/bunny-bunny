@@ -6,7 +6,7 @@ export const appRegistry = {
   forum: ["论坛", "文", "forum"], delivery: ["外卖", "食", "delivery"], shop: ["购物", "购", "shop"], flea: ["二手", "换", "flea"],
   sms: ["短信", "信", "sms"], phone: ["电话", "话", "phone"], worldbook: ["世界书", "世", "worldbook"], presets: ["预设", "预", "presets"],
   games: ["游戏", "玩", "games"], memos: ["备忘录", "记", "memos"], calendar: ["日历", "日", "calendar"], wallet: ["钱包", "¥", "wallet"],
-  focus: ["陪伴专注", "25", "focus"], together: ["一起刷", "▷", "together"], api: ["模型与 API", "AI", "api"], bridge: ["现实桥", "⌁", "bridge"],
+  focus: ["番茄钟", "25", "focus"], couple: ["两人岛", "♡", "couple"], offline: ["见面簿", "⌖", "offline"], api: ["模型与 API", "AI", "api"], bridge: ["现实桥", "⌁", "bridge"],
   mcp: ["MCP", "M", "mcp"], "phone-settings": ["手机设置", "＋", "phone-settings"]
 };
 

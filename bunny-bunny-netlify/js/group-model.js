@@ -3,6 +3,7 @@ import { accountFriends, accountContext } from './account-system.js';
 import { addMemoryEntry } from './memory-engine.js';
 import { appendWorldEvent, availableGroupSpeakers, changeRelationship, ensureWorldEngine, entityWorld, knownWorldEvents, relationEdge } from './world-engine.js';
 import { currentSchedule } from './schedule-engine.js';
+import { compileWorldbook } from './apps/prompt-library.js';
 
 export function createGroupThread(store,{name,memberIds,accountId,worldId}) {
   const state=ensureWorldEngine(store.getState()); accountId ||= state.currentUserId;
@@ -11,7 +12,7 @@ export function createGroupThread(store,{name,memberIds,accountId,worldId}) {
   if(actors.some(id=>!state.people.some(row=>row.id===id&&['char','npc'].includes(row.type))))throw Error('群成员必须是有效的 CHAR 或 NPC');
   worldId ||= entityWorld(state,actors[0]);
   if(actors.some(id=>entityWorld(state,id)!==worldId))throw Error('群成员必须属于同一个世界');
-  const id=crypto.randomUUID(),thread={id,name:String(name||'新的群聊').trim().slice(0,28),worldId,accountId,memberIds:[accountId,...actors],nicknames:{},announcement:'',muted:false,createdAt:Date.now(),lastActivityAt:Date.now(),unread:0};
+  const id=crypto.randomUUID(),thread={id,name:String(name||'新的群聊').trim().slice(0,28),worldId,accountId,memberIds:[accountId,...actors],nicknames:{},memberProfiles:{},announcement:'',muted:false,createdAt:Date.now(),lastActivityAt:Date.now(),unread:0};
   store.update(s=>{ensureWorldEngine(s);s.groupThreads.push(thread);s.groupMessages[id]=[]});
   appendWorldEvent(store,{id:`group-created:${id}`,worldId,actorIds:thread.memberIds,witnessIds:thread.memberIds,kind:'group-created',payload:{threadId:id,public:false,name:thread.name}});
   return thread;
@@ -41,7 +42,7 @@ export async function generateGroupReplies(store,threadId) {
   const state=ensureWorldEngine(store.getState()),thread=state.groupThreads.find(row=>row.id===threadId),model=state.modelProfiles.find(row=>row.id===state.activeModelProfileId);
   if(!thread||!model?.apiKey||!model?.model)return [];
   const lastText=(state.groupMessages[threadId]||[]).at(-1)?.text||'',available=availableGroupSpeakers(store,thread).filter(row=>!thread.mutedMemberIds?.includes(row.id)).sort((a,b)=>Number(lastText.includes(`@${b.name}`))-Number(lastText.includes(`@${a.name}`))).slice(0,4),allowed=new Set(available.map(row=>row.id));if(!allowed.size)return [];
-  const recent=(state.groupMessages[threadId]||[]).slice(-16),people=available.map(row=>({id:row.id,name:row.name,persona:row.persona||row.personality||row.note||'',relation:relationEdge(state,thread.accountId,row.id,thread.worldId).label}));
+  const recent=(state.groupMessages[threadId]||[]).slice(-16),people=available.map(row=>{const settings=thread.memberProfiles?.[row.id]||{},base=state.chatProfiles?.[row.id]||{};return{id:row.id,name:settings.nickname||row.name,persona:[row.persona||row.personality||row.note||'',settings.personaNote||''].filter(Boolean).join('。'),city:settings.longDistance?settings.city||row.city:'',cityPrototype:settings.longDistance?settings.cityPrototype||row.cityPrototype:'',worldbooks:(state.worldbooks||[]).filter(book=>(settings.worldbookIds||base.worldbookIds||[]).includes(book.id)).map(book=>compileWorldbook(book,lastText)).filter(Boolean),relation:relationEdge(state,thread.accountId,row.id,thread.worldId).label}});
   const publicFacts=knownWorldEvents(state,thread.accountId,thread.worldId,8).filter(row=>row.witnessIds.every(id=>thread.memberIds.includes(id))||row.payload.public).map(row=>row.payload.summary||row.payload.text).filter(Boolean);
   const context={group:{name:thread.name,announcement:thread.announcement},speakers:people,recent:recent.map(row=>({speaker:state.people.find(person=>person.id===row.speakerId)?.name,text:row.text})),knownFacts:publicFacts};
   const system='写一段真实手机群聊的后续。允许说话的人只来自 speakers，speakerId 必须严格匹配。角色可以接别人的话、短暂插嘴、只发一个表情，也可以不说；不要轮流报到，不要替 USER 发言，不要突然换话题。每句 2—60 字，语言习惯依人设，保留微妙关系与上条消息的具体细节。不能让没在场的人知道群内私事，不能编造已经发生的重大事件。只返回 JSON：{"messages":[{"speakerId":"允许的 ID","text":"一条消息"}]}，0—6 条。';

@@ -64,7 +64,7 @@ export function createChatRenderers({ store, navigate }) {
     container.innerHTML = `<section class="chat-layout" style="${chatAppearance.background?`background-image:linear-gradient(rgba(244,244,242,.72),rgba(244,244,242,.72)),url(${escapeHtml(chatAppearance.background)});background-size:cover;background-position:center`:""}">
       <div class="chat-person row between"><button class="avatar-button" data-profile-card>${initialsAvatar(person, profile)}</button><div class="meta"><strong>${escapeHtml(profile.remark || person.name)}</strong><span>${escapeHtml(person.note)}</span></div><button class="icon-button" data-chat-settings aria-label="聊天设置">•••</button></div>
       <div class="chat-stream" data-stream>${state.messages[conv.id].map((message,index,list) => messageBubble(message,index>0&&list[index-1].role===message.role,person,user,profile,chatAppearance)).join("")}</div>
-      <div><div class="plus-tray hidden" data-plus-tray>${["图片","拍摄","语音","位置","红包","转账","文件","一起刷","表情包"].map((label,index)=>`<button data-extra="${label}"><span>${["▧","◉","♫","⌖","礼","¥","□","▷","☺"][index]}</span>${label}</button>`).join("")}</div>
+      <div><div class="plus-tray hidden" data-plus-tray>${["图片","拍摄","语音","位置","红包","转账","文件","表情包"].map((label,index)=>`<button data-extra="${label}"><span>${["▧","◉","♫","⌖","礼","¥","□","☺"][index]}</span>${label}</button>`).join("")}</div>
       <form class="composer"><button type="button" class="icon-button" data-plus aria-label="更多功能">＋</button><textarea name="message" rows="1" placeholder="说点什么…" aria-label="消息"></textarea><button type="button" class="send secondary-send" data-send-only aria-label="仅发送">↑</button><button class="send ai-send" aria-label="发送给 AI">AI</button></form></div>
     </section>`;
     const form = container.querySelector("form");
@@ -84,7 +84,6 @@ export function createChatRenderers({ store, navigate }) {
       if(type==="位置"){if(!navigator.geolocation)return showToast("当前浏览器不支持定位");navigator.geolocation.getCurrentPosition(pos=>add(`[位置] ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`),()=>showToast("未获得定位权限"));return}
       if(type==="语音"){navigator.mediaDevices?.getUserMedia({audio:true}).then(stream=>{stream.getTracks().forEach(t=>t.stop());add("[语音] 00:03")}).catch(()=>showToast("未获得麦克风权限"));return}
       if(type==="红包"||type==="转账"){const amount=prompt(`${type}金额`,"52.00");if(amount)add(`[${type}] ¥${amount}`);return}
-      if(type==="一起刷"){navigate("together");return}
       if(type==="表情包"){openSheet(`<div class="sheet-handle"></div><div class="sheet-title"><h3>表情包</h3><button class="button ghost" data-sheet-close>关闭</button></div><div class="action-grid">${store.getState().stickerLibraries.characters[person.id].map((x,i)=>`<button class="action-card" data-sticker-index="${i}">${escapeHtml(x.name)}</button>`).join("")||'<p class="callout">请先在聊天设置上传角色表情包。</p>'}</div>`,{onReady(sheet){sheet.querySelectorAll("[data-sticker-index]").forEach(b=>b.onclick=()=>{const x=store.getState().stickerLibraries.characters[person.id][Number(b.dataset.stickerIndex)];closeSheet();add(`[表情] ${x.name}`)})}})}
     }
 

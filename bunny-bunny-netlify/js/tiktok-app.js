@@ -59,7 +59,7 @@ export function createTikTokRenderer({store,navigate}){
     const entering=!container.firstElementChild;containerRef=container;ensureTikTok(state());stopVideo();
     const home=page==='home',dark=home||page==='dm'||page==='live-room';
     container.className='app-view tt-app';container.dataset.ttDark=dark?'true':'false';
-    document.querySelector('#header-title').textContent='TikTok';document.querySelector('#back-button').onclick=back;
+    document.querySelector('#header-title').textContent='映兔';document.querySelector('#back-button').onclick=back;
     container.innerHTML=`<div class="tt-page ${home?'tt-page-feed':''}">
       ${home?feed():page==='discover'?discover():page==='create'?createPage():page==='inbox'?inbox():
         page==='dm'?dm():page==='profile'||page==='person'?profilePage(profileId||me()):
