@@ -1,6 +1,7 @@
 import { setupDeviceShell } from './device-shell.js';
 import { createStore } from "./core/store.js";
 import { createXRenderer } from './x-app.js';
+import { setupXAutomation } from './x-engine.js';
 import { registerRoute, navigate } from "./core/router.js";
 import { createDesktopRenderer } from "./apps/desktop-v2.js";
 import { createChatRenderers } from "./apps/chat-v2.js";
@@ -50,6 +51,7 @@ await hydrateMediaState(store.getState());
 playLaunchAnimation();
 registerPwa();
 const context = { store, navigate };
+setupXAutomation(context);
 const chats = createChatRenderers(context);
 
 registerRoute("desktop", createDesktopRenderer(context));

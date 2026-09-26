@@ -326,29 +326,35 @@ export function playEcho(message){
   const base=bubble.getBoundingClientRect(),surface=screen.getBoundingClientRect(),w=surface.width,h=surface.height;
   const x=base.left-surface.left,y=base.top-surface.top,words=bubble.textContent.trim().slice(0,110);
   const sent=message.classList.contains('user'),style=getComputedStyle(bubble);
-  scene.style.setProperty('--echo-accent',style.color);
+  const sourceFill=bubble.querySelector('.bubble-outline path');
+  scene.style.setProperty('--echo-accent',sourceFill?getComputedStyle(sourceFill).fill:style.backgroundColor);
   scene.style.setProperty('--echo-font',style.fontFamily);
-  const ghostWidth=Math.min(base.width,w*.44);
-  for(let i=0;i<12;i++){
-    const ghost=document.createElement('article');ghost.className=`echo-ghost message ${sent?'user':'char'} group-end`;
+  const ghostWidth=Math.min(base.width,170);
+  for(let i=0;i<20;i++){
+    const ghost=document.createElement('article');ghost.className=`echo-sprite message ${sent?'user':'char'} group-end`;
     const body=document.createElement('div');body.className='message-body-v3';
-    const copy=document.createElement('div');copy.className='bubble-v3';copy.textContent=words;
-    for(const key of ['background','background-color','background-image','color','border','border-radius','font-family','font-size','font-weight','letter-spacing','line-height','padding','box-shadow','text-shadow'])copy.style.setProperty(key,style.getPropertyValue(key));
+    const copy=bubble.cloneNode(true);copy.removeAttribute('id');
+    for(const key of ['color','border-radius','font-family','font-size','font-weight','letter-spacing','line-height','padding','box-shadow','text-shadow'])copy.style.setProperty(key,style.getPropertyValue(key));
+    const copyPath=copy.querySelector('.bubble-outline path');if(sourceFill&&copyPath)copyPath.style.fill=getComputedStyle(sourceFill).fill;
     body.append(copy);ghost.append(body);
-    const targetX=((i%2)+.5)*w/2-x-ghostWidth/2,targetY=(Math.floor(i/2)+.5)*h/6-y-base.height/2;
+    const column=i%4,row=Math.floor(i/4),scale=.5+((i*7)%6)*.03;
+    const desiredX=(column+.5)*w/4-ghostWidth*scale/2+(row%2?11:-9);
+    const desiredY=(row+.5)*h/5-base.height*scale/2+((column%2)*12-6);
+    const targetX=Math.max(8,Math.min(w-ghostWidth*scale-8,desiredX))-x;
+    const targetY=Math.max(8,Math.min(h-base.height*scale-8,desiredY))-y;
     ghost.style.setProperty('--echo-x',`${x}px`);ghost.style.setProperty('--echo-y',`${y}px`);
     ghost.style.setProperty('--echo-w',`${ghostWidth}px`);ghost.style.setProperty('--echo-dx',`${targetX}px`);
-    ghost.style.setProperty('--echo-dy',`${targetY}px`);ghost.style.setProperty('--echo-delay',`${i*37}ms`);scene.append(ghost);
+    ghost.style.setProperty('--echo-dy',`${targetY}px`);ghost.style.setProperty('--echo-scale',scale);ghost.style.setProperty('--echo-delay',`${(i%4)*46+Math.floor(i/4)*26}ms`);scene.append(ghost);
   }
   const letters=globalThis.Intl?.Segmenter?[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(words)].map(x=>x.segment):Array.from(words);
-  letters.filter(x=>x.trim()).slice(0,42).forEach((letter,i)=>{
+  letters.filter(x=>x.trim()).slice(0,12).forEach((letter,i)=>{
     const glyph=document.createElement('span');glyph.className='echo-glyph';glyph.textContent=letter;
     glyph.style.setProperty('--echo-x',`${x+base.width/2}px`);glyph.style.setProperty('--echo-y',`${y+base.height/2}px`);
     glyph.style.setProperty('--echo-dx',`${((i*73)%97)/97*w-x-base.width/2}px`);
     glyph.style.setProperty('--echo-dy',`${((i*41+19)%89)/89*h-y-base.height/2}px`);
     glyph.style.setProperty('--echo-delay',`${i*26}ms`);glyph.style.setProperty('--echo-turn',`${(i%2?-1:1)*(16+i%5*9)}deg`);scene.append(glyph);
   });
-  window.setTimeout(()=>scene.remove(),2600);
+  window.setTimeout(()=>scene.remove(),3200);
 }
 function bunnyStamp(){return'<svg viewBox="0 0 64 64"><path d="M24 27C15 13 18 5 23 5c5 0 7 12 8 18 2-8 5-18 10-17 6 1 4 13-2 22 6 3 10 9 10 16 0 10-8 15-17 15S15 54 15 44c0-8 3-13 9-17Z"/><circle cx="26" cy="42" r="2"/><circle cx="39" cy="42" r="2"/><path d="M29 49c2 2 5 2 7 0"/><path d="M11 35c4 1 7 3 9 6M53 35c-4 1-7 3-9 6"/></svg>'}
 function sendIcon(){return'<svg viewBox="0 0 24 24"><path d="m5 12 14-7-4 14-3-5-7-2Z"/><path d="m12 14 7-9"/></svg>'}

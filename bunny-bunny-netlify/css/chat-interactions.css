@@ -12,31 +12,36 @@
 
 /* Echo fills the conversation with bubble echoes and independently moving letters. */
 #phone-root .chat-layout-v3{position:relative}
-#phone-root .chat-layout-v3 .echo-scene{position:absolute;inset:0;z-index:18;overflow:hidden;pointer-events:none;isolation:isolate;background:radial-gradient(circle at 50% 46%,#ffffff20,transparent 75%)}
-#phone-root .chat-layout-v3 .echo-ghost{
-  position:absolute;top:var(--echo-y);left:var(--echo-x);width:var(--echo-w);max-height:3.2rem;
-  overflow:visible;overflow-wrap:anywhere;padding:0!important;box-shadow:0 6px 20px #0002;
-  opacity:0;transform-origin:center;animation:bunny-echo-bubble 2.15s var(--echo-delay) cubic-bezier(.17,.68,.2,1) both
+#phone-root .chat-layout-v3 .echo-scene{position:absolute;inset:0;z-index:18;overflow:hidden;pointer-events:none;isolation:isolate}
+#phone-root .chat-layout-v3 .echo-scene:before{content:'';position:absolute;inset:0;background:#11192619;animation:bunny-echo-veil 3.1s ease-in-out both}
+#phone-root .chat-layout-v3 .echo-sprite{
+  position:absolute!important;top:var(--echo-y);left:var(--echo-x);width:var(--echo-w);
+  display:block!important;max-width:none!important;height:auto;margin:0!important;padding:0!important;
+  opacity:0;transform-origin:top left;filter:drop-shadow(0 3px 7px #0002);
+  animation:bunny-echo-bubble 2.6s var(--echo-delay) cubic-bezier(.2,.75,.2,1) both
 }
-#phone-root .chat-layout-v3 .echo-ghost .message-body-v3{width:100%;max-width:100%!important}
-#phone-root .chat-layout-v3 .echo-ghost .bubble-v3{width:100%;max-height:3.2rem;overflow:hidden}
+#phone-root .chat-layout-v3 .echo-sprite .message-body-v3{width:100%;max-width:100%!important;flex:none!important}
+#phone-root .chat-layout-v3 .echo-sprite .bubble-v3{width:100%;max-width:none!important;min-width:0!important;max-height:9rem;overflow:visible!important}
+#phone-root .chat-layout-v3 .echo-sprite .bubble-outline{visibility:visible!important}
 #phone-root .chat-layout-v3 .echo-glyph{
   position:absolute;left:var(--echo-x);top:var(--echo-y);display:block;color:var(--echo-accent,#166fcf);
-  font:750 clamp(1.2rem,7vw,2.15rem)/1 var(--echo-font,-apple-system,BlinkMacSystemFont,sans-serif);
-  text-shadow:0 2px 12px #1116;opacity:0;
-  animation:bunny-echo-letter 1.75s var(--echo-delay) cubic-bezier(.16,.8,.2,1) both
+  font:650 clamp(.8rem,4vw,1.25rem)/1 var(--echo-font,-apple-system,BlinkMacSystemFont,sans-serif);
+  text-shadow:0 1px 5px #1113;opacity:0;
+  animation:bunny-echo-letter 1.65s var(--echo-delay) ease-out both
 }
+@keyframes bunny-echo-veil{0%,100%{opacity:0}20%,72%{opacity:1}}
 @keyframes bunny-echo-bubble{
-  0%{opacity:0;transform:translate3d(0,0,0) scale(.58);filter:blur(0)}
-  18%{opacity:.92}
-  55%{opacity:.74;transform:translate3d(var(--echo-dx),var(--echo-dy),0) scale(1.08)}
-  100%{opacity:0;transform:translate3d(var(--echo-dx),var(--echo-dy),0) scale(1.42)}
+  0%{opacity:0;translate:0 0;scale:.35}
+  14%{opacity:1}
+  58%{opacity:1;translate:var(--echo-dx) var(--echo-dy);scale:var(--echo-scale)}
+  78%{opacity:.96;translate:var(--echo-dx) var(--echo-dy);scale:var(--echo-scale)}
+  100%{opacity:0;translate:var(--echo-dx) var(--echo-dy);scale:calc(var(--echo-scale) * 1.06)}
 }
 @keyframes bunny-echo-letter{
-  0%{opacity:0;transform:translate3d(0,0,0) rotate(0) scale(.3)}
-  24%{opacity:.9}
-  75%{opacity:.72}
-  100%{opacity:0;transform:translate3d(var(--echo-dx),var(--echo-dy),0) rotate(var(--echo-turn)) scale(1.65)}
+  0%{opacity:0;transform:translate3d(0,0,0) scale(.8)}
+  28%{opacity:.4}
+  75%{opacity:.28}
+  100%{opacity:0;transform:translate3d(calc(var(--echo-dx) * .35),calc(var(--echo-dy) * .35),0) scale(1.1)}
 }
 
 /* Hidden behind the composer plus menu. The cloud holds fictional inner voice. */

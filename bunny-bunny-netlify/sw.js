@@ -1,10 +1,10 @@
-const CACHE_NAME = "bunny-bunny-shell-v50";
+const CACHE_NAME = "bunny-bunny-shell-v51";
 const OFFLINE_URL = new URL("./index.html", self.registration.scope).href;
 const APP_SHELL = [
  "./js/photo-editor.js", "./js/bubble-shape.js", "./js/schedule-engine.js", "./js/inner-voice.js", "./js/world-engine.js", "./js/group-model.js", "./js/group-chat.js", "./js/character-diary.js", "./css/chat-refresh.css", "./css/chat-bubble-fidelity.css", "./css/chat-interactions.css",
  "./js/world-context.js",
  './js/chat-skins.js', './css/chat-skins.css',
- './js/device-shell.js', './css/device-shell.css',
+ './js/device-shell.js', './css/device-shell.css', './js/x-engine.js', './js/x-panels.js',
  './js/apps/desktop-drag.js', './js/appearance-controls.js', './js/x-app.js', './js/x-model.js', './css/desktop-polish.css', './css/x-app.css',
   './css/apps/widget-collection.css', './js/apps/widget-collection.js',
   './css/apps/widget-surfaces.css', './js/apps/widget-surfaces.js',
