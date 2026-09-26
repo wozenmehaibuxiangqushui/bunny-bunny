@@ -329,22 +329,27 @@ export function playEcho(message){
   const sourceFill=bubble.querySelector('.bubble-outline path');
   scene.style.setProperty('--echo-accent',sourceFill?getComputedStyle(sourceFill).fill:style.backgroundColor);
   scene.style.setProperty('--echo-font',style.fontFamily);
-  const ghostWidth=Math.min(base.width,170);
-  for(let i=0;i<20;i++){
+  const ghostWidth=base.width;
+  let seed=[...String(message.dataset.messageId||words)].reduce((n,char)=>((n*33)^char.charCodeAt(0))>>>0,0x9e3779b9);
+  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+  const anchors=[[.08,.08],[.52,.11],[.86,.2],[.23,.31],[.7,.39],[.14,.53],[.8,.58],[.43,.73],[.88,.86],[.18,.9]];
+  const sizes=[.24,.34,.47,.62,.82,1.08,1.42,1.78,2.18];
+  for(let i=0;i<38;i++){
     const ghost=document.createElement('article');ghost.className=`echo-sprite message ${sent?'user':'char'} group-end`;
     const body=document.createElement('div');body.className='message-body-v3';
     const copy=bubble.cloneNode(true);copy.removeAttribute('id');
     for(const key of ['color','border-radius','font-family','font-size','font-weight','letter-spacing','line-height','padding','box-shadow','text-shadow'])copy.style.setProperty(key,style.getPropertyValue(key));
     const copyPath=copy.querySelector('.bubble-outline path');if(sourceFill&&copyPath)copyPath.style.fill=getComputedStyle(sourceFill).fill;
     body.append(copy);ghost.append(body);
-    const column=i%4,row=Math.floor(i/4),scale=.5+((i*7)%6)*.03;
-    const desiredX=(column+.5)*w/4-ghostWidth*scale/2+(row%2?11:-9);
-    const desiredY=(row+.5)*h/5-base.height*scale/2+((column%2)*12-6);
-    const targetX=Math.max(8,Math.min(w-ghostWidth*scale-8,desiredX))-x;
-    const targetY=Math.max(8,Math.min(h-base.height*scale-8,desiredY))-y;
+    const anchor=anchors[i%anchors.length],scale=sizes[(i*5+Math.floor(random()*3))%sizes.length];
+    const desiredX=(anchor[0]+(random()-.5)*.35)*w-ghostWidth*scale/2;
+    const desiredY=(anchor[1]+(random()-.5)*.19)*h-base.height*scale/2;
+    const targetX=Math.max(-ghostWidth*scale*.58,Math.min(w-ghostWidth*scale*.42,desiredX))-x;
+    const targetY=Math.max(-base.height*scale*.58,Math.min(h-base.height*scale*.42,desiredY))-y;
     ghost.style.setProperty('--echo-x',`${x}px`);ghost.style.setProperty('--echo-y',`${y}px`);
     ghost.style.setProperty('--echo-w',`${ghostWidth}px`);ghost.style.setProperty('--echo-dx',`${targetX}px`);
-    ghost.style.setProperty('--echo-dy',`${targetY}px`);ghost.style.setProperty('--echo-scale',scale);ghost.style.setProperty('--echo-delay',`${(i%4)*46+Math.floor(i/4)*26}ms`);scene.append(ghost);
+    ghost.style.setProperty('--echo-dy',`${targetY}px`);ghost.style.setProperty('--echo-scale',scale);
+    ghost.style.setProperty('--echo-delay',`${Math.floor(random()*310)}ms`);ghost.style.zIndex=String(Math.round(scale*10));scene.append(ghost);
   }
   const letters=globalThis.Intl?.Segmenter?[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(words)].map(x=>x.segment):Array.from(words);
   letters.filter(x=>x.trim()).slice(0,12).forEach((letter,i)=>{
