@@ -1,5 +1,6 @@
 import { bindPhotoEditor } from "./photo-editor.js";
 import { alignBubbleShapes } from "./bubble-shape.js";
+import { generateInnerVoice, savedInnerVoices, innerVoiceActivityDue } from './inner-voice.js';
 import { worldContextPrompt } from "./world-context.js";
 import { applyConversationSkin } from "./chat-skins.js";
 import { conversationById, personById } from "./core/store.js";
@@ -16,7 +17,8 @@ import { ensureAccountState, accountContext } from "./account-system.js";
 import { generateImage } from "./image-client.js";
 import { ensureTimeProfile, buildTimeContext, timeSummary, localDateValue, localTimeValue } from "./time-context.js";
 import { compileWorldbook, compilePreset } from "./apps/prompt-library.js";
-import { currentSchedule, ensureDailySchedule, enrichDailySchedule, publicScheduleStatus, recordScheduleCommitment, schedulePrompt } from './schedule-engine.js';
+import { currentSchedule, nextReplyAt, ensureDailySchedule, enrichDailySchedule, publicScheduleStatus, recordScheduleCommitment, schedulePrompt } from './schedule-engine.js';
+import { appendWorldEvent, changeRelationship, entityWorld, knownWorldEvents } from './world-engine.js';
 
 const DEFAULT_REACTIONS = ["❤️", "👍", "👎", "😂", "‼️", "❓"];
 const EMOJI_GROUPS = {
@@ -34,16 +36,18 @@ const TYPE_META = {
 };
 
 export function createConversationV3Renderer({ store, navigate }) {
-  const ui = { conversationId:"", quoteId: "", selectMode: false, selected: new Set(), attachmentsOpen:false, sending:false, echoNext:false, error:"" };
+  const ui = { conversationId:"", quoteId: "", selectMode: false, selected: new Set(), attachmentsOpen:false, sending:false, echoNext:false, voiceGenerating:false, error:"" };
 
   function conversation(container, params = {}) {
     const state = store.getState();
     const conv = conversationById(state, params.id || "conv-jun");
-    if (!conv) return navigate("chat");
+    if (!conv || (conv.userAccountId && conv.userAccountId !== state.currentUserId)) return navigate("chat");
+    if(conv.hiddenFromList)store.update(s=>{const row=conversationById(s,conv.id);if(row)row.hiddenFromList=false});
     if(ui.conversationId!==conv.id){ui.conversationId=conv.id;ui.quoteId="";ui.selectMode=false;ui.selected.clear();ui.attachmentsOpen=false;ui.echoNext=false}
     const person = personById(state, conv.personId);
     const user = personById(state, state.currentUserId);
     const profile = ensureTimeProfile(state.chatProfiles[person.id]||(state.chatProfiles[person.id]={}));
+    const newThought=savedInnerVoices(state,conv).find(row=>row.activity&&!row.seenAt);
     const appearance = state.chatAppearance;
     const skin = applyConversationSkin(appearance);
     ensureDailySchedule(store,person.id);void enrichDailySchedule(store,person.id);
@@ -54,13 +58,17 @@ export function createConversationV3Renderer({ store, navigate }) {
     container.className = `app-view conversation-v3 ${ui.selectMode ? "select-mode" : ""}`;
     container.innerHTML = `<section class="chat-layout-v3" data-chat-skin="${skin}" style="${backgroundStyle(appearance.background,appearance.backgroundOpacity)}">
       <header class="chat-contact-bar">
-        <button class="chat-contact-avatar" data-profile-card aria-label="查看 ${escapeHtml(person.name)} 的资料">${initialsAvatar(person, profile)}</button>
+        <button class="chat-contact-avatar" data-profile-card aria-label="查看 ${escapeHtml(person.name)} 的资料">${initialsAvatar(person, profile)}</button>${newThought?'<button type="button" class="inner-voice-alert" data-voice-activity aria-label="查看新的心声">•••</button>':''}
         <div><strong>${escapeHtml(profile.remark || person.name)}</strong><span>${escapeHtml(publicScheduleStatus(store,person.id))}</span></div>
         <div class="chat-contact-actions"><button class="chat-time ${profile.timeAwarenessEnabled!==false?"active":"manual"}" data-time-awareness aria-label="时间感知：${escapeHtml(timeSummary(profile))}" title="${escapeHtml(timeSummary(profile))}">${clockIcon()}</button><button data-start-call="voice" aria-label="语音通话">${callIcon(false)}</button><button data-start-call="video" aria-label="视频通话">${callIcon(true)}</button><button class="chat-more" data-chat-settings aria-label="聊天设置">•••</button></div>
       </header>
       <div class="chat-stream-v3" data-stream>${messages.map((message,index,list)=>messageView(message,index>0&&list[index-1].role===message.role,person,user,profile,appearance,messages,ui,!list[index+1]||list[index+1].role!==message.role||list[index+1].recalled)).join("")}${ui.sending?typingView(person,profile):""}</div>
       ${ui.selectMode ? selectionBar(ui.selected.size) : composerView(quoted,ui.attachmentsOpen,ui.sending,ui.error,ui.echoNext)}
     </section>`;
+    // Resolve the end of each visible sender run after recalled/system rows are
+    // omitted. The shape and timestamp must agree about the same last bubble.
+    const visibleRows=[...container.querySelectorAll('.chat-stream-v3 > .message')];
+    visibleRows.forEach((row,index)=>row.classList.toggle('group-end',!visibleRows[index+1]?.classList.contains('continuation')));
     bind(container, params, conv, person, user, profile, messages);
     alignBubbleShapes(container.querySelector('[data-chat-skin]'));
     requestAnimationFrame(() => { const stream=container.querySelector("[data-stream]"); if(stream)stream.scrollTop=stream.scrollHeight; });
@@ -86,6 +94,7 @@ export function createConversationV3Renderer({ store, navigate }) {
     let singleTimer;
     topAvatar.onclick=()=>{if(topAvatar.__bunnyDoubleTappedUntil>Date.now())return;clearTimeout(singleTimer);singleTimer=setTimeout(()=>showProfile(person,profile),280)};
     bindDoubleTap(topAvatar,()=>{clearTimeout(singleTimer);pat(person,profile,conv,container,params)});
+    container.querySelector('[data-voice-activity]')?.addEventListener('click',()=>openInnerVoiceSheet(conv,person));
     container.querySelectorAll("[data-pat-avatar]").forEach(avatar=>bindDoubleTap(avatar,()=>pat(person,profile,conv,container,params)));
     container.querySelectorAll(".message.char .bubble-v3").forEach(bubble=>bindLongPress(bubble,()=>openMessageMenu(bubble.closest(".message").dataset.messageId,conv,person,container,params)));
     container.querySelectorAll(".message.user .bubble-v3").forEach(bubble=>bindLongPress(bubble,()=>openUserMessageMenu(bubble.closest(".message").dataset.messageId,conv,person,container,params)));
@@ -122,7 +131,7 @@ export function createConversationV3Renderer({ store, navigate }) {
   async function submitMessage(sendAi,form,conv,person,profile,container,params){
     if(sendAi&&ui.sending)return showToast("正在等待 AI 回复");
     const input=form.elements.message,text=input.value.trim();
-    if(text){const replyTo=ui.quoteId||"",now=timeNow(),effect=ui.echoNext?'echo':'',messageId=id();store.update(s=>{s.messages[conv.id].push({id:messageId,role:"user",type:"text",text,time:now,createdAt:Date.now(),replyTo,effect});const c=conversationById(s,conv.id);c.preview=text;c.time=now});ui.quoteId="";ui.error="";ui.echoNext=false;input.value="";requestAnimationFrame(()=>playEcho(container.querySelector(`[data-message-id="${messageId}"]`)))}
+    if(text){const replyTo=ui.quoteId||"",now=timeNow(),effect=ui.echoNext?'echo':'',messageId=id();store.update(s=>{s.messages[conv.id].push({id:messageId,role:"user",type:"text",text,time:now,createdAt:Date.now(),replyTo,effect});const c=conversationById(s,conv.id);c.preview=text;c.time=now});ui.quoteId="";ui.error="";ui.echoNext=false;input.value="";if(effect==='echo')requestAnimationFrame(()=>playEcho(container.querySelector(`[data-message-id="${messageId}"]`)))}
     else if(!sendAi)return showToast("请输入消息内容");
     if(!sendAi){activeRender(container,params);return}
     ui.sending=true;activeRender(container,params);
@@ -135,20 +144,27 @@ export function createConversationV3Renderer({ store, navigate }) {
     updateIsland(`${person.name} 正在回复…`,true);
     try{
       if(!model?.apiKey||!model?.model)throw Error("没有可用的文本模型：请到“模型与 API”拉取模型、测试连接并保存启用")
+      const block=currentSchedule(store,person.id);
+      if(block?.canReply===false){
+        const dueAt=nextReplyAt(store,person.id).getTime();
+        store.update(s=>{s.callRuntime=s.callRuntime||{};s.callRuntime.pendingReplies=s.callRuntime.pendingReplies||{};s.callRuntime.pendingReplies[conv.id]={personId:person.id,dueAt,createdAt:Date.now(),reason:block.status,source:'schedule'}});
+        showToast(`${person.name}现在${block.status}，有空后再回`);
+        return;
+      }
       const p=current.presets.find(x=>x.id===profile.presetId)||current.presets.find(x=>x.name===profile.preset);
       const books=current.worldbooks.filter(x=>(profile.worldbookIds||[]).includes(x.id)||x.name===profile.worldbook);
       const commonStickers=(current.stickerLibraries?.global||[]).map(x=>({...x,scope:"CHAR 通用"})),exclusiveStickers=(current.stickerLibraries?.characters?.[person.id]||[]).map(x=>({...x,scope:"角色专属"})),charStickers=[...exclusiveStickers,...commonStickers];
       const stickerGuide=charStickers.length?`当前 CHAR 可用表情包（只能按描述选择）：\n${charStickers.map((x,i)=>`${i+1}. [${x.scope}] ${x.name||"表情"}｜${x.description||(x.tags||[]).join("、")||"无描述"}`).join("\n")}`:"当前 CHAR 没有可用表情包，不要输出 sticker；仍可在开启偷表情时收藏 USER 发来的表情。";
       ensureTtsState(current);
-      ensureAccountState(current);const user=personById(current,current.currentUserId),identity=accountContext(current,person.id,user.id),boundChar=person.boundCharId?personById(current,person.boundCharId):null,boundIdentities=[...new Set([...(person.boundIdentityIds||[]),...(person.boundCharId?[person.boundCharId]:[])])].map(id=>personById(current,id)).filter(Boolean),history=current.messages[conv.id]||[],lastUser=[...history].reverse().find(x=>x.role==="user"&&!x.recalled),lastMessage=[...history].reverse().find(x=>x.createdAt),memory=await retrieveMemoryContext(current,identity.memoryOwnerId,lastUser?.text||lastUser?.description||""),world=current.worlds.find(x=>x.id===current.currentWorldId);
-      const imageEnabled=Boolean(current.mediaApis?.image?.enabled&&current.mediaApis.image.channels?.chat!==false&&profile.imageGenerationEnabled),timeContext=buildTimeContext(profile,{timezone:world?.timezone,lastMessageAt:lastMessage?.createdAt}),worldbookPrompts=books.map(book=>compileWorldbook(book,lastUser?.text||lastUser?.description||"")).filter(Boolean),preset=compilePreset(p),prompt=[preset.systemPrompt,worldContextPrompt(current,person.id),...worldbookPrompts,buildInternalChatPrompt({person,user,boundChar,boundIdentities,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:imageEnabled}),timeContext,schedulePrompt(store,person.id),`【当前账号身份规则】\n${identity.prompt}`,memory.promptBlock,options.instruction].filter(Boolean).join("\n\n"),promptBundle={system:prompt,prefixMessages:preset.prefixMessages};
+      ensureAccountState(current);const user=personById(current,current.currentUserId),identity=accountContext(current,person.id,user.id),boundChar=person.boundCharId?personById(current,person.boundCharId):null,boundIdentities=[...new Set([...(person.boundIdentityIds||[]),...(person.boundCharId?[person.boundCharId]:[])])].map(id=>personById(current,id)).filter(Boolean),history=current.messages[conv.id]||[],lastUser=[...history].reverse().find(x=>x.role==="user"&&!x.recalled),lastMessage=[...history].reverse().find(x=>x.createdAt),memory=await retrieveMemoryContext(current,identity.memoryOwnerId,lastUser?.text||lastUser?.description||""),worldId=entityWorld(current,person.id),world=current.worlds.find(x=>x.id===worldId),knownEvents=knownWorldEvents(current,person.id,worldId,6).map(row=>row.payload.summary||row.payload.text).filter(Boolean);
+      const imageEnabled=Boolean(current.mediaApis?.image?.enabled&&current.mediaApis.image.channels?.chat!==false&&profile.imageGenerationEnabled),timeContext=buildTimeContext(profile,{timezone:world?.timezone,lastMessageAt:lastMessage?.createdAt}),worldbookPrompts=books.map(book=>compileWorldbook(book,lastUser?.text||lastUser?.description||"")).filter(Boolean),preset=compilePreset(p),prompt=[preset.systemPrompt,worldContextPrompt(current,person.id),knownEvents.length?`【你亲历或公开可知的近期世界事件】\n${knownEvents.join('\n')}`:'',...worldbookPrompts,buildInternalChatPrompt({person,user,boundChar,boundIdentities,profile,translationEnabled:profile.translationEnabled,toneEnabled:profile.llmTone!==false,stickerGuide,imageGenerationEnabled:imageEnabled}),timeContext,schedulePrompt(store,person.id),`【当前账号身份规则】\n${identity.prompt}`,memory.promptBlock,options.instruction].filter(Boolean).join("\n\n"),promptBundle={system:prompt,prefixMessages:preset.prefixMessages};
       const avatarContext=profile.visionEnabled&&user.avatarUrl?[{id:"user-current-avatar",role:"user",type:"image",src:user.avatarUrl,text:"USER 当前头像",description:"这是 USER 当前正在使用的头像。你可以识别它，但不要机械复述。"}]:[];
       store.update(s=>{for(const message of s.messages[conv.id]||[])if(message.role==="user"&&!message.charReadAt)message.charReadAt=Date.now()});
       const modelMessages=[...avatarContext,...current.messages[conv.id].map(m=>profile.visionEnabled?m:{...m,src:""})];
       savePromptDebug(store,identity.memoryOwnerId,{systemPrompt:prompt,prefixMessages:preset.prefixMessages,messages:modelMessages,retrieval:{query:lastUser?.text||lastUser?.description||"",selected:memory.selected.map(x=>({id:x.id,kind:x.kind,text:x.text||x.event})),semantic:memory.semantic}});
       const raw=await sendToModel(model,modelMessages,promptBundle),parsed=await enforceChatFormat(raw,model,profile),responseBatchId=id();
       for(const row of parsed.messages)recordScheduleCommitment(store,person.id,row.text);
-      for(let index=0;index<parsed.messages.length;index++){const reply=parsed.messages[index],pause=460+Math.min(1450,Math.max(0,reply.text.length-2)*24);await sleep(pause);store.update(s=>{s.messages[conv.id].push({id:id(),responseBatchId,role:"char",type:"text",text:reply.text,translation:reply.translation,tone:reply.tone,time:timeNow(),createdAt:Date.now(),arrivedWithPause:true});const target=s.conversations.find(x=>x.id===conv.id);if(target){target.preview=reply.text;target.time=timeNow()}});activeRender(container,params)}
+      for(let index=0;index<parsed.messages.length;index++){const reply=parsed.messages[index],pause=460+Math.min(1450,Math.max(0,reply.text.length-2)*24),messageId=id();await sleep(pause);store.update(s=>{s.messages[conv.id].push({id:messageId,responseBatchId,role:"char",type:"text",text:reply.text,translation:reply.translation,tone:reply.tone,effect:reply.effect,time:timeNow(),createdAt:Date.now(),arrivedWithPause:true});const target=s.conversations.find(x=>x.id===conv.id);if(target){target.preview=reply.text;target.time=timeNow()}});activeRender(container,params);if(reply.effect==='echo')requestAnimationFrame(()=>playEcho(container.querySelector(`[data-message-id="${messageId}"]`)))}
       for(const action of parsed.actions){
         if(action.kind==="sticker"){const query=action.query.toLowerCase(),item=charStickers.find(x=>[x.name,x.description,...(x.tags||[])].filter(Boolean).some(v=>String(v).toLowerCase().includes(query)||query.includes(String(v).toLowerCase())))||charStickers[0];if(item)store.update(s=>s.messages[conv.id].push({id:id(),responseBatchId,role:"char",type:"sticker",text:item.name||"表情包",src:item.url,description:item.description||(item.tags||[]).join("、")||"CHAR 发送的表情包",time:timeNow()}));continue}
         if(action.kind==="steal_sticker"){const source=current.messages[conv.id].find(x=>x.id===action.target&&x.role==="user"&&x.type==="sticker"&&x.src);if(source&&profile.stickerSteal){store.update(s=>{const library=s.stickerLibraries.characters[person.id]||(s.stickerLibraries.characters[person.id]=[]);if(!library.some(x=>x.url===source.src))library.push({name:source.text||"收藏的表情",url:source.src,description:source.description||source.text||"从 USER 收藏的表情",tags:["偷来的"]})});showToast(`${person.name} 收藏了这张表情`)}continue}
@@ -163,7 +179,12 @@ export function createConversationV3Renderer({ store, navigate }) {
         const kind=action.kind==="redpacket"&&action.amount>520?"transfer":action.kind,messageId=id();store.update(s=>s.messages[conv.id].push({id:messageId,responseBatchId,role:"char",type:kind,text:action.note||(kind==="redpacket"?"大吉大利":"转账给你"),amount:action.amount,time:timeNow()}));walletCredit(store,{amount:action.amount,kind,title:`收到 ${person.name} 的${kind==="redpacket"?"红包":"转账"}`,conversationId:conv.id,messageId,note:action.note})
       }
       activeRender(container,params);
-      scheduleMemoryMaintenance({store,personId:identity.memoryOwnerId,model,messages:store.getState().messages[conv.id]||[]});
+      if(parsed.messages.length){const event=appendWorldEvent(store,{id:`chat-batch:${responseBatchId}`,worldId,actorIds:[user.id,person.id],witnessIds:[user.id,person.id],kind:'private-chat',payload:{summary:`${person.name} 与 ${user.name} 聊到：${(lastUser?.text||'').slice(0,80)}`,public:false},source:'chat'});changeRelationship(store,{a:user.id,b:person.id,worldId,deltaAffinity:1,reasonEventId:event.id})}
+      scheduleMemoryMaintenance({store,personId:person.id,ownerId:identity.memoryOwnerId,conversationId:conv.id,accountId:user.id,model,messages:store.getState().messages[conv.id]||[]});
+      if(!ui.voiceGenerating&&innerVoiceActivityDue(store.getState(),conv)){
+        ui.voiceGenerating=true;
+        void generateInnerVoice(store,conv,person,{activity:true}).then(()=>{if(ui.conversationId===conv.id&&container.isConnected)activeRender(container,params)}).catch(error=>console.warn('Bunny inner voice activity skipped',error)).finally(()=>{ui.voiceGenerating=false});
+      }
       if(profile.voiceGenerationMode==="auto"){const voices=(store.getState().messages[conv.id]||[]).filter(x=>x.responseBatchId===responseBatchId&&x.type==="voice"&&!x.audioMediaId);for(const message of voices)await cacheVoiceMessage(message,profile).catch(error=>showToast(error.message))}
       if(profile.autoPlayVoice&&parsed.messages.length){const spoken=parsed.messages.map(x=>x.text).join("。"),tone=parsed.messages.find(x=>x.tone)?.tone||"";synthesizeSpeech(resolveTtsConfig(store.getState(),profile),spoken,{tone}).catch(error=>showToast(error.message))}
     }catch(error){ui.error=readableAiError(error);showToast(ui.error)}finally{ui.sending=false;updateIsland("bunny 正在陪你",false);activeRender(container,params)}
@@ -176,6 +197,7 @@ export function createConversationV3Renderer({ store, navigate }) {
       <div class="message-menu-preview">${escapeHtml(message.text)}</div>
       <div class="message-action-list">
         <button data-quote>${menuIcon("quote")}<span><strong>引用回复</strong><small>在输入框上方显示这条消息</small></span></button>
+        ${message.type==='text'||!message.type?'<button data-echo-message><span class="echo-menu-symbol">◎</span><span><strong>回声</strong><small>让这条消息的文字跃满屏幕</small></span></button>':''}
         <button data-edit>${menuIcon("edit")}<span><strong>编辑</strong><small>修改文字或消息类型</small></span></button>
         <button data-favorite>${menuIcon("favorite")}<span><strong>收藏</strong><small>保存到“我的收藏”</small></span></button>
         <button data-multi>${menuIcon("multi")}<span><strong>多选</strong><small>删除或合并转发消息</small></span></button>
@@ -183,6 +205,7 @@ export function createConversationV3Renderer({ store, navigate }) {
         sheet.querySelectorAll("[data-reaction]").forEach(b=>b.onclick=()=>applyReaction(b.dataset.reaction,messageId,conv,container,params));
         sheet.querySelector("[data-more-emoji]").onclick=()=>openEmojiPicker(emoji=>applyReaction(emoji,messageId,conv,container,params));
         sheet.querySelector("[data-quote]").onclick=()=>{ui.quoteId=messageId;closeSheet();activeRender(container,params);requestAnimationFrame(()=>container.querySelector("textarea")?.focus())};
+        sheet.querySelector('[data-echo-message]')?.addEventListener('click',()=>markMessageEcho(messageId,conv,container,params));
         sheet.querySelector("[data-edit]").onclick=()=>openEditor(messageId,conv,container,params);
         sheet.querySelector("[data-favorite]").onclick=()=>favoriteMessage(messageId,conv);
         sheet.querySelector("[data-multi]").onclick=()=>{ui.selectMode=true;ui.selected=new Set([messageId]);closeSheet();activeRender(container,params)};
@@ -192,7 +215,9 @@ export function createConversationV3Renderer({ store, navigate }) {
   function applyReaction(emoji,messageId,conv,container,params){store.update(s=>{const m=s.messages[conv.id].find(x=>x.id===messageId);m.reaction=m.reaction===emoji?"":emoji;m.reactionBy="user";s.chatAppearance.recentReactions=[emoji,...(s.chatAppearance.recentReactions||DEFAULT_REACTIONS).filter(x=>x!==emoji)].slice(0,6)});closeSheet();activeRender(container,params);const state=store.getState(),person=personById(state,conv.personId);requestAiReply(conv,person,state.chatProfiles[person.id],container,params)}
   function openEmojiPicker(select){const names=Object.keys(EMOJI_GROUPS);openSheet(`<div class="emoji-picker"><div class="sheet-title"><h3>选择表情</h3><button class="button ghost" data-sheet-close>关闭</button></div><div class="emoji-tabs">${names.map((x,i)=>`<button class="${i===0?"active":""}" data-emoji-tab="${x}">${x}</button>`).join("")}</div><div class="emoji-grid" data-emoji-grid>${EMOJI_GROUPS[names[0]].map(x=>`<button data-emoji="${x}">${x}</button>`).join("")}</div></div>`,{onReady(sheet){const grid=sheet.querySelector("[data-emoji-grid]");const bind=()=>grid.querySelectorAll("[data-emoji]").forEach(b=>b.onclick=()=>select(b.dataset.emoji));bind();sheet.querySelectorAll("[data-emoji-tab]").forEach(tab=>tab.onclick=()=>{sheet.querySelectorAll("[data-emoji-tab]").forEach(x=>x.classList.toggle("active",x===tab));grid.innerHTML=EMOJI_GROUPS[tab.dataset.emojiTab].map(x=>`<button data-emoji="${x}">${x}</button>`).join("");bind()})}})}
 
-  function openUserMessageMenu(messageId,conv,person,container,params){const message=store.getState().messages[conv.id].find(x=>x.id===messageId);if(!message||message.recalled)return;openSheet(`<div class="message-action-menu user-action-menu"><div class="message-menu-preview">${escapeHtml(message.text)}</div><div class="message-action-list"><button data-recall>${menuIcon("recall")}<span><strong>撤回</strong><small>CHAR 会知道你撤回了这条消息</small></span></button><button data-edit>${menuIcon("edit")}<span><strong>编辑</strong><small>修改消息类型和内容</small></span></button><button data-favorite>${menuIcon("favorite")}<span><strong>收藏</strong><small>保存文字、图片或语音</small></span></button><button data-delete-one>${menuIcon("delete")}<span><strong>删除</strong><small>仅从当前聊天记录删除</small></span></button><button data-multi>${menuIcon("multi")}<span><strong>多选</strong><small>批量删除或合并转发</small></span></button></div></div>`,{onReady(sheet){sheet.querySelector("[data-recall]").onclick=()=>recallUserMessage(messageId,conv,person,container,params);sheet.querySelector("[data-edit]").onclick=()=>openEditor(messageId,conv,container,params,"USER");sheet.querySelector("[data-favorite]").onclick=()=>favoriteMessage(messageId,conv);sheet.querySelector("[data-delete-one]").onclick=()=>confirmDialog("删除消息","确定删除这条消息吗？删除后不会通知 CHAR。","删除",()=>{store.update(s=>s.messages[conv.id]=s.messages[conv.id].filter(x=>x.id!==messageId));activeRender(container,params)});sheet.querySelector("[data-multi]").onclick=()=>{ui.selectMode=true;ui.selected=new Set([messageId]);closeSheet();activeRender(container,params)}}})}
+  function openUserMessageMenu(messageId,conv,person,container,params){const message=store.getState().messages[conv.id].find(x=>x.id===messageId);if(!message||message.recalled)return;openSheet(`<div class="message-action-menu user-action-menu"><div class="message-menu-preview">${escapeHtml(message.text)}</div><div class="message-action-list">${message.type==='text'||!message.type?'<button data-echo-message><span class="echo-menu-symbol">◎</span><span><strong>回声</strong><small>让这条消息的文字跃满屏幕</small></span></button>':''}<button data-recall>${menuIcon("recall")}<span><strong>撤回</strong><small>CHAR 会知道你撤回了这条消息</small></span></button><button data-edit>${menuIcon("edit")}<span><strong>编辑</strong><small>修改消息类型和内容</small></span></button><button data-favorite>${menuIcon("favorite")}<span><strong>收藏</strong><small>保存文字、图片或语音</small></span></button><button data-delete-one>${menuIcon("delete")}<span><strong>删除</strong><small>仅从当前聊天记录删除</small></span></button><button data-multi>${menuIcon("multi")}<span><strong>多选</strong><small>批量删除或合并转发</small></span></button></div></div>`,{onReady(sheet){sheet.querySelector('[data-echo-message]')?.addEventListener('click',()=>markMessageEcho(messageId,conv,container,params));sheet.querySelector("[data-recall]").onclick=()=>recallUserMessage(messageId,conv,person,container,params);sheet.querySelector("[data-edit]").onclick=()=>openEditor(messageId,conv,container,params,"USER");sheet.querySelector("[data-favorite]").onclick=()=>favoriteMessage(messageId,conv);sheet.querySelector("[data-delete-one]").onclick=()=>confirmDialog("删除消息","确定删除这条消息吗？删除后不会通知 CHAR。","删除",()=>{store.update(s=>s.messages[conv.id]=s.messages[conv.id].filter(x=>x.id!==messageId));activeRender(container,params)});sheet.querySelector("[data-multi]").onclick=()=>{ui.selectMode=true;ui.selected=new Set([messageId]);closeSheet();activeRender(container,params)}}})}
+
+  function markMessageEcho(messageId,conv,container,params){store.update(s=>{const target=s.messages[conv.id]?.find(row=>row.id===messageId);if(target)target.effect='echo'});closeSheet();activeRender(container,params);requestAnimationFrame(()=>playEcho(container.querySelector(`[data-message-id="${messageId}"]`)))}
 
   function favoriteMessage(messageId,conv){const state=store.getState(),message=state.messages[conv.id]?.find(x=>x.id===messageId);if(!message)return;store.update(s=>{s.favorites=s.favorites||[];if(!s.favorites.some(x=>x.messageId===messageId))s.favorites.unshift({id:id(),messageId,conversationId:conv.id,personId:conv.personId,createdAt:Date.now(),...message})});closeSheet();showToast("已添加到收藏")}
 
@@ -207,6 +232,7 @@ export function createConversationV3Renderer({ store, navigate }) {
   function pat(person,profile,conv,container,params){const text=profile.patText||`你拍了拍${person.name}`;store.update(s=>s.messages[conv.id].push({id:id(),role:"system",type:"pat",text,time:timeNow()}));navigator.vibrate?.(18);showToast(text);activeRender(container,params)}
   function showProfile(person,profile){openSheet(`<section class="chat-profile-card-v2"><div class="profile-card-orbit"></div><header>${initialsAvatar(person,profile)}<span>BUNNY CONTACT</span><h2>${escapeHtml(profile.remark||person.name)}</h2><p>${escapeHtml(person.name)} · ${escapeHtml(person.occupation||person.note||"CHAR")}</p></header><blockquote>${escapeHtml(person.signature||"还没有留下个性签名")}</blockquote><div class="profile-card-facts"><span><small>所在地</small><strong>${escapeHtml(person.city||person.location||"未设置")}</strong></span><span><small>关系</small><strong>${escapeHtml(profile.relationship||"好友")}</strong></span></div><nav><button data-card-profile aria-label="角色档案">${photoToolIcon("prompt")}</button><button data-card-settings aria-label="聊天设置">${clockIcon()}</button><button data-sheet-close aria-label="关闭">${photoToolIcon("undo")}</button></nav></section>`,{onReady(sheet){sheet.querySelector("[data-card-profile]").onclick=()=>{closeSheet();navigate("character-edit",{id:person.id,type:person.type})};sheet.querySelector("[data-card-settings]").onclick=()=>{closeSheet();navigate("chat-settings",{personId:person.id})}}})}
   function handleFoldAction(action,conv,person,container,params){
+    if(action==='inner-voice')return openInnerVoiceSheet(conv,person);
     if(action==="reroll")return rerollLastReply(conv,person,container,params);
     if(action==="call"||action==="video")return navigate("call",{id:conv.id,mode:action==="video"?"video":"voice"});
     if(action==="album"||action==="camera"){const input=document.createElement("input");input.type="file";input.accept="image/*";input.multiple=action==="album";if(action==="camera")input.capture="environment";input.onchange=async()=>{const files=[...(input.files||[])].slice(0,12);if(!files.length)return;try{showToast(`正在保存 ${files.length} 张照片…`);const rows=[];for(const file of files){const blob=await readImageBlobOptimized(file),media=await saveMediaBlob(blob);rows.push({type:"image",text:file.name,src:media.src,mediaId:media.mediaId,description:`USER 发送的真实照片：${file.name}`})}sendRichBatch(conv,rows,container,params);showToast(`已发送 ${rows.length} 张照片`)}catch(error){showToast(error.message)}};input.click();return}
@@ -214,6 +240,11 @@ export function createConversationV3Renderer({ store, navigate }) {
     if(action==="voice")return openVoiceRecorder(conv,person,container,params);
     if(action==="redpacket"||action==="transfer")return openMoney(action,conv,person,container,params);
     if(action==="sticker")return openUserStickers(conv,container,params);
+  }
+  function openInnerVoiceSheet(conv,person){
+    const recent=savedInnerVoices(store.getState(),conv),latest=recent[0];
+    if(latest&&!latest.seenAt){store.update(s=>{const row=(s.innerVoiceRecords||[]).find(x=>x.id===latest.id);if(row)row.seenAt=Date.now()});document.querySelector('[data-voice-activity]')?.remove()}
+    openSheet(`<section class="inner-voice-sheet"><div class="sheet-title"><div><small>UNSENT WORDS</small><h3>${escapeHtml(person.name)} 的心声</h3></div><button type="button" class="button ghost" data-sheet-close>关闭</button></div><p class="inner-voice-note">一段只给你看的虚构内心独白。聊天几轮后偶尔出现，也可手动看看此刻。</p><div class="inner-voice-cloud ${latest?'has-thought':''}"><p data-inner-voice-text>${escapeHtml(latest?.thought||'那些没说出口的话，会在这里慢慢浮现。')}</p></div><small class="inner-voice-date" data-inner-voice-date>${latest?new Date(latest.createdAt).toLocaleString('zh-CN'):''}</small><button type="button" class="button inner-voice-generate" data-generate-inner-voice>${latest?'看看此刻有没有新心声':'生成此刻心声'}</button><p class="inner-voice-status" data-inner-voice-status role="status"></p></section>`,{onReady(sheet){const button=sheet.querySelector('[data-generate-inner-voice]'),status=sheet.querySelector('[data-inner-voice-status]');button.onclick=async()=>{button.disabled=true;button.textContent='正在捕捉心声…';status.textContent='';try{const row=await generateInnerVoice(store,conv,person);if(!sheet.isConnected)return;sheet.querySelector('[data-inner-voice-text]').textContent=row.thought;sheet.querySelector('.inner-voice-cloud').classList.add('has-thought');sheet.querySelector('[data-inner-voice-date]').textContent=new Date(row.createdAt).toLocaleString('zh-CN');button.textContent='心声已保存';status.textContent='这段心声只属于当前账号与这段聊天。'}catch(error){if(!sheet.isConnected)return;status.textContent=error.message;button.textContent='重试生成';button.disabled=false}}}});
   }
   function sendRich(conv,data,container,params,askAi=false){sendRichBatch(conv,[data],container,params,askAi)}
   function sendRichBatch(conv,rows,container,params,askAi=false){store.update(s=>{for(const data of rows)s.messages[conv.id].push({id:id(),role:"user",time:timeNow(),createdAt:Date.now(),...data});const target=s.conversations.find(item=>item.id===conv.id),last=rows.at(-1);if(target){target.preview=previewFor(last);target.time=timeNow()}});ui.attachmentsOpen=false;ui.error="";if(askAi)ui.sending=true;activeRender(container,params);if(askAi){const state=store.getState(),person=personById(state,conv.personId);requestAiReply(conv,person,state.chatProfiles[person.id],container,params)}}
@@ -264,7 +295,7 @@ function messageView(message,continuation,person,user,profile,appearance,message
   const select=ui.selectMode?`<button class="select-circle ${ui.selected.has(message.id)?"checked":""}" data-select-message="${message.id}" aria-label="选择消息"></button>`:"";
   const avatar=hide?"":`<div class="message-avatar-v3 ${continuation?"invisible":""}" ${isUser?"":"data-pat-avatar"}>${initialsAvatar(owner,avatarProfile)}</div>`;
   const special=message.type&&message.type!=="text"?"special-message":"",arriving=message.role==="char"&&message.arrivedWithPause&&Date.now()-Number(message.createdAt||0)<1800?"arriving":"";
-  return `<article class="message ${message.role} ${continuation?"continuation":""} ${special} ${arriving} ${groupEnd?"group-end":""} ${message.reaction?"has-reaction":""}" data-message-id="${message.id}">${select}${avatar}<div class="message-body-v3"><div class="bubble-v3">${quote?`<div class="inline-quote"><strong>${quote.role==="user"?escapeHtml(user.name):escapeHtml(person.name)}</strong><span>${escapeHtml(quote.text)}</span></div>`:""}${messageContent(message)}</div>${message.effect==='echo'?`<button type="button" class="echo-replay" data-echo-replay aria-label="重播回声效果">回声 · ↻</button>`:''}${message.translation&&message.type!=="voice"?`<div class="message-translation">${escapeHtml(message.translation)}</div>`:""}${message.reaction?`<button class="message-reaction-v3">${escapeHtml(message.reaction)}</button>`:""}<time>${message.time}${message.edited?" · 已编辑":""}${message.readAt||message.charReadAt?'<em class="message-read">已读</em>':""}</time></div></article>`;
+  return `<article class="message ${message.role} ${continuation?"continuation":""} ${special} ${arriving} ${groupEnd?"group-end":""} ${message.reaction?"has-reaction":""}" data-message-id="${message.id}">${select}${avatar}<div class="message-body-v3">${!isUser&&!continuation?`<span class="message-sender-v3">${escapeHtml(profile.remark||person.name)}</span>`:""}<div class="bubble-v3">${quote?`<div class="inline-quote"><strong>${quote.role==="user"?escapeHtml(user.name):escapeHtml(person.name)}</strong><span>${escapeHtml(quote.text)}</span></div>`:""}${messageContent(message)}</div>${message.effect==='echo'?`<button type="button" class="echo-replay" data-echo-replay aria-label="重播回声效果">回声 · ↻</button>`:''}${message.translation&&message.type!=="voice"?`<div class="message-translation">${escapeHtml(message.translation)}</div>`:""}${message.reaction?`<button class="message-reaction-v3">${escapeHtml(message.reaction)}</button>`:""}<time>${message.time}${message.edited?" · 已编辑":""}${message.readAt||message.charReadAt?'<em class="message-read">已读</em>':""}</time></div></article>`;
 }
 function messageContent(message){
   if(message.type==="chat-record")return`<div class="chat-record-card"><strong>💬 ${escapeHtml(message.text)}</strong><span>${message.bundle?.length||0} 条消息</span><small>${(message.bundle||[]).slice(0,3).map(x=>escapeHtml(x.text)).join(" · ")}</small></div>`;
@@ -280,21 +311,56 @@ function messageContent(message){
   if(message.type&&message.type!=="text")return`<div class="typed-message"><span>${TYPE_META[message.type]?.[1]||"□"}</span><div><small>${TYPE_META[message.type]?.[0]||"消息"}</small><strong>${escapeHtml(message.text)}</strong></div></div>`;
   return escapeHtml(message.text)
 }
-function composerView(quote,open,sending,error,echoNext=false){const actions=[["camera","camera","拍摄"],["album","image","照片"],["voice","mic","语音"],["text-image","text","文字图"],["echo","echo","回声"],["redpacket","gift","红包"],["transfer","money","转账"],["sticker","smile","表情包"],["reroll","reroll","重 roll"],["call","phone","语音通话"],["video","video","视频通话"]];return `<div class="composer-shell-v3 ${open?"attachments-open":""}">${error?`<div class="composer-error"><span>${escapeHtml(error)}</span><button type="button" data-open-api>去配置模型</button></div>`:""}${quote?`<div class="composer-quote"><div><strong>回复</strong><span>${escapeHtml(quote.text)}</span></div><button data-cancel-quote aria-label="取消引用">×</button></div>`:""}<div class="folded-attachments"><div>${actions.map(x=>`<button type="button" data-fold-action="${x[0]}" ${x[0]==="echo"?`aria-pressed="${echoNext}"`:""}>${foldIcon(x[1])}<span>${x[2]}</span></button>`).join("")}</div></div><form class="composer-v3" data-composer><button type="button" data-plus aria-label="展开更多功能">${open?"×":"＋"}</button><textarea name="message" rows="1" placeholder="${echoNext?"回声效果已开启 · 输入文字":"发送消息…"}" aria-label="消息"></textarea><button type="button" class="send-icon" data-send-only aria-label="仅发送">${sendIcon()}</button><button type="button" class="ai-send-v3 ${sending?"sending":""}" data-send-ai aria-label="让 AI 回复当前聊天" ${sending?"disabled":""}>${sending?'<i></i>':sparkIcon()}</button></form></div>`}
+function composerView(quote,open,sending,error,echoNext=false){const actions=[["camera","camera","拍摄"],["album","image","照片"],["voice","mic","语音"],["text-image","text","文字图"],["echo","echo","回声"],["inner-voice","thought","心声"],["redpacket","gift","红包"],["transfer","money","转账"],["sticker","smile","表情包"],["reroll","reroll","重 roll"],["call","phone","语音通话"],["video","video","视频通话"]];return `<div class="composer-shell-v3 ${open?"attachments-open":""}">${error?`<div class="composer-error"><span>${escapeHtml(error)}</span><button type="button" data-open-api>去配置模型</button></div>`:""}${quote?`<div class="composer-quote"><div><strong>回复</strong><span>${escapeHtml(quote.text)}</span></div><button data-cancel-quote aria-label="取消引用">×</button></div>`:""}<div class="folded-attachments"><div>${actions.map(x=>`<button type="button" data-fold-action="${x[0]}" ${x[0]==="echo"?`aria-pressed="${echoNext}"`:""}>${foldIcon(x[1])}<span>${x[2]}</span></button>`).join("")}</div></div><form class="composer-v3" data-composer><button type="button" data-plus aria-label="展开更多功能">${open?"×":"＋"}</button><textarea name="message" rows="1" placeholder="${echoNext?"回声效果已开启 · 输入文字":"发送消息…"}" aria-label="消息"></textarea><button type="button" class="send-icon" data-send-only aria-label="仅发送">${sendIcon()}</button><button type="button" class="ai-send-v3 ${sending?"sending":""}" data-send-ai aria-label="让 AI 回复当前聊天" ${sending?"disabled":""}>${sending?'<i></i>':sparkIcon()}</button></form></div>`}
 function selectionBar(count){return`<nav class="selection-toolbar"><button data-selection-delete ${count?"":"disabled"}>⌫<span>删除</span></button><strong>${count?`已选择 ${count} 条`:"选择消息"}</strong><button data-selection-forward ${count?"":"disabled"}>↗<span>转发</span></button></nav>`}
 function typingView(person,profile){return`<article class="message char ai-typing-message"><div class="message-avatar-v3">${initialsAvatar(person,profile)}</div><div class="message-body-v3"><div class="bubble-v3 ai-typing-bubble"><i></i><i></i><i></i></div><time>正在回复</time></div></article>`}
 function backgroundStyle(url,opacity=1){const veil=1-Math.max(0,Math.min(1,opacity));return url?`background-image:linear-gradient(rgba(246,246,244,${veil}),rgba(246,246,244,${veil})),url('${escapeHtml(url)}');background-size:cover;background-position:center`:""}
 function bindLongPress(element,callback){let timer,x=0,y=0;element.onpointerdown=e=>{x=e.clientX;y=e.clientY;timer=setTimeout(()=>{navigator.vibrate?.(12);callback()},460)};element.onpointermove=e=>{if(Math.abs(e.clientX-x)>8||Math.abs(e.clientY-y)>8)clearTimeout(timer)};element.onpointerup=element.onpointercancel=()=>clearTimeout(timer)}
 function bindDoubleTap(element,callback){let previous=0;element.addEventListener("pointerup",event=>{const now=Date.now();if(now-previous<340){event.preventDefault();element.__bunnyDoubleTappedUntil=now+420;previous=0;callback()}else previous=now})}
 function menuIcon(type){const d={quote:'M7 11h11a5 5 0 0 1 5 5v3M7 11l4-4m-4 4 4 4',edit:'M5 21l4-.8L21 6.2 17.8 3 4 16.2 5 21Z',favorite:'m13 4 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L13 4Z',multi:'M8 7h14v14H8zM3 3h14v4M3 3v14h5',recall:'M8 8 4 12l4 4M5 12h10a6 6 0 0 1 6 6v2',delete:'M6 8h14M10 8V5h6v3m-8 0 1 14h8l1-14'}[type]||"M5 13h16";return`<svg viewBox="0 0 26 26" aria-hidden="true"><path d="${d}"/></svg>`}
-function foldIcon(type){const d={echo:'<path d="M4 9a8 8 0 0 1 16 0M7 12a5 5 0 0 1 10 0M10 15a2 2 0 0 1 4 0"/><circle cx="12" cy="19" r="1"/>',camera:'<path d="M4 8h4l2-3h4l2 3h4v11H4z"/><circle cx="12" cy="13" r="3"/>',image:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="m5 18 5-5 3 3 3-3 4 4"/>',mic:'<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',text:'<path d="M5 6h14M12 6v13M8 19h8"/>',gift:'<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M12 9v11M3 9h18v-3H3zM12 6c-4 0-5-4-2-4 2 0 2 4 2 4Zm0 0c4 0 5-4 2-4-2 0-2 4-2 4Z"/>',money:'<circle cx="12" cy="12" r="9"/><path d="M8 9h8m-4-3v12m-4-3h8"/>',smile:'<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M8 15c2 2 6 2 8 0"/>',reroll:'<path d="M19 8V3l-2 2a8 8 0 1 0 2.2 8"/><path d="M19 3h-5"/>',phone:'<path d="M7 4 4 6c1 8 6 13 14 14l2-3-5-3-2 2c-2-1-4-3-5-5l2-2-3-5Z"/>',video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>'}[type]||"";return`<svg viewBox="0 0 24 24">${d}</svg>`}
-function playEcho(message){
+function foldIcon(type){const d={thought:'<path d="M6 17c-2.2-1.2-3.2-3.1-2.7-5.1.5-1.7 1.7-2.8 3.5-3.2.4-2.5 2.3-4.1 4.6-4.1 1.9 0 3.4 1 4.2 2.5 2.4-.2 4.4 1.6 4.4 4 1.6.8 2.4 2.1 2.1 3.8-.3 2.1-2 3.3-4.6 3.3H8"/><circle cx="6" cy="20" r="1"/><circle cx="3" cy="22" r=".5"/>',echo:'<path d="M4 9a8 8 0 0 1 16 0M7 12a5 5 0 0 1 10 0M10 15a2 2 0 0 1 4 0"/><circle cx="12" cy="19" r="1"/>',camera:'<path d="M4 8h4l2-3h4l2 3h4v11H4z"/><circle cx="12" cy="13" r="3"/>',image:'<rect x="3" y="5" width="18" height="15" rx="2"/><path d="m5 18 5-5 3 3 3-3 4 4"/>',mic:'<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"/>',text:'<path d="M5 6h14M12 6v13M8 19h8"/>',gift:'<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M12 9v11M3 9h18v-3H3zM12 6c-4 0-5-4-2-4 2 0 2 4 2 4Zm0 0c4 0 5-4 2-4-2 0-2 4-2 4Z"/>',money:'<circle cx="12" cy="12" r="9"/><path d="M8 9h8m-4-3v12m-4-3h8"/>',smile:'<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M8 15c2 2 6 2 8 0"/>',reroll:'<path d="M19 8V3l-2 2a8 8 0 1 0 2.2 8"/><path d="M19 3h-5"/>',phone:'<path d="M7 4 4 6c1 8 6 13 14 14l2-3-5-3-2 2c-2-1-4-3-5-5l2-2-3-5Z"/>',video:'<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/>'}[type]||"";return`<svg viewBox="0 0 24 24">${d}</svg>`}
+export function playEcho(message){
   if(!message||window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const screen=message.closest('.chat-layout-v3'),bubble=message.querySelector('.bubble-v3');if(!screen||!bubble)return;
+  screen.querySelector('.echo-scene')?.remove();
   const scene=document.createElement('div');scene.className='echo-scene';scene.setAttribute('aria-hidden','true');screen.append(scene);
-  const base=bubble.getBoundingClientRect(),surface=screen.getBoundingClientRect();
-  for(let i=0;i<7;i++){const ghost=document.createElement('div');ghost.className='echo-ghost';ghost.textContent=bubble.textContent;ghost.style.setProperty('--echo-x',`${base.left-surface.left}px`);ghost.style.setProperty('--echo-y',`${base.top-surface.top}px`);ghost.style.setProperty('--echo-w',`${base.width}px`);ghost.style.setProperty('--echo-delay',`${i*82}ms`);ghost.style.setProperty('--echo-shift',`${(i%2?-1:1)*(12+i*9)}px`);scene.append(ghost)}
-  window.setTimeout(()=>scene.remove(),1900);
+  const base=bubble.getBoundingClientRect(),surface=screen.getBoundingClientRect(),w=surface.width,h=surface.height;
+  const x=base.left-surface.left,y=base.top-surface.top,words=bubble.textContent.trim().slice(0,110);
+  const sent=message.classList.contains('user'),style=getComputedStyle(bubble);
+  const sourceFill=bubble.querySelector('.bubble-outline path');
+  scene.style.setProperty('--echo-accent',sourceFill?getComputedStyle(sourceFill).fill:style.backgroundColor);
+  scene.style.setProperty('--echo-font',style.fontFamily);
+  const ghostWidth=base.width;
+  let seed=[...String(message.dataset.messageId||words)].reduce((n,char)=>((n*33)^char.charCodeAt(0))>>>0,0x9e3779b9);
+  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296};
+  const anchors=[[.08,.08],[.52,.11],[.86,.2],[.23,.31],[.7,.39],[.14,.53],[.8,.58],[.43,.73],[.88,.86],[.18,.9]];
+  const sizes=[.24,.34,.47,.62,.82,1.08,1.42,1.78,2.18];
+  for(let i=0;i<38;i++){
+    const ghost=document.createElement('article');ghost.className=`echo-sprite message ${sent?'user':'char'} group-end`;
+    const body=document.createElement('div');body.className='message-body-v3';
+    const copy=bubble.cloneNode(true);copy.removeAttribute('id');
+    for(const key of ['color','border-radius','font-family','font-size','font-weight','letter-spacing','line-height','padding','box-shadow','text-shadow'])copy.style.setProperty(key,style.getPropertyValue(key));
+    const copyPath=copy.querySelector('.bubble-outline path');if(sourceFill&&copyPath)copyPath.style.fill=getComputedStyle(sourceFill).fill;
+    body.append(copy);ghost.append(body);
+    const anchor=anchors[i%anchors.length],scale=sizes[(i*5+Math.floor(random()*3))%sizes.length];
+    const desiredX=(anchor[0]+(random()-.5)*.35)*w-ghostWidth*scale/2;
+    const desiredY=(anchor[1]+(random()-.5)*.19)*h-base.height*scale/2;
+    const targetX=Math.max(-ghostWidth*scale*.58,Math.min(w-ghostWidth*scale*.42,desiredX))-x;
+    const targetY=Math.max(-base.height*scale*.58,Math.min(h-base.height*scale*.42,desiredY))-y;
+    ghost.style.setProperty('--echo-x',`${x}px`);ghost.style.setProperty('--echo-y',`${y}px`);
+    ghost.style.setProperty('--echo-w',`${ghostWidth}px`);ghost.style.setProperty('--echo-dx',`${targetX}px`);
+    ghost.style.setProperty('--echo-dy',`${targetY}px`);ghost.style.setProperty('--echo-scale',scale);
+    ghost.style.setProperty('--echo-delay',`${Math.floor(random()*310)}ms`);ghost.style.zIndex=String(Math.round(scale*10));scene.append(ghost);
+  }
+  const letters=globalThis.Intl?.Segmenter?[...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(words)].map(x=>x.segment):Array.from(words);
+  letters.filter(x=>x.trim()).slice(0,12).forEach((letter,i)=>{
+    const glyph=document.createElement('span');glyph.className='echo-glyph';glyph.textContent=letter;
+    glyph.style.setProperty('--echo-x',`${x+base.width/2}px`);glyph.style.setProperty('--echo-y',`${y+base.height/2}px`);
+    glyph.style.setProperty('--echo-dx',`${((i*73)%97)/97*w-x-base.width/2}px`);
+    glyph.style.setProperty('--echo-dy',`${((i*41+19)%89)/89*h-y-base.height/2}px`);
+    glyph.style.setProperty('--echo-delay',`${i*26}ms`);glyph.style.setProperty('--echo-turn',`${(i%2?-1:1)*(16+i%5*9)}deg`);scene.append(glyph);
+  });
+  window.setTimeout(()=>scene.remove(),3200);
 }
 function bunnyStamp(){return'<svg viewBox="0 0 64 64"><path d="M24 27C15 13 18 5 23 5c5 0 7 12 8 18 2-8 5-18 10-17 6 1 4 13-2 22 6 3 10 9 10 16 0 10-8 15-17 15S15 54 15 44c0-8 3-13 9-17Z"/><circle cx="26" cy="42" r="2"/><circle cx="39" cy="42" r="2"/><path d="M29 49c2 2 5 2 7 0"/><path d="M11 35c4 1 7 3 9 6M53 35c-4 1-7 3-9 6"/></svg>'}
 function sendIcon(){return'<svg viewBox="0 0 24 24"><path d="m5 12 14-7-4 14-3-5-7-2Z"/><path d="m12 14 7-9"/></svg>'}

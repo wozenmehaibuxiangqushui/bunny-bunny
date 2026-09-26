@@ -39,6 +39,7 @@ export function parentRoute(route){
   if(route.params?._parent)return route.params._parent;
   const id=route.params?.conversationId||route.params?.id;
   if(route.name==="conversation")return{name:"chat",params:{}};
+  if(route.name==="group-chat")return{name:"chat",params:{}};
   if(route.name==="call"||route.name==="chat-settings")return id?{name:"conversation",params:{id}}:{name:"chat",params:{}};
   if(route.name==="character-edit"||route.name==="user-profile")return{name:"contacts",params:{}};
   if(route.name==="contact-manage"||route.name==="relationship-map")return{name:"contacts",params:{}};

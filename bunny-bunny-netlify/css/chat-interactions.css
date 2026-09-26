@@ -1,0 +1,103 @@
+/* Reactions are loose emoji, without the old pill or thought-tail decoration. */
+#phone-root .chat-layout-v3[data-chat-skin] .message-reaction-v3{
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  min-width:0!important;height:auto!important;padding:0!important;
+  top:-.38rem!important;left:-.36rem!important;right:auto!important;font-size:1.35rem!important;line-height:1!important;
+  filter:drop-shadow(0 1px 2px #0005)
+}
+#phone-root .chat-layout-v3[data-chat-skin] .message-reaction-v3::after{content:none!important;display:none!important}
+#phone-root .chat-layout-v3[data-chat-skin] .message.user .message-reaction-v3{left:auto!important;right:-.36rem!important}
+#phone-root .chat-layout-v3[data-chat-skin] .message.has-reaction{margin-top:.2rem!important}
+.echo-menu-symbol{display:inline-grid;place-items:center;flex:0 0 1.15rem;width:1.15rem;font-size:1.3rem;font-weight:400}
+
+/* Echo fills the conversation with bubble echoes and independently moving letters. */
+#phone-root .chat-layout-v3{position:relative}
+#phone-root .chat-layout-v3 .echo-scene{position:absolute;inset:0;z-index:18;overflow:hidden;pointer-events:none;isolation:isolate}
+#phone-root .chat-layout-v3 .echo-scene:before{content:'';position:absolute;inset:0;background:#11192619;animation:bunny-echo-veil 3.1s ease-in-out both}
+#phone-root .chat-layout-v3 .echo-sprite{
+  position:absolute!important;top:var(--echo-y);left:var(--echo-x);width:var(--echo-w);
+  display:block!important;max-width:none!important;height:auto;margin:0!important;padding:0!important;
+  opacity:0;transform-origin:top left;filter:drop-shadow(0 3px 7px #0002);
+  animation:bunny-echo-bubble 2.6s var(--echo-delay) cubic-bezier(.2,.75,.2,1) both
+}
+#phone-root .chat-layout-v3 .echo-sprite .message-body-v3{width:100%;max-width:100%!important;flex:none!important}
+#phone-root .chat-layout-v3 .echo-sprite .bubble-v3{width:100%;max-width:none!important;min-width:0!important;max-height:9rem;overflow:visible!important}
+#phone-root .chat-layout-v3 .echo-sprite .bubble-outline{visibility:visible!important}
+#phone-root .chat-layout-v3 .echo-glyph{
+  position:absolute;left:var(--echo-x);top:var(--echo-y);display:block;color:var(--echo-accent,#166fcf);
+  font:650 clamp(.8rem,4vw,1.25rem)/1 var(--echo-font,-apple-system,BlinkMacSystemFont,sans-serif);
+  text-shadow:0 1px 5px #1113;opacity:0;
+  animation:bunny-echo-letter 1.65s var(--echo-delay) ease-out both
+}
+@keyframes bunny-echo-veil{0%,100%{opacity:0}20%,72%{opacity:1}}
+@keyframes bunny-echo-bubble{
+  0%{opacity:0;translate:0 0;scale:.35}
+  14%{opacity:1}
+  58%{opacity:1;translate:var(--echo-dx) var(--echo-dy);scale:var(--echo-scale)}
+  78%{opacity:.96;translate:var(--echo-dx) var(--echo-dy);scale:var(--echo-scale)}
+  100%{opacity:0;translate:var(--echo-dx) var(--echo-dy);scale:calc(var(--echo-scale) * 1.06)}
+}
+@keyframes bunny-echo-letter{
+  0%{opacity:0;transform:translate3d(0,0,0) scale(.8)}
+  28%{opacity:.4}
+  75%{opacity:.28}
+  100%{opacity:0;transform:translate3d(calc(var(--echo-dx) * .35),calc(var(--echo-dy) * .35),0) scale(1.1)}
+}
+
+/* Hidden behind the composer plus menu. The cloud holds fictional inner voice. */
+.inner-voice-sheet{display:grid;justify-items:center;gap:.65rem;padding:.25rem .6rem 1.3rem}
+.inner-voice-sheet>.sheet-title{width:100%;align-self:stretch}
+.inner-voice-note{margin:0;color:var(--muted,#6d7480);font-size:.68rem;line-height:1.6;text-align:center}
+.inner-voice-cloud{
+  position:relative;isolation:isolate;display:grid;place-items:center;min-height:9.5rem;width:min(100%,20rem);
+  margin:1rem auto 1.8rem;padding:2rem 2.2rem;border:1px solid #dee5ec;
+  border-radius:45% 55% 47% 53% / 48% 43% 57% 52%;
+  background:linear-gradient(155deg,#fff,#eff5fb);box-shadow:0 12px 32px #30476119,inset 0 1px #fff;
+  color:#303c4e;text-align:center
+}
+.inner-voice-cloud::before{
+  content:'';position:absolute;z-index:-1;inset:-.65rem -1rem;
+  background:radial-gradient(circle at 12% 36%,#f8fbff 0 1.45rem,transparent 1.5rem),
+    radial-gradient(circle at 30% 3%,#f9fcff 0 1.5rem,transparent 1.55rem),
+    radial-gradient(circle at 72% 5%,#f8fbff 0 1.65rem,transparent 1.7rem),
+    radial-gradient(circle at 96% 42%,#f4f8fd 0 1.5rem,transparent 1.55rem),
+    radial-gradient(circle at 75% 94%,#f1f6fb 0 1.35rem,transparent 1.4rem);
+  pointer-events:none
+}
+.inner-voice-cloud::after{
+  content:'';position:absolute;left:1.05rem;bottom:-1.45rem;width:.75rem;height:.75rem;
+  border-radius:50%;background:#f4f8fd;box-shadow:-.78rem .8rem 0 -.18rem #f4f8fd;pointer-events:none
+}
+.inner-voice-cloud p{margin:0;font:500 .88rem/1.8 "Songti SC",serif;overflow-wrap:anywhere}
+.inner-voice-cloud.has-thought p{font-size:.94rem}
+.inner-voice-date{min-height:.9rem;color:#98a0ac;font-size:.6rem}
+.inner-voice-generate{min-width:10rem}
+.inner-voice-status{min-height:1.2rem;margin:0;color:#677589;font-size:.64rem;text-align:center}
+/* The activity marker grows out of the contact avatar, never into the message stream. */
+#phone-root .chat-layout-v3[data-chat-skin] .inner-voice-alert{position:absolute;z-index:5;top:.2rem;left:4.8rem;min-width:2rem;height:1.42rem;border:1px solid #ffffffcf;border-radius:1rem;background:#fff;color:#535d6f;box-shadow:0 3px 12px #0002;font-size:.8rem;letter-spacing:.08em;line-height:1;animation:thought-arrive .75s cubic-bezier(.16,1.2,.25,1) both,thought-breathe 2.8s 1s ease-in-out infinite}
+#phone-root .chat-layout-v3[data-chat-skin] .inner-voice-alert::before{content:'';position:absolute;left:-.27rem;top:.62rem;width:.48rem;height:.48rem;background:inherit;border-left:1px solid #ffffffcf;transform:rotate(38deg);z-index:-1}
+#phone-root .chat-layout-v3[data-chat-skin=imessage] .inner-voice-alert{left:calc(50% + .95rem);top:-.08rem}
+@keyframes thought-arrive{from{opacity:0;transform:scale(.25) translate(-1.4rem,.8rem)}to{opacity:1;transform:scale(1) translate(0,0)}}
+@keyframes thought-breathe{50%{transform:translateY(-.12rem)}}
+@media(prefers-reduced-motion:reduce){#phone-root .chat-layout-v3 .echo-scene{display:none!important}}
+@media(prefers-reduced-motion:reduce){#phone-root .inner-voice-alert{animation:none!important}}
+
+.group-list-avatar{width:3rem;height:3rem;flex:0 0 3rem;display:grid;place-items:center;border-radius:1rem;background:linear-gradient(135deg,#dde9ef,#a9c9ce);font-weight:800;color:#355269}
+.group-chat-view{padding:0!important;overflow:hidden!important}
+.group-chat-shell{height:100%;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;background:#dce6e9;color:#20272c}
+.group-chat-head{display:flex;align-items:center;gap:.7rem;min-height:3.7rem;padding:.5rem .7rem;background:#f6fafbe6;box-shadow:0 1px 0 #0000000a}
+.group-chat-head>button{width:2rem;height:2rem;border:0;border-radius:50%;background:#fff8;font-size:1.4rem;color:inherit}.group-chat-head>button:last-child{margin-left:auto;font-size:1rem}
+.group-chat-head strong,.group-chat-head small{display:block}.group-chat-head strong{font-size:.92rem}.group-chat-head small{margin-top:.12rem;color:#738087;font-size:.6rem}
+.group-announcement{padding:.5rem .9rem;background:#fff9;color:#5d6870;font-size:.65rem;line-height:1.4}
+.group-chat-stream{min-height:0;overflow:auto;display:flex;flex-direction:column;gap:.75rem;padding:1rem .75rem 1.5rem}
+.group-empty,.group-typing{align-self:center;max-width:85%;padding:.55rem .8rem;border-radius:99px;background:#ffffff85;color:#697a84;font-size:.66rem;text-align:center}
+.group-message{display:flex;align-items:flex-start;gap:.45rem;max-width:90%}.group-message.mine{align-self:flex-end;flex-direction:row-reverse}.group-message-avatar{flex:0 0 2rem}.group-message-avatar .avatar{width:2rem;height:2rem;border-radius:.75rem}
+.group-message-main{display:grid;gap:.2rem;min-width:0}.group-message.mine .group-message-main{justify-items:end}.group-message-main>small{color:#74828c;font-size:.56rem}
+.group-message-bubble{width:fit-content;max-width:100%;padding:.65rem .8rem;border-radius:1rem 1rem 1rem .25rem;background:#fff;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.45;font-size:.78rem;box-shadow:0 2px 8px #2242530b}
+.group-message.mine .group-message-bubble{border-radius:1rem 1rem .25rem 1rem;background:#ffe856}
+.group-message-bubble.redpacket{min-width:10rem;display:grid;gap:.2rem;background:linear-gradient(140deg,#dc5e44,#b92e32);color:#fff}.group-message-bubble.redpacket small{opacity:.7;font-size:.55rem}
+.group-composer{display:flex;align-items:flex-end;gap:.4rem;padding:.6rem;background:#f8fbfbea}.group-composer textarea{min-width:0;flex:1;max-height:7rem;resize:vertical;border:1px solid #dfe7e8;border-radius:1.1rem;background:#fff;padding:.65rem .8rem;font:inherit;font-size:.77rem}.group-composer button{border:0;border-radius:1rem;background:#fff;padding:.62rem .7rem;color:#303a3e}.group-composer button[type=submit]{background:#242e31;color:#fff}.group-composer button:disabled{opacity:.4}
+.group-member-picker{display:grid;gap:.35rem;max-height:16rem;overflow:auto}.group-member-picker label{display:flex;align-items:center;gap:.45rem;padding:.45rem;border:1px solid #e6ebeb;border-radius:.8rem}.group-member-picker .avatar{width:1.8rem;height:1.8rem}.group-member-picker small{margin-left:auto;color:#929a9d;font-size:.55rem}
+.group-settings-members{display:grid;gap:.3rem}.group-settings-members>label{display:flex;justify-content:space-between;align-items:center;padding:.35rem 0;border-bottom:1px solid #eee}.group-settings-members button{border:0;background:transparent;color:#a34646}
+.character-diary-view{background:#f7f3ed!important;padding:1rem!important}.diary-hero{padding:1.2rem;border-radius:1.3rem;background:linear-gradient(150deg,#ede3d6,#fff9f1);box-shadow:0 6px 22px #5b45330e}.diary-hero>span{font-size:.55rem;letter-spacing:.2em;color:#9a8069}.diary-hero h2{margin:.25rem 0;font:600 1.2rem 'Songti SC',serif}.diary-hero p{font-size:.68rem;color:#85776b}.diary-hero button{border:0;border-radius:99px;padding:.55rem .8rem;background:#3d3a35;color:#fff;font-size:.68rem}.diary-hero button:disabled{opacity:.5}.diary-list{display:grid;gap:.7rem;margin-top:1rem}.diary-card{display:grid;gap:.3rem;width:100%;padding:1rem;border:1px solid #e5dacc;border-radius:.8rem;background:#fffdf9;text-align:left;color:#40382f;box-shadow:0 4px 14px #5548320b}.diary-card small{font-size:.55rem;color:#a28c76}.diary-card strong{font:600 .95rem 'Songti SC',serif}.diary-card span{font-size:.68rem;color:#807568}.diary-card.locked{opacity:.65;background:repeating-linear-gradient(-30deg,#fffdfa,#fffdfa 7px,#f8f4ee 8px)}.diary-page{padding:1.5rem;border:1px solid #e7dccc;border-radius:.8rem;background:#fffdf9;box-shadow:0 8px 28px #59462b11}.diary-page button{display:block;margin-bottom:1rem;border:0;background:transparent;color:#82705f}.diary-page small{color:#a58d76}.diary-page h3{font:600 1.1rem 'Songti SC',serif}.diary-page p{white-space:pre-wrap;font:.84rem/1.9 'Songti SC',serif;color:#473e34}
+.memory-openable{cursor:pointer}.memory-openable:hover{outline:1px solid #abbac1}.memory-openable:focus-visible{outline:2px solid #4d7b91;outline-offset:2px}.memory-detail-text{white-space:pre-wrap;line-height:1.75}.memory-detail-fields{display:grid;gap:.5rem;max-height:56vh;overflow:auto}.memory-detail-fields article{padding:.55rem .65rem;border-radius:.75rem;background:#f4f6f6}.memory-detail-fields strong{font-size:.65rem}.memory-detail-fields p{margin:.2rem 0 0;font-size:.7rem;line-height:1.5;white-space:pre-wrap}.memory-entry-list{display:grid;gap:.45rem;max-height:60vh;overflow:auto}.memory-entry-list button{display:grid;gap:.25rem;text-align:left;padding:.7rem;border:1px solid #e5eaeb;border-radius:.7rem;background:#fff}.memory-entry-list b{font-size:.7rem;font-weight:500}.memory-entry-list small{font-size:.55rem;color:#899397}.memory-entry-detail dl{display:grid;grid-template-columns:1fr 1fr;gap:.3rem}.memory-entry-detail dl>div{padding:.4rem;background:#f4f6f6;border-radius:.5rem}.memory-entry-detail dt{font-size:.52rem;color:#879397}.memory-entry-detail dd{margin:0;font-size:.7rem}.memory-sources{max-height:10rem;overflow:auto}.memory-sources p{padding:.45rem;border-left:2px solid #aebfc4;font-size:.67rem;line-height:1.5}

@@ -15,6 +15,7 @@ assert.equal(first.date,'2026-09-24');
 assert.equal(engine.ensureDailySchedule(store,'char-1',day),first,'same day must reuse the canonical plan');
 assert.equal(engine.currentSchedule(store,'char-1',day).title,'每周四夜课');
 assert.equal(engine.currentSchedule(store,'char-1',day).canReply,false);
+assert.equal(engine.nextReplyAt(store,'char-1',day).toISOString(),'2026-09-24T12:00:00.000Z','reply waits until the fixed lesson ends');
 assert.equal(engine.recordScheduleCommitment(store,'char-1','明天面试',day),true);
 const tomorrow=engine.ensureDailySchedule(store,'char-1',new Date('2026-09-25T03:00:00Z'));
 assert.equal(tomorrow.blocks.some(x=>x.title==='明天面试'&&x.start==='10:00'),true);

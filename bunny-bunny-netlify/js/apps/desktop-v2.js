@@ -10,7 +10,7 @@ export const appRegistry={
   sms:{name:"短信",route:"sms",icon:"sms",tone:"mint"},phone:{name:"电话",route:"phone",icon:"phone",tone:"green"},worldbook:{name:"世界书",route:"worldbook",icon:"worldbook",tone:"paper"},presets:{name:"预设",route:"presets",icon:"presets",tone:"lilac"},
   games:{name:"游戏",route:"games",icon:"games",tone:"blue"},memos:{name:"备忘录",route:"memos",icon:"memos",tone:"yellow"},calendar:{name:"日历",route:"calendar",icon:"calendar",tone:"red"},wallet:{name:"钱包",route:"wallet",icon:"wallet",tone:"graphite"},
   focus:{name:"陪伴专注",route:"focus",icon:"focus",tone:"sand"},together:{name:"一起刷",route:"together",icon:"together",tone:"sky"},"phone-settings":{name:"设置",route:"phone-settings",icon:"settings",tone:"silver"},
-  "x-social":{name:"X",route:"x-social",icon:"x",tone:"ink"},tiktok:{name:"TikTok",route:"",icon:"tiktok",tone:"ink",placeholder:true}
+  "x-social":{name:"X",route:"x-social",icon:"x",tone:"ink"},tiktok:{name:"TikTok",route:"tiktok",icon:"tiktok",tone:"ink"}
 };
 
 const HIDDEN_HOME_APPS=new Set(["api","bridge","mcp","data-settings","moments"]);

@@ -1,6 +1,10 @@
 import { setupDeviceShell } from './device-shell.js';
 import { createStore } from "./core/store.js";
 import { createXRenderer } from './x-app.js';
+import { setupXAutomation } from './x-engine.js';
+import { createTikTokRenderer } from './tiktok-app.js';
+import { createForumRenderer } from './forum-app.js';
+import { setupTikTokAutomation } from './tiktok-engine.js';
 import { registerRoute, navigate } from "./core/router.js";
 import { createDesktopRenderer } from "./apps/desktop-v2.js";
 import { createChatRenderers } from "./apps/chat-v2.js";
@@ -31,19 +35,37 @@ import { createAnonymousBoxRenderer, createAnonymousLetterRenderer, setupAnonymo
 import { ensureAccountState } from "./account-system.js";
 import { createMomentsRenderer, setupMomentsAutomation } from "./moments-v2.js";
 import { createRelationshipNotebookRenderer } from "./relationship-notebook.js";
+import { createGroupChatRenderer } from './group-chat.js';
+import { ensureWorldEngine, tickWorld } from './world-engine.js';
+import { deliverWorldJobs } from './group-model.js';
+import { createDiaryRenderer, setupDiaryAutomation } from './character-diary.js';
 
 const store = createStore();
+const previewSkin = new URLSearchParams(location.search).get('preview-skin');
+if (['imessage','wechat','kakaotalk','line'].includes(previewSkin)) {
+  store.update(state => {
+    state.chatAppearance.bubblePreset = previewSkin;
+    state.chatListAppearance = { ...state.chatListAppearance, skin: previewSkin };
+  });
+}
 ensureAccountState(store.getState());
+ensureWorldEngine(store.getState());
 await hydrateMediaState(store.getState());
 playLaunchAnimation();
 registerPwa();
 const context = { store, navigate };
+setupXAutomation(context);
+setupTikTokAutomation(context);
 const chats = createChatRenderers(context);
 
 registerRoute("desktop", createDesktopRenderer(context));
 registerRoute('x-social', createXRenderer(context));
+registerRoute('tiktok', createTikTokRenderer(context));
+registerRoute('forum', createForumRenderer(context));
 registerRoute("chat", chats.list);
 registerRoute("conversation", createConversationV3Renderer(context));
+registerRoute('group-chat', createGroupChatRenderer(context));
+registerRoute('character-diary', createDiaryRenderer(context));
 registerRoute("call", createCallRenderer(context));
 registerRoute("contacts", createContactsRenderer(context));
 registerRoute("contact-manage", createContactManagerRenderer(context));
@@ -69,7 +91,7 @@ registerRoute("mcp", createMcpRenderer(context));
 registerRoute("together", createTogetherRenderer(context));
 registerRoute("focus", createFocusRenderer(context));
 registerRoute("world", createWorldRenderer(context));
-placeholderRoutes.filter(route => !["worldbook","presets","wallet","x-social"].includes(route)).forEach(route => registerRoute(route, createPlaceholderRenderer(route)));
+placeholderRoutes.filter(route => !["worldbook","presets","wallet","x-social","tiktok","forum"].includes(route)).forEach(route => registerRoute(route, createPlaceholderRenderer(route)));
 registerRoute("wallet", createWalletRenderer(context));
 registerRoute("placeholder", container => { container.innerHTML = `<div class="empty"><strong>这个模块还在路上</strong><span>当前版本不会伪装成已经接入。</span></div>`; });
 
@@ -80,12 +102,15 @@ const initialHash = location.hash.slice(1);
 setPhoneAppearance(store.getState().appearance);
 applyAppIdentity(store.getState().appearance);
 applyChatAppearance(store.getState().chatAppearance);
-navigate(["x-social", "chat", "contacts", "contact-manage", "relationship-map", "character-edit", "user-profile", "add-friend", "friend-requests", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "favorites", "memory-debug", "anonymous-box", "anonymous-letter", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
+navigate(["x-social", "tiktok", "chat", "conversation", "group-chat", "character-diary", "contacts", "contact-manage", "relationship-map", "character-edit", "user-profile", "add-friend", "friend-requests", "phone-settings", "chat-settings", "api", "data-settings", "worldbook", "presets", "moments", "chat-me", "favorites", "memory-debug", "anonymous-box", "anonymous-letter", "bridge", "mcp", "together", "focus", "world", ...placeholderRoutes].includes(initialHash) ? initialHash : "desktop");
 setupIosRefinement(context);
 setupDeviceShell(context);
 setupChatVoiceSettings(context);
 setupProactiveCalls(context);
 setupProactiveMessages(context);
+setupDiaryAutomation(context);
+tickWorld(store);void deliverWorldJobs(store);
+setInterval(()=>{tickWorld(store);void deliverWorldJobs(store)},60_000);
 setupAnonymousQuestions(context);
 setupMomentsAutomation(context);
 if (registerBunnyTools(context)) showToast("已启用页面级 MCP 工具");
