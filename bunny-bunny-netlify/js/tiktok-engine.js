@@ -48,6 +48,7 @@ function batchPrompt(posts,comments){
     '每条作品有短标题、具体画面或卡片文字、随手写的 caption、一个音频名。语气允许停顿、吐槽、错字、松弛感；别轮流写同一种鸡汤。',
     '可新建 0—2 个网友。作者必须来自 actors 且 canPost=true，或本次 newCreators 的 new:1/new:2。',
     'assetId 只能从 library 中选，选视频填 kind=video，照片填 kind=photo；没选素材则 kind=story、assetId 为空。绝不编造本地素材 ID。',
+    'library 的 note 是用户给的画面描述。只能据此、文件名和已知标题写媒体内容；没有描述时不要猜视频里有谁、发生了什么。',
     '评论必须接住视频标题、字幕或具体细节；有不同意见和普通路人，别清一色夸赞。评论可指向本批作品 key 或 recent 公开作品 id。',
     'shares 可选 0—1 条，只有确实想分享给 USER 的 CHAR/NPC 才写；note 像熟人私聊，别复述整条作品。',
     '不透露私聊、心声、未公开身份或别的世界的事。只返回 JSON：',
@@ -108,7 +109,8 @@ export async function refreshTikTok(store,{manual=true,groupId}={}){
         conv.unread=(conv.unread||0)+1;db.shareHistory[sender.id]=Date.now();shares++;
       }
       db.settings.lastRefreshAt[groupId]=Date.now();
-      db.settings.lastActivityCount[groupId]=db.posts.filter(p=>p.groupId===groupId&&p.authorId===s.activeUserAccountId).length;
+      db.settings.lastActivityCount[groupId+':'+s.activeUserAccountId]=db.posts.filter(p=>
+        p.groupId===groupId&&p.authorId===s.activeUserAccountId).length;
       db.generationHistory.push({id:crypto.randomUUID(),groupId,createdAt:Date.now(),manual,
         requested:{posts:postsWanted,comments:commentsWanted},created:{posts:created.length,comments:replies.length,shares}});
       db.generationHistory=db.generationHistory.slice(-80);
@@ -125,7 +127,7 @@ export async function respondToTikTokPost(store,postId){
   if(!actors.length)return [];
   running.add(key);
   try{
-    const prompt='你是刷到 USER 作品的虚构 TikTok 账号。最多写 3 条具体评论和 4 个点赞，也可以不互动。评论要接作品中的一个具体细节，不要全员捧场；只从 actors 中选 id。不要泄露私聊、隐藏身份或其他世界。只返回 JSON：{"comments":[{"authorId":"id","text":"评论"}],"likes":["id"]}';
+    const prompt='你是刷到 USER 作品的虚构 TikTok 账号。最多写 3 条具体评论和 4 个点赞，也可以不互动。评论只能接标题、正文或文案里已知的细节；没有视觉描述时不要假装看清了视频画面。不要全员捧场；只从 actors 中选 id。不要泄露私聊、隐藏身份或其他世界。只返回 JSON：{"comments":[{"authorId":"id","text":"评论"}],"likes":["id"]}';
     const data=parse(await sendToModel(model,[{role:'user',text:JSON.stringify({post:{
       title:post.title,body:post.body,caption:post.caption,kind:post.kind},actors,world:ctx.group})}],prompt));
     const results=[];store.update(s=>{
@@ -197,7 +199,7 @@ export function tikAutoDue(state,trigger='timer',now=Date.now()){
   if(trigger==='open')return setting.autoMode==='on-open';
   if(setting.autoMode==='interval')return now-last>=count(setting.autoMinutes,15,1440,180)*60_000;
   if(setting.autoMode==='activity')return t.posts.filter(p=>p.groupId===t.groupId&&p.authorId===state.activeUserAccountId).length-
-    Number(setting.lastActivityCount[t.groupId]||0)>=count(setting.activityThreshold,1,20,3);
+    Number(setting.lastActivityCount[t.groupId+':'+state.activeUserAccountId]||0)>=count(setting.activityThreshold,1,20,3);
   return false;
 }
 export function setupTikTokAutomation({store}){

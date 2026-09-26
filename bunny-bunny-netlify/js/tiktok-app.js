@@ -312,7 +312,7 @@ export function createTikTokRenderer({store,navigate}){
       <div class="tt-grid">${list.map(p=>tile(p)).join('')}</div>`;
   }
   function livePage(){
-    const actors=people().filter(id=>id!==me()).slice(0,12);
+    const actors=people().filter(id=>profile(id).kind!=='user').slice(0,12);
     return `<header class="tt-light-header"><button data-tt-back>${icon('back')}</button><h1>LIVE</h1></header>
       <section class="tt-live-hero"><span>LIVE / WORLD</span><h2>正在这个世界里</h2><p>进入角色的图文直播间，发送弹幕，再让 AI 续写现场。真实视频仍从你的素材库播放。</p></section>
       <section class="tt-section"><h2>正在开播</h2>${actors.map(id=>`<button class="tt-live-card" data-tt-live-room="${id}">
