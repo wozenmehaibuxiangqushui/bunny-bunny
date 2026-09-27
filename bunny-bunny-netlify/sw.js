@@ -1,7 +1,7 @@
-const CACHE_NAME = "bunny-bunny-shell-v61";
+const CACHE_NAME = "bunny-bunny-shell-v63";
 const OFFLINE_URL = new URL("./index.html", self.registration.scope).href;
 const APP_SHELL = [
- "./js/photo-editor.js", "./js/bubble-shape.js", "./js/schedule-engine.js", "./js/inner-voice.js", "./js/world-engine.js", "./js/group-model.js", "./js/group-chat.js", "./js/group-appearance.js", "./js/chat-record.js", "./js/island-3d.js", "./js/island-avatar.js", "./js/island-wardrobe.js", "./js/island-life.js", "./js/island-panels.js", "./css/lifestyle-glass.css", "./js/island-character.js", "./js/island-home.js", "./js/island-app.js", "./js/character-diary.js", "./css/chat-refresh.css", "./css/chat-bubble-fidelity.css", "./css/chat-interactions.css", "./css/group-appearance.css", "./css/chat-record.css", "./css/island-app.css",
+ "./js/photo-editor.js", "./js/bubble-shape.js", "./js/schedule-engine.js", "./js/inner-voice.js", "./js/world-engine.js", "./js/group-model.js", "./js/group-chat.js", "./js/group-appearance.js", "./js/chat-record.js", "./js/island-3d.js", "./js/island-avatar.js", "./js/island-wardrobe.js", "./js/island-life.js", "./js/island-panels.js", "./css/lifestyle-glass.css", "./css/liquid-glass-v2.css", "./js/island-character.js", "./js/island-home.js", "./js/island-app.js", "./js/character-diary.js", "./css/chat-refresh.css", "./css/chat-bubble-fidelity.css", "./css/chat-interactions.css", "./css/group-appearance.css", "./css/chat-record.css", "./css/island-app.css",
  "./js/forum-model.js", "./js/forum-engine.js", "./js/forum-app.js", "./css/forum-app.css", "./css/fullscreen-shell.css", "./css/group-chat-plus.css", "./css/group-call.css", "./css/relationship-apps.css", "./js/group-call.js", "./js/group-member-settings.js", "./js/apps/relationship-apps.js",
  "./js/world-context.js",
  './js/chat-skins.js', './css/chat-skins.css',
