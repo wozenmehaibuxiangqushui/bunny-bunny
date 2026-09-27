@@ -16,6 +16,8 @@
 #phone-root.has-wallpaper .screen[data-app=desktop]{background-image:linear-gradient(rgba(244,244,242,var(--wallpaper-veil,0)),rgba(244,244,242,var(--wallpaper-veil,0))),var(--wallpaper-image)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}
 #phone-root .screen:is([data-app=focus],[data-app=couple],[data-app=offline]){grid-template-rows:0 minmax(0,1fr) 0!important}
 #phone-root .screen:is([data-app=focus],[data-app=couple],[data-app=offline]) .app-header{display:none!important}
+#phone-root .screen:is([data-app=games],[data-app=bunny-island]){grid-template-rows:0 minmax(0,1fr) 0!important}
+#phone-root .screen:is([data-app=games],[data-app=bunny-island]) .app-header{display:none!important}
 #phone-root .screen[data-app=group-chat] .app-header{background:#f6fafbe6!important}
 #phone-root .screen[data-app=forum] .app-header{background:#f8f7f4!important}
 @media(prefers-reduced-motion:reduce){#phone-root .screen{scroll-behavior:auto!important}}

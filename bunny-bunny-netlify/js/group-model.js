@@ -1,6 +1,6 @@
 import { sendToModel } from './integrations/ai-client.js';
 import { accountFriends, accountContext } from './account-system.js';
-import { addMemoryEntry } from './memory-engine.js';
+import { addMemoryEntry, retrieveMemoryContext } from './memory-engine.js';
 import { appendWorldEvent, availableGroupSpeakers, changeRelationship, ensureWorldEngine, entityWorld, knownWorldEvents, relationEdge } from './world-engine.js';
 import { currentSchedule } from './schedule-engine.js';
 import { compileWorldbook } from './apps/prompt-library.js';
@@ -26,8 +26,9 @@ export function postGroupMessage(store,threadId,{speakerId,text,type='text',amou
   const message={id:messageId||crypto.randomUUID(),speakerId,text:content,type,amount,sourceId,createdAt:Date.now(),status:'sent'};
   store.update(s=>{s.groupMessages[threadId].push(message);const item=s.groupThreads.find(row=>row.id===threadId);item.lastActivityAt=message.createdAt;if(speakerId!==item.accountId){item.unread++;item.archived=false}});
   const event=appendWorldEvent(store,{id:`group-message:${message.id}`,worldId:thread.worldId,actorIds:[speakerId],witnessIds:thread.memberIds,kind:'group-message',payload:{threadId,text:content,type,public:false},source:'group-chat'});
-  const speaker=state.people.find(row=>row.id===speakerId);for(const id of thread.memberIds.filter(id=>id!==thread.accountId)){const ownerId=accountContext(state,id,thread.accountId).memoryOwnerId;void addMemoryEntry(ownerId,{kind:'episodic',category:'daily_event',layer:content.includes(`@${state.people.find(row=>row.id===id)?.name}`)?'retrieval':'temporary',text:`${thread.name} 群里，${speaker?.name||'成员'}说：${content.slice(0,180)}`,importance:2,confidence:1,visibility:'group',sourceIds:[message.id],worldId:thread.worldId,accountId:thread.accountId,source:'group-chat',eventId:event.id}).catch(()=>{})}
+  const speaker=state.people.find(row=>row.id===speakerId);for(const id of thread.memberIds.filter(id=>id!==thread.accountId)){const ownerId=accountContext(state,id,thread.accountId).memoryOwnerId,listener=state.people.find(row=>row.id===id),self=id===speakerId;void addMemoryEntry(ownerId,{kind:'episodic',category:'daily_event',layer:content.includes(`@${listener?.name}`)?'retrieval':'temporary',text:self?`我在「${thread.name}」群说过：${content.slice(0,180)}`:`我在「${thread.name}」群听见${speaker?.name||'成员'}说：${content.slice(0,180)}`,importance:2,confidence:1,visibility:'group',witnessIds:[...thread.memberIds],subjectIds:[speakerId],sourceIds:[message.id],worldId:thread.worldId,accountId:thread.accountId,source:'group-chat',eventId:event.id}).catch(()=>{})}
   if(speakerId===thread.accountId)for(const id of thread.memberIds.filter(id=>id!==speakerId))changeRelationship(store,{a:speakerId,b:id,worldId:thread.worldId,deltaAffinity:1,reasonEventId:event.id});
+  for(const listenerId of thread.memberIds.filter(id=>id!==speakerId&&id!==thread.accountId)){const name=state.people.find(row=>row.id===listenerId)?.name;if(name&&content.includes(`@${name}`))changeRelationship(store,{a:speakerId,b:listenerId,worldId:thread.worldId,deltaAffinity:1,reasonEventId:event.id})}
   return message;
 }
 
@@ -41,13 +42,20 @@ function parseGroupReply(raw,allowed) {
 export async function generateGroupReplies(store,threadId) {
   const state=ensureWorldEngine(store.getState()),thread=state.groupThreads.find(row=>row.id===threadId),model=state.modelProfiles.find(row=>row.id===state.activeModelProfileId);
   if(!thread||!model?.apiKey||!model?.model)return [];
-  const lastText=(state.groupMessages[threadId]||[]).at(-1)?.text||'',available=availableGroupSpeakers(store,thread).filter(row=>!thread.mutedMemberIds?.includes(row.id)).sort((a,b)=>Number(lastText.includes(`@${b.name}`))-Number(lastText.includes(`@${a.name}`))).slice(0,4),allowed=new Set(available.map(row=>row.id));if(!allowed.size)return [];
-  const recent=(state.groupMessages[threadId]||[]).slice(-16),people=available.map(row=>{const settings=thread.memberProfiles?.[row.id]||{},base=state.chatProfiles?.[row.id]||{};return{id:row.id,name:settings.nickname||row.name,persona:[row.persona||row.personality||row.note||'',settings.personaNote||''].filter(Boolean).join('。'),city:settings.longDistance?settings.city||row.city:'',cityPrototype:settings.longDistance?settings.cityPrototype||row.cityPrototype:'',worldbooks:(state.worldbooks||[]).filter(book=>(settings.worldbookIds||base.worldbookIds||[]).includes(book.id)).map(book=>compileWorldbook(book,lastText)).filter(Boolean),relation:relationEdge(state,thread.accountId,row.id,thread.worldId).label}});
-  const publicFacts=knownWorldEvents(state,thread.accountId,thread.worldId,8).filter(row=>row.witnessIds.every(id=>thread.memberIds.includes(id))||row.payload.public).map(row=>row.payload.summary||row.payload.text).filter(Boolean);
-  const context={group:{name:thread.name,announcement:thread.announcement},speakers:people,recent:recent.map(row=>({speaker:state.people.find(person=>person.id===row.speakerId)?.name,text:row.text})),knownFacts:publicFacts};
-  const system='写一段真实手机群聊的后续。允许说话的人只来自 speakers，speakerId 必须严格匹配。角色可以接别人的话、短暂插嘴、只发一个表情，也可以不说；不要轮流报到，不要替 USER 发言，不要突然换话题。每句 2—60 字，语言习惯依人设，保留微妙关系与上条消息的具体细节。不能让没在场的人知道群内私事，不能编造已经发生的重大事件。只返回 JSON：{"messages":[{"speakerId":"允许的 ID","text":"一条消息"}]}，0—6 条。';
-  const rows=parseGroupReply(await sendToModel(model,[{role:'user',text:JSON.stringify(context)}],system),allowed),created=[];
-  for(const row of rows){await new Promise(resolve=>setTimeout(resolve,420+Math.min(1400,row.text.length*24)));const current=store.getState().groupThreads.find(item=>item.id===threadId);if(!current?.memberIds.includes(row.speakerId)||currentSchedule(store,row.speakerId)?.canReply===false)continue;const message=postGroupMessage(store,threadId,row);if(message)created.push(message)}
+  const lastText=(state.groupMessages[threadId]||[]).at(-1)?.text||'',available=availableGroupSpeakers(store,thread).filter(row=>!thread.mutedMemberIds?.includes(row.id)).sort((a,b)=>Number(lastText.includes(`@${b.name}`))-Number(lastText.includes(`@${a.name}`))).slice(0,2);if(!available.length)return [];
+  const created=[];
+  // Each call sees only one character's private vault. Shared group facts remain visible to all witnesses.
+  for(const speaker of available){
+    const live=store.getState(),current=live.groupThreads.find(item=>item.id===threadId);if(!current?.memberIds.includes(speaker.id)||currentSchedule(store,speaker.id)?.canReply===false)continue;
+    const settings=current.memberProfiles?.[speaker.id]||{},base=live.chatProfiles?.[speaker.id]||{},ownerId=accountContext(live,speaker.id,current.accountId).memoryOwnerId;
+    const privateMemory=await retrieveMemoryContext(live,ownerId,lastText).catch(()=>({promptBlock:''}));
+    const publicFacts=knownWorldEvents(live,speaker.id,current.worldId,8).filter(row=>row.witnessIds?.every(id=>current.memberIds.includes(id))||row.payload?.public).map(row=>row.payload?.summary||row.payload?.text).filter(Boolean);
+    const relations=current.memberIds.filter(id=>id!==speaker.id).map(id=>({name:live.people.find(person=>person.id===id)?.name||'成员',relation:relationEdge(live,speaker.id,id,current.worldId).label}));
+    const context={group:{name:current.name,announcement:current.announcement},speaker:{id:speaker.id,name:settings.nickname||speaker.name,persona:[speaker.persona||speaker.personality||speaker.note||'',settings.personaNote||''].filter(Boolean).join('。'),city:settings.longDistance?settings.city||speaker.city:'',worldbooks:(live.worldbooks||[]).filter(book=>(settings.worldbookIds||base.worldbookIds||[]).includes(book.id)).map(book=>compileWorldbook(book,lastText)).filter(Boolean),relations,privateMemory:privateMemory.promptBlock},recent:(live.groupMessages[threadId]||[]).slice(-14).map(row=>({speaker:live.people.find(person=>person.id===row.speakerId)?.name,text:row.text})),knownFacts:publicFacts};
+    const system=`你是群里真实存在的${speaker.name}。只写你自己的回应，可以沉默、接别人的话、插一句短话或表情。私聊和自身记忆只能影响你的语气与判断；除非你主动决定且不侵犯隐私，不要把私聊细节说给群里其他人听。不要代替 USER 或别人发言，不要机械报到，不要重复上句，不要编造已发生的重大事件。只返回 JSON：{"messages":[{"speakerId":"${speaker.id}","text":"2—60 字的一条消息"}]}；0—2 条。`;
+    const rows=parseGroupReply(await sendToModel(model,[{role:'user',text:JSON.stringify(context)}],system),new Set([speaker.id])).slice(0,2);
+    for(const row of rows){await new Promise(resolve=>setTimeout(resolve,420+Math.min(1400,row.text.length*24)));const now=store.getState().groupThreads.find(item=>item.id===threadId);if(!now?.memberIds.includes(row.speakerId)||currentSchedule(store,row.speakerId)?.canReply===false)continue;const message=postGroupMessage(store,threadId,row);if(message)created.push(message)}
+  }
   if(created.length)queueGroupFollowup(store,thread,created.at(-1));
   return created;
 }
