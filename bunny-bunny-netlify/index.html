@@ -76,6 +76,22 @@
     </section>
   </main>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    // A failed module import must never leave the launch animation covering the phone forever.
+    window.__bunnyBootTimer = setTimeout(() => {
+      const splash = document.querySelector('#launch-screen');
+      if (!splash) return;
+      if (document.querySelector('#app-view')?.childElementCount) {
+        splash.classList.add('is-finished');
+        setTimeout(() => splash.remove(), 650);
+        return;
+      }
+      splash.classList.add('launch-failed');
+      splash.querySelector('.launch-subtitle').textContent = '启动遇到问题，请重新载入';
+      splash.querySelector('.launch-progress').innerHTML = '<button type="button">重新载入</button>';
+      splash.querySelector('.launch-progress button').addEventListener('click', () => location.reload());
+    }, 7000);
+  </script>
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
