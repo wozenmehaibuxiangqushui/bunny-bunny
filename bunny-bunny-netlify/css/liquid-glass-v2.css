@@ -1,6 +1,6 @@
 /* System chrome in the glass theme. Content surfaces and user chat bubbles keep their own colors. */
 #phone-root[data-theme=glass]{--liquid-ink:#263143;--liquid-fill:rgba(245,249,255,.208);--liquid-blur:19px;--liquid-edge:rgba(255,255,255,.83);--liquid-shadow:0 10px 28px rgba(36,56,83,.16),inset 0 1px 1px rgba(255,255,255,.95),inset 0 -1px 1px rgba(35,60,94,.12)}
-#phone-root[data-theme=glass] .screen[data-app=desktop]{background-color:#cbd5e5!important;background-image:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.12)),var(--wallpaper-image)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}
+#phone-root[data-theme=glass] .screen[data-app=desktop]{background-color:#cbd5e5!important;background-image:linear-gradient(180deg,rgba(248,250,255,calc(.04 + var(--wallpaper-veil,0) * .72)),rgba(248,250,255,calc(.12 + var(--wallpaper-veil,0) * .72))),var(--wallpaper-image)!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important}
 #phone-root[data-theme=glass] .screen[data-app=desktop]>.app-header{background:transparent!important;box-shadow:none!important;backdrop-filter:none!important}
 #phone-root[data-theme=glass] .home-screen-v4 .app-icon:not(:has(>img)){
   position:relative;isolation:isolate;overflow:hidden;
