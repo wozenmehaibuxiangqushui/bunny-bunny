@@ -10,7 +10,7 @@ export function applyGroupAppearance(container,thread){
   for(const [name,value] of Object.entries({'--group-mine':a.mineColor,'--group-other':a.otherColor,'--group-mine-text':a.mineText,'--group-other-text':a.otherText,'--group-scale':Math.max(.7,Math.min(1.6,Number(a.bubbleScale)||1)),'--group-radius':`${Math.max(0,Math.min(36,Number(a.bubbleRadius)||0))}px`,'--group-font-size':`${Math.max(11,Math.min(21,Number(a.fontSize)||13))}px`}))shell.style.setProperty(name,value);
   const background=a.background;const use=url=>{if(!shell.isConnected||!url)return;const veil=(1-Math.max(0,Math.min(1,Number(a.backgroundOpacity))));shell.style.backgroundImage=`linear-gradient(rgba(246,246,244,${veil}),rgba(246,246,244,${veil})), url("${String(url).replace(/["\\\n]/g,'')}")`};
   if(a.backgroundMediaId)getMediaUrl(a.backgroundMediaId).then(use);else if(background)use(background);
-  const style=document.createElement('style');style.textContent=`${a.fontUrl?`@font-face{font-family:GroupCustom;src:url("${String(a.fontUrl).replace(/["\\\n]/g,'')}")}.group-chat-shell{font-family:GroupCustom,sans-serif}`:''}\n${String(a.bubbleCss||'').replace(/<\/?style[^>]*>/gi,'').slice(0,4000)}`;container.prepend(style);
+  const style=document.createElement('style');style.textContent=`${a.fontUrl?`@font-face{font-family:GroupCustom;src:url("${String(a.fontUrl).replace(/["\\\n]/g,'')}")}.group-chat-shell{font-family:GroupCustom,sans-serif}`:''}\n${String(a.bubbleCss||'').replace(/<\/?style[^>]*>/gi,'').slice(0,4000)}`;container.append(style);
 }
 
 export function openGroupAppearance(store,thread,done){
