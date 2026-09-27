@@ -7,6 +7,7 @@ import { ensureTikTok,tikPost,tikComment,tikToggle,tikFollow,tikFollowers,tikRec
 import { refreshTikTok,respondToTikTokPost,replyToTikTokComment,replyToTikTokDm,
   generateTikTokLiveMoment,tikAutoDue } from './tiktok-engine.js';
 import { postGroupMessage } from './group-model.js';
+import { forumGroups,forumIsMember,forumPost } from './forum-model.js';
 
 const icons={
   home:'M4 11 12 4l8 7v9H4z',search:'M20 20l-5-5M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0',
@@ -483,8 +484,8 @@ export function createTikTokRenderer({store,navigate}){
   function openComments(postId){
     const post=t().posts.find(p=>p.id===postId);if(!post)return;
     const rows=t().comments.filter(c=>c.postId===postId&&!c.deleted);
-    const comments=rows.filter(c=>!c.parentId).map(c=>commentHtml(c,rows)).join('');
-    openSheet(`<div class="tt-comments-sheet"><h3>${rows.length} 条评论</h3>
+    const comments=rows.filter(c=>!c.parentId||!rows.some(parent=>parent.id===c.parentId)).sort((a,b)=>b.createdAt-a.createdAt).map(c=>commentHtml(c,rows)).join('');
+    openSheet(`<div class="tt-comments-sheet"><h3>${rows.length} 条评论</h3><div class="tt-comment-context"><b>${esc(post.title||'这段内容')}</b><span>${esc(post.caption||'')}</span></div>
       <div class="tt-comment-list">${comments||'<p>还没有评论。说点和这段内容有关的话。</p>'}</div>
       <form class="tt-comment-compose"><input name="text" maxlength="500" placeholder="添加评论…" aria-label="评论内容" required>
         <button>发送</button></form></div>`,{onReady(sheet){
@@ -508,24 +509,24 @@ export function createTikTokRenderer({store,navigate}){
       };
     }});
   }
-  function commentHtml(c,rows){
-    const p=profile(c.authorId),children=rows.filter(row=>row.parentId===c.id).slice(0,12);
-    return `<div class="tt-comment"><button data-tt-comment-person="${c.authorId}">${avatar(c.authorId)}</button>
-      <div><b>${esc(p.name)}</b><p>${esc(c.text)}</p><small>${when(c.createdAt)} ·
+  function commentHtml(c,rows,depth=0){
+    const p=profile(c.authorId),children=rows.filter(row=>row.parentId===c.id).sort((a,b)=>a.createdAt-b.createdAt);
+    return `<div class="tt-comment ${depth?'tt-comment-child':''}"><button data-tt-comment-person="${c.authorId}" aria-label="查看${esc(p.name)}的主页">${avatar(c.authorId)}</button>
+      <div class="tt-comment-body"><b>${esc(p.name)}</b><p>${esc(c.text)}</p><small>${when(c.createdAt)} ·
         <button data-tt-reply-comment="${c.id}">回复</button></small>
-        ${children.map(child=>`<div class="tt-comment tt-comment-child">
-          ${avatar(child.authorId)}<span><b>${esc(profile(child.authorId).name)}</b><p>${esc(child.text)}</p>
-          <small>${when(child.createdAt)}</small></span></div>`).join('')}</div>
-      <button class="tt-comment-like ${c.likes.includes(me())?'selected':''}" data-tt-like-comment="${c.id}">${icon('heart')}<small>${c.likes.length||''}</small></button></div>`;
+        ${children.map(child=>commentHtml(child,rows,depth+1)).join('')}</div>
+      <button class="tt-comment-like ${(c.likes||[]).includes(me())?'selected':''}" data-tt-like-comment="${c.id}" aria-label="赞这条评论">${icon('heart')}<small>${c.likes?.length||''}</small></button></div>`;
   }
   function share(postId){
     const post=t().posts.find(p=>p.id===postId);if(!post)return;
     const friends=state().conversations.filter(c=>c.userAccountId===me()&&
       friendWorldGroup(state(),c.personId)===t().groupId),groups=(state().groupThreads||[]).filter(g=>g.accountId===me()&&!g.archived&&g.worldId===state().chatGroups.find(x=>x.id===t().groupId)?.worldId);
+    const forumWorld=state().chatGroups.find(x=>x.id===post.groupId)?.worldId,forumDestinations=forumWorld?forumGroups(state(),forumWorld).filter(g=>forumIsMember(state(),g.id,me())):[];
     openSheet(`<div class="tt-share-sheet"><h3>分享这段内容</h3><p>${esc(post.title)}</p>
       <div class="tt-share-actions"><button data-tik-repost>${icon('refresh')}<span>${owned('reposts').has(postId)?'取消转发':'转发'}</span></button>
         <button data-tik-copy>${icon('share')}<span>复制简介</span></button>
         <button data-tik-uninterested>⊘<span>不感兴趣</span></button></div>
+      <h4>发到回声广场的小组</h4><div class="tt-share-peers">${forumDestinations.map(g=>`<button data-tik-send-forum="${esc(g.id)}"><span class="tt-group-avatar">${esc(g.symbol)}</span><small>${esc(g.name)}</small></button>`).join('')||'<p>先在回声广场加入兴趣小组，就能把这段内容带过去讨论。</p>'}</div>
       <h4>发送 TikTok 私信</h4><div class="tt-share-peers">${people().filter(id=>id!==me()).slice(0,12).map(id=>
         `<button data-tik-send-dm="${id}">${avatar(id)}<small>${esc(profile(id).name)}</small></button>`).join('')}</div>
       <h4>分享到聊天</h4><div class="tt-share-peers">${friends.map(c=>
@@ -538,6 +539,7 @@ export function createTikTokRenderer({store,navigate}){
         catch{showToast('复制失败，请检查剪贴板权限')}closeSheet()};
       sheet.querySelector('[data-tik-uninterested]').onclick=()=>{
         store.update(s=>tikToggle(s,'notInterested',postId,me()));closeSheet();index=0;render(containerRef)};
+      sheet.querySelectorAll('[data-tik-send-forum]').forEach(button=>button.onclick=()=>{try{store.update(s=>{const row=forumPost(s,{authorId:me(),worldId:forumWorld,groupId:button.dataset.tikSendForum,board:'group',anonymous:false,text:`刚在映兔看到《${post.title}》：${post.caption}`});row.sourceTikTokPostId=postId});closeSheet();showToast('已发到回声广场')}catch(error){showToast(error.message)}});
       sheet.querySelectorAll('[data-tik-send-dm]').forEach(button=>button.onclick=()=>{
         try{store.update(s=>tikDm(s,{from:me(),to:button.dataset.tikSendDm,
           text:`看到这段想发给你：《${post.title}》`,postId}));peerId=button.dataset.tikSendDm;

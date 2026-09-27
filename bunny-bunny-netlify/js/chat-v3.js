@@ -93,6 +93,7 @@ export function createConversationV3Renderer({ store, navigate }) {
     container.querySelectorAll("[data-start-call]").forEach(button=>button.onclick=()=>{unlockCallAudio();navigate("call",{id:conv.id,mode:button.dataset.startCall})});
     container.querySelectorAll(".money-card").forEach(card=>card.onclick=()=>{const message=messages.find(item=>item.id===card.closest(".message")?.dataset.messageId);if(message)openMoneyReceipt(message,person)});
     container.querySelectorAll('[data-chat-record]').forEach(button=>button.onclick=()=>{const row=messages.find(item=>item.id===button.dataset.chatRecord);if(row)openChatRecordDetail(row)});
+    container.querySelectorAll('[data-forum-post-link]').forEach(button=>button.onclick=event=>{event.stopPropagation();navigate('forum',{postId:button.dataset.forumPostLink,_parent:{name:'conversation',params:{id:conv.id}}})});
     const topAvatar=container.querySelector("[data-profile-card]");
     let singleTimer;
     topAvatar.onclick=()=>{if(topAvatar.__bunnyDoubleTappedUntil>Date.now())return;clearTimeout(singleTimer);singleTimer=setTimeout(()=>showProfile(person,profile),280)};
@@ -301,6 +302,7 @@ function messageView(message,continuation,person,user,profile,appearance,message
   return `<article class="message ${message.role} ${continuation?"continuation":""} ${special} ${arriving} ${groupEnd?"group-end":""} ${message.reaction?"has-reaction":""}" data-message-id="${message.id}">${select}${avatar}<div class="message-body-v3">${!isUser&&!continuation?`<span class="message-sender-v3">${escapeHtml(profile.remark||person.name)}</span>`:""}<div class="bubble-v3">${quote?`<div class="inline-quote"><strong>${quote.role==="user"?escapeHtml(user.name):escapeHtml(person.name)}</strong><span>${escapeHtml(quote.text)}</span></div>`:""}${messageContent(message)}</div>${message.effect==='echo'?`<button type="button" class="echo-replay" data-echo-replay aria-label="重播回声效果">回声 · ↻</button>`:''}${message.translation&&message.type!=="voice"?`<div class="message-translation">${escapeHtml(message.translation)}</div>`:""}${message.reaction?`<button class="message-reaction-v3">${escapeHtml(message.reaction)}</button>`:""}<time>${message.time}${message.edited?" · 已编辑":""}${message.readAt||message.charReadAt?'<em class="message-read">已读</em>':""}</time></div></article>`;
 }
 function messageContent(message){
+  if(message.sourceForumPostId)return`<button type="button" class="forum-chat-card" data-forum-post-link="${escapeHtml(message.sourceForumPostId)}"><small>↗ 回声广场 · 讨论</small><strong>${escapeHtml(message.text||"分享一条帖子")}</strong><span>查看正文与评论 ›</span></button>`;
   if(message.type==="chat-record")return chatRecordCard(message);
   if(message.type==="image"&&message.generating)return`<div class="image-generation-card"><span>${bunnyStamp()}</span><div><i></i><i></i><i></i></div><small>正在显影</small></div>`;
   if(message.type==="image"){const description=message.description||message.text||"一张照片";return`<button class="real-photo-message" data-real-photo="${message.id}" type="button" aria-label="查看真实照片"><img src="${escapeHtml(message.src||"")}" alt="${escapeHtml(description)}" loading="lazy"></button>`}

@@ -162,6 +162,8 @@
 .tt-comment-child{margin-top:.7rem}.tt-comment-child .tt-avatar{width:1.55rem;height:1.55rem}
 .tt-comment>button{border:0;background:none}.tt-comment-like{display:grid;justify-items:center;color:#888}.tt-comment-like.selected{color:#ff365f}.tt-comment-like svg{width:1rem;height:1rem}
 .tt-comment-compose{display:flex;gap:.5rem;padding:.5rem 0;border-top:1px solid #eee}.tt-comment-compose input{flex:1;min-width:0;border:0;border-radius:99px;background:#f1f1f3;padding:.65rem}.tt-comment-compose button{border:0;border-radius:.4rem;background:#ff365f;color:white;padding:.4rem .7rem}
+.tt-comment-context{display:grid;gap:3px;padding:9px 12px;background:#f3f4f4;border-radius:11px}.tt-comment-context b{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tt-comment-context span{font-size:10px;color:#90969a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tt-comment-body{flex:1;min-width:0}.tt-comment-child{padding-top:10px;border-left:1px solid #e7e9ea;padding-left:9px;margin:8px 0 0 0}.tt-comment-child .tt-avatar{width:1.45rem;height:1.45rem}.tt-comment-like{min-width:24px}.tt-comment-list{overscroll-behavior:contain}
 .tt-share-sheet{display:grid;gap:.65rem;color:#17181b}.tt-share-sheet>p{margin:0;color:#8b8e95;font-size:.75rem}.tt-share-sheet h4{margin:.4rem 0 0;font-size:.72rem}
 .tt-share-actions,.tt-share-peers{display:flex;gap:.75rem;overflow-x:auto}.tt-share-actions button,.tt-share-peers button{display:grid;justify-items:center;gap:.25rem;flex:0 0 3.7rem;border:0;background:none;color:#222;font-size:.66rem}
 .tt-share-actions button>svg{width:2.5rem;height:2.5rem;padding:.55rem;border-radius:50%;background:#f1f2f4}
