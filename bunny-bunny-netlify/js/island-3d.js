@@ -1,3 +1,4 @@
+import { drawIslandCharacter } from './island-character.js';
 // Rounded, hand-built WebGL meshes keep the first island playable and available offline.
 export function createIsland3D(canvas,{scene,onMove,preview=false,indoor=false,onFurniture}){
   const gl=canvas.getContext('webgl',{antialias:true,alpha:true});if(!gl)return null;
@@ -13,39 +14,7 @@ export function createIsland3D(canvas,{scene,onMove,preview=false,indoor=false,o
   function flower(data,x,z,petal='#fff8ed'){box(data,x,.2,z,.055,.24,.055,'#5e9e67');for(let n=0;n<5;n++){const a=n*2*Math.PI/5;sphere(data,x+Math.cos(a)*.105,.32,z+Math.sin(a)*.105,.095,.052,.095,petal,5,7)}sphere(data,x,.34,z,.065,.055,.065,'#f5c962',5,7)}
   function tree(data,x,z,leaf='#6eae79',fruit=false){sphere(data,x,.06,z,.65,.09,.55,'#70a765',6,9);box(data,x,.75,z,.24,1.38,.24,'#9d7657');sphere(data,x,1.53,z,.85,.73,.78,leaf,12,16);sphere(data,x-.5,1.31,z+.16,.45,.48,.46,'#8bc189',7,10);sphere(data,x+.49,1.39,z-.05,.48,.49,.46,'#77b47f',7,10);if(fruit)for(const [dx,dy,dz] of [[-.55,1.25,.55],[.42,1.53,.48],[.03,1.08,.75]])sphere(data,x+dx,dy,z+dz,.13,.14,.13,'#e98572',6,8)}
   function house(data){const cx=6.67,front=3.52,back=1.25,left=5.45,right=7.9,eave=1.7,ridge=2.38;sphere(data,cx,.07,2.36,1.8,.11,1.55,'#b1d185',6,10);box(data,cx,.86,2.38,2.28,1.55,2.1,'#fff1d8');box(data,cx,.27,front+.09,2.25,.17,.48,'#e7caaa');tri(data,[left,eave,front+.12],[cx,ridge,front+.12],[right,eave,front+.12],'#fff1d8');tri(data,[left,eave,back-.12],[cx,ridge,back-.12],[right,eave,back-.12],'#fff1d8');for(const [a,b,c,d] of [[[left-.15,eave+.04,front+.23],[left-.15,eave+.04,back-.23],[cx,ridge+.1,back-.23],[cx,ridge+.1,front+.23]],[[cx,ridge+.1,front+.23],[cx,ridge+.1,back-.23],[right+.15,eave+.04,back-.23],[right+.15,eave+.04,front+.23]]]){tri(data,a,b,c,'#dc8e82');tri(data,a,c,d,'#dc8e82')};box(data,cx,.71,front+.075,.54,.93,.095,'#986d5c');sphere(data,cx+.16,.72,front+.14,.037,.037,.037,'#f5d777',5,6);for(const x of [5.82,7.53]){box(data,x,1.03,front+.08,.46,.49,.09,'#fff8ec');box(data,x,1.03,front+.14,.33,.35,.04,'#a7d9d9');box(data,x,1.03,front+.17,.04,.4,.05,'#fff8ec')};box(data,7.73,2.27,1.76,.32,.58,.35,'#c77e78');box(data,5.35,.43,3.76,.13,.63,.13,'#f2e8d1');box(data,7.98,.43,3.76,.13,.63,.13,'#f2e8d1');box(data,6.66,.64,3.78,2.71,.1,.12,'#f2e8d1');box(data,7.96,.4,4.1,.15,.6,.12,'#ab8060');box(data,7.96,.69,4.1,.45,.07,.28,'#eedeb8')}
-  function person(data,x,z,look,walking=false){
-    const start=data.length,skin=look.skin||'#f3c7a4',shirt=look.shirt||'#8db3cb',hair=look.hair||'#6c4b39',style=look.hairStyle||'bob',outfit=look.outfit||'overalls',face=look.face||'round';
-    const bob=walking?Math.abs(Math.sin(phase))*.045:0,step=walking?Math.sin(phase)*.16:0;
-    const ball=(a,b,c,d,e,f,color)=>sphere(data,a,b+bob,c,d,e,f,color,10,14);
-    const headWidth=face==='wide'?.52:face==='oval'?.43:.48,headHeight=face==='oval'?.49:.44;
-    sphere(data,0,.07,0,.36,.025,.26,'#82aa79',6,10);
-    for(const side of [-1,1]){ball(side*.14,.25,side*step,.105,.19,.11,outfit==='bunny'?shirt:'#e9dfc8');ball(side*.14,.115,.075+side*step,.14,.085,.2,'#fff5df');}
-    ball(0,.64,0,look.gender==='male'?.32:.29,.32,.24,shirt);
-    if(outfit==='dress')ball(0,.43,0,.4,.22,.3,shirt);
-    if(outfit==='overalls'){ball(0,.43,.035,.28,.17,.245,'#607f93');box(data,-.16,.7,.235,.07,.37,.045,'#607f93');box(data,.16,.7,.235,.07,.37,.045,'#607f93');box(data,0,.58,.255,.25,.19,.035,'#789bad');}
-    if(outfit==='hoodie'||outfit==='bunny')ball(0,.91,-.08,.34,.19,.26,shirt);
-    if(outfit==='sweater')for(const y of [.49,.57,.65])box(data,0,y,.237,.4,.025,.025,'#f7e9d0');
-    for(const side of [-1,1]){ball(side*.32,.62,-side*step,.12,.21,.115,shirt);ball(side*.34,.46,-side*step,.095,.105,.095,skin);ball(side*headWidth,.125+1.1,0,.095,.13,.085,skin);}
-    if(style==='long'||style==='pony')ball(0,1.12,-.19,.45,.45,.28,hair);
-    ball(0,1.3,0,headWidth,headHeight,.405,skin);
-    ball(0,1.56,-.1,headWidth+.035,.28,.405,hair);
-    for(const side of [-1,1])ball(side*.2,1.53,.24,.24,.12,.17,hair);
-    if(style==='bob'||style==='long')for(const side of [-1,1])ball(side*.41,1.27,-.055,.12,style==='long'?.4:.25,.25,hair);
-    if(style==='buns')for(const side of [-1,1])ball(side*.43,1.65,-.1,.21,.21,.2,hair);
-    if(style==='pony')ball(.19,1.47,-.4,.2,.34,.18,hair);
-    if(style==='curly')for(let i=0;i<7;i++){const t=i*Math.PI/6;ball(Math.cos(t)*.39,1.5+Math.sin(t)*.18,.1,.17,.16,.2,hair);}
-    if(style==='crop')ball(-.08,1.73,.02,.21,.12,.2,hair);
-    for(const side of [-1,1]){
-      const eyeY=1.3,eyeX=side*.16;
-      if(face==='smile'){for(let j=0;j<3;j++)ball(eyeX+(j-1)*.023,eyeY+.018-Math.abs(j-1)*.017,.391,.022,.014,.012,'#3d3032');}
-      else {ball(eyeX,eyeY,.39,.056,face==='sleepy'?.024:.076,.026,'#3d3032');if(face!=='sleepy')ball(eyeX-.012,eyeY+.025,.414,.015,.022,.01,'#fffdf5');}
-      ball(side*.28,1.18,.337,.079,.045,.018,'#edaaa0');
-    }
-    ball(0,1.21,.408,.042,.033,.04,'#e9aa8c');ball(0,1.12,.387,.032,.016,.012,'#995f56');
-    if(outfit==='bunny'){for(const side of [-1,1]){ball(side*.19,1.99,-.04,.105,.31,.1,shirt);ball(side*.19,2.0,.04,.053,.22,.03,'#efb6b3');}}
-    const angle=walking?facing:(look.direction||0),c=Math.cos(angle),q=Math.sin(angle);
-    for(let i=start;i<data.length;i+=6){const px=data[i],pz=data[i+2];data[i]=x+px*c+pz*q;data[i+2]=z-px*q+pz*c;}
-  }
+  function person(data,x,z,look,walking=false){drawIslandCharacter(data,x,z,look,{sphere,box,phase,facing,walking});}
   function furnitureSize(f){const size=f.kind==='bed'?[1.25,2]:f.kind==='sofa'?[1.8,.8]:f.kind==='table'?[1.1,1.1]:[.65,.65];return f.rotation%2?[size[1],size[0]]:size;}
   function blocked(x,z){
     if(indoor)return x<.75||x>8.25||z<.75||z>8.25||(scene().furniture||[]).some(f=>{const [w,d]=furnitureSize(f);return f.kind!=='rug'&&Math.abs(x-f.x)<w/2+.18&&Math.abs(z-f.z)<d/2+.18;});
@@ -76,7 +45,7 @@ export function createIsland3D(canvas,{scene,onMove,preview=false,indoor=false,o
   function build(state){const data=[];if(preview){person(data,0,0,state.avatar);return data;}if(indoor)return room(data,state);islandDisc(data,4.5,-.69,4.5,8.1,7.55,.16,'#83ccdb','#6cb6c9');islandDisc(data,4.5,-.32,4.5,5.42,5.26,.39,'#efdbab','#d2b783');islandDisc(data,4.5,.03,4.5,4.95,4.82,.4,'#abd889','#8fc474');sphere(data,2.2,.06,7.15,1.5,.15,1.05,'#a4d282',7,10);sphere(data,7.22,.06,5.5,1.65,.13,1.25,'#a7d685',7,10);
     for(const [x,z] of [[5.98,3.95],[5.51,4.28],[5.03,4.62],[4.54,4.95],[4.1,5.22]])sphere(data,x,.09,z,.32,.065,.27,'#e9dfbe',5,8);
     islandDisc(data,7.02,.065,6.55,1.22,.88,.03,'#86c7cb','#80b9bf');for(const [x,z] of [[6.56,6.21],[7.38,6.77]])sphere(data,x,.085,z,.22,.035,.13,'#d6edf0',5,8);
-    for(const x of [2,3,4])for(const z of [5,6]){sphere(data,x,.085,z,.43,.085,.39,'#947662',7,10);sphere(data,x,.15,z,.37,.045,.33,'#a47c61',6,9);const crop=state.crops?.find(row=>row.x===x&&row.z===z);if(crop){const age=Math.max(0,(Date.now()-crop.plantedAt)/3600000),height=Math.min(.62,.16+age*.19);box(data,x,.2+height/2,z,.06,height,.06,'#629c5a');for(const dx of [-.15,.15])sphere(data,x+dx,.34+height*.48,z,.18,.055,.11,'#6cae66',6,8);if(age>=2)sphere(data,x,.33+height,z+.06,.17,.17,.16,'#ea867f',7,9)}}
+    for(const x of [2,3,4])for(const z of [5,6]){if(!state.crops?.some(c=>c.x===x&&c.z===z)&&!state.tilled?.includes(`${x},${z}`))continue;sphere(data,x,.085,z,.43,.085,.39,'#947662',7,10);sphere(data,x,.15,z,.37,.045,.33,'#a47c61',6,9);const crop=state.crops?.find(row=>row.x===x&&row.z===z);if(crop){const age=crop.progress??Math.min(1,(Date.now()-crop.plantedAt)/7200000),height=.16+age*.46;box(data,x,.2+height/2,z,.06,height,.06,'#629c5a');for(const dx of [-.15,.15])sphere(data,x+dx,.34+height*.48,z,.18,.055,.11,'#6cae66',6,8);if(age>=1)sphere(data,x,.33+height,z+.06,crop.type==='pumpkin'?.27:.17,.17,.16,crop.color||'#ea867f',9,12)}}
     house(data);tree(data,1.55,1.45,'#67a96f',true);tree(data,2.45,2.25,'#77b87b',false);tree(data,8.28,5.65,'#74b17b',true);
     // A tiny lived-in garden: fence, bench, mailbox and scattered flower patches.
     for(let x=1.55;x<=4.65;x+=.53)box(data,x,.31,4.48,.075,.52,.075,'#f8f0dd');box(data,3.08,.35,4.48,3.2,.075,.07,'#f8f0dd');
@@ -84,6 +53,13 @@ export function createIsland3D(canvas,{scene,onMove,preview=false,indoor=false,o
     box(data,8.18,.45,3.89,.1,.68,.1,'#a98264');sphere(data,8.18,.83,3.89,.25,.2,.21,'#e9b79d',7,9);box(data,8.18,.85,4.11,.14,.08,.05,'#fff7df');
     for(const [x,z,petal] of [[.9,3.5,'#fff6dc'],[1.3,4.1,'#f8c5ca'],[1.2,6.9,'#fff6dc'],[3.3,2.3,'#f7cbda'],[5.5,6.75,'#f8c5ca'],[7.8,4.5,'#fff6dc'],[4.95,1.15,'#fff6dc'],[5.2,2.8,'#f8c5ca'],[5.05,3.15,'#fff6dc'],[8.25,3.15,'#fff6dc']])flower(data,x,z,petal);
     for(const [x,z] of [[4.5,1.35],[4.75,1.55],[.75,5.4],[8.4,3.25]])sphere(data,x,.12,z,.36,.26,.3,'#7dbb75',7,9);
+    for(const [index,pet] of (state.pets||[]).entries()){
+      const t=Date.now()/1800+index*2,x=5.05-index*.6+Math.sin(t)*.18,z=6.95+Math.cos(t*.6)*.2,col=pet.species==='dog'?'#ba987a':pet.species==='cat'?'#c6b2a0':'#f3eee2';
+      sphere(data,x,.07,z,.3,.03,.22,'#8bad79',6,10);sphere(data,x,.32,z,.24,.22,.32,col,10,14);sphere(data,x,.56,z+.18,.23,.22,.2,col,12,16);
+      for(const side of [-1,1]){sphere(data,x+side*.12,.12,z+.1,.08,.085,.12,col,7,10);sphere(data,x+side*.13,.77,z+.14,pet.species==='dog'?.12:.065,pet.species==='rabbit'?.25:pet.species==='dog'?.16:.13,.065,col,9,12);sphere(data,x+side*.085,.58,z+.36,.022,.029,.016,'#3e3637',6,8);}
+      sphere(data,x,.51,z+.383,.026,.021,.018,'#bd9392',6,8);sphere(data,x+.17,.39,z-.28,.075,.12,.08,col,8,10);
+    }
+    if(state.weather?.kind==='雨')for(let i=0;i<28;i++){const x=.7+(i*1.73)%7.7,z=.8+(i*2.1)%7.6,y=.4+((Date.now()/900+i*.29)%2.5);box(data,x,y,z,.012,.18,.012,'#c3dde0');}
     person(data,walker.x,walker.z,{...state.avatar,direction:facing},route.length>0);if(state.visitor)person(data,state.visitor.x,state.visitor.z,state.visitor,false);return data}
   function render(now){if(!canvas.isConnected){gl.deleteBuffer(buffer);gl.deleteProgram(program);gl.getExtension('WEBGL_lose_context')?.loseContext();return;}frame=requestAnimationFrame(render);if(now-lastFrame<32)return;const dt=Math.min((now-lastFrame)/1000,.06);lastFrame=now;const state=scene();walker||={x:state.avatar.x||4,z:state.avatar.z||4};if(route.length){let budget=dt*1.65;phase+=dt*10;while(route.length&&budget>0){const target=route[0],dx=target.x-walker.x,dz=target.z-walker.z,d=Math.hypot(dx,dz);facing=Math.atan2(dx,dz);if(d<=budget){walker={...target};route.shift();budget-=d;}else{walker.x+=dx/d*budget;walker.z+=dz/d*budget;budget=0;}}if(!route.length)onMove?.(walker.x,walker.z);}const dpr=Math.min(devicePixelRatio||1,2),width=Math.max(1,Math.round(canvas.clientWidth*dpr)),height=Math.max(1,Math.round(canvas.clientHeight*dpr));if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;gl.viewport(0,0,width,height)}const data=build(state);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.disable(gl.CULL_FACE);gl.useProgram(program);gl.uniform1f(uniforms.uYaw,yaw);gl.uniform1f(uniforms.uElevation,preview?.08:.56);gl.uniform1f(uniforms.uAspect,width/height);gl.uniform1f(uniforms.uZoom,zoom);gl.uniform3f(uniforms.uCenter,preview?0:4.5,preview?1.08:.55,preview?0:4.5);gl.bindBuffer(gl.ARRAY_BUFFER,buffer);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.DYNAMIC_DRAW);gl.enableVertexAttribArray(position);gl.enableVertexAttribArray(color);gl.vertexAttribPointer(position,3,gl.FLOAT,false,24,0);gl.vertexAttribPointer(color,3,gl.FLOAT,false,24,12);gl.drawArrays(gl.TRIANGLES,0,data.length/6)}
   function ground(event){const bounds=canvas.getBoundingClientRect(),sx=(event.clientX-bounds.left)/bounds.width,sy=(event.clientY-bounds.top)/bounds.height,xx=(sx*2-1)*(bounds.width/bounds.height)/zoom,zz=(-(1-2*sy)/zoom-.52*Math.cos(.56))/Math.sin(.56);return{x:4.5+xx*Math.cos(yaw)+zz*Math.sin(yaw),z:4.5-xx*Math.sin(yaw)+zz*Math.cos(yaw)};}
