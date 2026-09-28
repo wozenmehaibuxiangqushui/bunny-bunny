@@ -32,6 +32,13 @@ export function createPhoneSettingsRenderer({store,navigate}){
         <button class="theme-preview mono ${a.theme==="mono"?"selected":""}" data-theme="mono"><span>MONO</span><strong>黑白简约</strong></button>
         <button class="theme-preview glass ${a.theme==="glass"?"selected":""}" data-theme="glass"><span>LIQUID</span><strong>水玻璃</strong></button>
       </section>
+      ${a.theme==="glass"?`<section class="liquid-material-panel" aria-label="水玻璃材质设置">
+        <div class="liquid-material-heading"><div><small>MATERIAL STUDIO</small><h3>玻璃的透气感</h3></div><span>◌</span></div>
+        <p>桌面保留壁纸的色彩；悬浮控件折射背景。聊天气泡仍按你在聊天设置里的样式显示。</p>
+        <div class="liquid-material-demo" aria-hidden="true"><span class="liquid-orb one"></span><span class="liquid-orb two"></span><span class="liquid-demo-pill">bunny bunny <i>✦</i></span><span class="liquid-demo-disc">◌</span></div>
+        <div class="liquid-mode-row" role="group" aria-label="玻璃材质模式"><button type="button" data-glass-mode="clear" aria-pressed="${(a.glassMode||"clear")==="clear"}"><strong>清透</strong><small>更多壁纸色彩</small></button><button type="button" data-glass-mode="soft" aria-pressed="${a.glassMode==="soft"}"><strong>柔雾</strong><small>更清晰的文字</small></button></div>
+        <label class="liquid-clarity-row"><span>清透度 <output>${a.glassClarity??72}%</output></span><input type="range" min="0" max="100" step="1" value="${a.glassClarity??72}" data-glass-clarity></label>
+      </section>`:""}
       <div class="section-title"><h3>系统壁纸</h3><span>图片保存在本机</span></div>
       <section class="card stack"><button class="wallpaper-upload-card ${a.wallpaper?"has-image":""}" data-wallpaper style="background-image:url('${escapeHtml(a.wallpaper||"")}')"><span>${a.wallpaper?"更换壁纸":"选择壁纸"}</span><small>相册 / 图床</small></button>${a.wallpaper?'<button class="button ghost" data-clear-wallpaper>恢复默认壁纸</button>':""}</section>
       ${appearancePanel(a)}
@@ -48,12 +55,14 @@ export function createPhoneSettingsRenderer({store,navigate}){
     bindAppearanceControls(container,store,()=>createPhoneSettingsRenderer({store,navigate})(container));
     container.querySelector("[data-app-name]").onchange=e=>{store.update(s=>s.appearance.appName=e.target.value.trim()||"bunny bunny");applyAppIdentity(store.getState().appearance);showToast("应用名称已保存")};
     container.querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{store.update(s=>s.appearance.theme=b.dataset.theme);setPhoneAppearance(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container)});
+    container.querySelectorAll("[data-glass-mode]").forEach(b=>b.onclick=()=>{store.update(s=>s.appearance.glassMode=b.dataset.glassMode);setPhoneAppearance(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container)});
+    container.querySelector("[data-glass-clarity]")?.addEventListener("input",e=>{const value=Number(e.target.value);store.update(s=>s.appearance.glassClarity=value);container.querySelector(".liquid-clarity-row output").textContent=`${value}%`;setPhoneAppearance(store.getState().appearance)});
     container.querySelectorAll("[data-bunny]").forEach(b=>b.onclick=()=>{store.update(s=>{s.appearance.bunnyIcon=b.dataset.bunny;s.appearance.appIcon=""});applyAppIdentity(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container);showToast("兔子图标已应用")});
     container.querySelectorAll("[data-jump]").forEach(b=>b.onclick=()=>navigate(b.dataset.jump,b.dataset.jump==="chat-settings"?{personId:"char-jun"}:{}));
     container.querySelector("[data-app-icon]").onclick=()=>openImageSourcePicker(value=>{store.update(s=>s.appearance.appIcon=value);applyAppIdentity(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container);showToast("应用图标已保存")});
     container.querySelector("[data-wallpaper]").onclick=()=>openImageSourcePicker(value=>{store.update(s=>{s.appearance.wallpapers||={mono:s.appearance.wallpaper||"",glass:s.appearance.wallpaper||""};s.appearance.wallpapers[s.appearance.theme]=value;s.appearance.wallpaper=value});setPhoneAppearance(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container);showToast("壁纸已保存")});
     container.querySelector("[data-clear-wallpaper]")?.addEventListener("click",()=>{store.update(s=>{s.appearance.wallpapers||={mono:s.appearance.wallpaper||"",glass:s.appearance.wallpaper||""};s.appearance.wallpapers[s.appearance.theme]="";s.appearance.wallpaper=""});setPhoneAppearance(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container)});
-    container.querySelector("[data-reset]").onclick=()=>{store.update(s=>s.appearance={...s.appearance,theme:"mono",wallpaperType:"gradient",wallpaper:"",wallpapers:{},wallpaperOpacity:1,globalFontUrl:"",globalTextColor:"#222222",desktopLabelColor:"#222222",appName:"bunny bunny",appIcon:"",bunnyIcon:"classic"});setPhoneAppearance(store.getState().appearance);applyAppIdentity(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container);showToast("已恢复默认外观")};
+    container.querySelector("[data-reset]").onclick=()=>{store.update(s=>s.appearance={...s.appearance,theme:"mono",wallpaperType:"gradient",wallpaper:"",wallpapers:{},wallpaperOpacity:1,glassMode:"clear",glassClarity:72,globalFontUrl:"",globalTextColor:"#222222",desktopLabelColor:"#222222",appName:"bunny bunny",appIcon:"",bunnyIcon:"classic"});setPhoneAppearance(store.getState().appearance);applyAppIdentity(store.getState().appearance);createPhoneSettingsRenderer({store,navigate})(container);showToast("已恢复默认外观")};
   };
 }
 function setting(label,small,route){return`<div class="setting-row"><div><span class="label">${label}</span><small>${small}</small></div><button class="button secondary" data-jump="${route}">管理</button></div>`}

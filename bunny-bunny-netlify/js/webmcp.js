@@ -4,7 +4,7 @@ export function registerBunnyTools({ store, navigate }) {
   const tools = [
     {
       name: "navigate_bunny_app", title: "打开 Bunny 应用", description: "在 bunny bunny 虚拟手机中打开指定应用。",
-      inputSchema: { type: "object", properties: { app: { type: "string", enum: ["desktop", "chat", "contacts", "together", "bridge", "mcp", "phone-settings", "api"] } }, required: ["app"], additionalProperties: false },
+      inputSchema: { type: "object", properties: { app: { type: "string", enum: ["desktop", "chat", "contacts", "couple", "offline", "focus", "bridge", "mcp", "phone-settings", "api"] } }, required: ["app"], additionalProperties: false },
       annotations: { readOnlyHint: true, untrustedContentHint: false },
       execute(input) { navigate(input.app); return { app: input.app, opened: true }; }
     },

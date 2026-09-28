@@ -1,10 +1,12 @@
-const CACHE_NAME = "bunny-bunny-shell-v45";
+const CACHE_NAME = "bunny-bunny-shell-v65";
 const OFFLINE_URL = new URL("./index.html", self.registration.scope).href;
-const APP_SHELL = [
- "./js/photo-editor.js", "./js/bubble-shape.js", "./js/schedule-engine.js", "./css/chat-refresh.css",
+const APP_SHELL = ["./css/chat-reference-v4.css","./js/games-hub.js","./js/horizontal-scroll.js","./css/games-hub.css","./js/empty-start.js","./js/social-media.js","./js/real-camera.js","./js/vision-actions.js","./js/camera-vision-worker.js","./css/social-detail-v3.css",
+ "./js/photo-editor.js", "./js/bubble-shape.js", "./js/schedule-engine.js", "./js/inner-voice.js", "./js/world-engine.js", "./js/group-model.js", "./js/group-chat.js", "./js/group-appearance.js", "./js/chat-record.js", "./js/island-3d.js", "./js/island-avatar.js", "./js/island-wardrobe.js", "./js/island-life.js", "./js/island-panels.js", "./css/lifestyle-glass.css", "./css/liquid-glass-v2.css", "./js/island-character.js", "./js/island-home.js", "./js/island-app.js", "./js/character-diary.js", "./css/chat-refresh.css", "./css/chat-bubble-fidelity.css", "./css/chat-interactions.css", "./css/group-appearance.css", "./css/chat-record.css", "./css/island-app.css",
+ "./js/forum-model.js", "./js/forum-engine.js", "./js/forum-app.js", "./css/forum-app.css", "./css/fullscreen-shell.css", "./css/group-chat-plus.css", "./css/group-call.css", "./css/relationship-apps.css", "./js/group-call.js", "./js/group-member-settings.js", "./js/apps/relationship-apps.js",
  "./js/world-context.js",
  './js/chat-skins.js', './css/chat-skins.css',
- './js/device-shell.js', './css/device-shell.css',
+ './js/device-shell.js', './css/device-shell.css', './js/x-engine.js', './js/x-panels.js',
+ './js/tiktok-model.js', './js/tiktok-engine.js', './js/tiktok-app.js', './css/tiktok-app.css',
  './js/apps/desktop-drag.js', './js/appearance-controls.js', './js/x-app.js', './js/x-model.js', './css/desktop-polish.css', './css/x-app.css',
   './css/apps/widget-collection.css', './js/apps/widget-collection.js',
   './css/apps/widget-surfaces.css', './js/apps/widget-surfaces.js',

@@ -32,6 +32,22 @@
   <link rel="stylesheet" href="./css/device-shell.css">
   <link rel="stylesheet" href="./css/chat-skins.css">
   <link rel="stylesheet" href="./css/chat-refresh.css">
+  <link rel="stylesheet" href="./css/chat-bubble-fidelity.css">
+  <link rel="stylesheet" href="./css/chat-interactions.css">
+  <link rel="stylesheet" href="./css/tiktok-app.css">
+  <link rel="stylesheet" href="./css/fullscreen-shell.css">
+  <link rel="stylesheet" href="./css/group-chat-plus.css">
+  <link rel="stylesheet" href="./css/group-appearance.css">
+  <link rel="stylesheet" href="./css/chat-record.css">
+  <link rel="stylesheet" href="./css/island-app.css">
+  <link rel="stylesheet" href="./css/group-call.css">
+  <link rel="stylesheet" href="./css/relationship-apps.css">
+  <link rel="stylesheet" href="./css/forum-app.css">
+  <link rel="stylesheet" href="./css/lifestyle-glass.css">
+  <link rel="stylesheet" href="./css/liquid-glass-v2.css">
+  <link rel="stylesheet" href="./css/social-detail-v3.css">
+  <link rel="stylesheet" href="./css/games-hub.css">
+  <link rel="stylesheet" href="./css/chat-reference-v4.css">
 </head>
 <body>
   <div class="launch-screen" id="launch-screen" role="status" aria-label="bunny bunny 正在启动">
@@ -65,6 +81,22 @@
     </section>
   </main>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    // A failed module import must never leave the launch animation covering the phone forever.
+    window.__bunnyBootTimer = setTimeout(() => {
+      const splash = document.querySelector('#launch-screen');
+      if (!splash) return;
+      if (document.querySelector('#app-view')?.childElementCount) {
+        splash.classList.add('is-finished');
+        setTimeout(() => splash.remove(), 650);
+        return;
+      }
+      splash.classList.add('launch-failed');
+      splash.querySelector('.launch-subtitle').textContent = '启动遇到问题，请重新载入';
+      splash.querySelector('.launch-progress').innerHTML = '<button type="button">重新载入</button>';
+      splash.querySelector('.launch-progress button').addEventListener('click', () => location.reload());
+    }, 7000);
+  </script>
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>

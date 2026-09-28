@@ -41,8 +41,13 @@ export function closeSheet() {
 export function setPhoneAppearance(appearance) {
   const phone = document.querySelector("#phone-root");
   phone.dataset.theme = appearance.theme || "mono";
+  const glassMode = appearance.glassMode === "soft" ? "soft" : "clear";
+  const clarity = Math.max(0, Math.min(100, Number(appearance.glassClarity ?? 72)));
+  phone.dataset.glassMode = glassMode;
+  phone.style.setProperty("--liquid-fill", `rgba(245,249,255,${(0.46 - clarity * 0.0035 + (glassMode === "soft" ? 0.16 : 0)).toFixed(3)})`);
+  phone.style.setProperty("--liquid-blur", `${Math.round(28 - clarity * 0.12 + (glassMode === "soft" ? 8 : 0))}px`);
   const wallpaper=appearance.wallpapers?.[appearance.theme]??appearance.wallpaper;
-  phone.style.setProperty("--wallpaper-image", wallpaper ? `url(${JSON.stringify(String(wallpaper))})` : appearance.theme==='glass'?'radial-gradient(ellipse at 20% 18%,#b6ccce,transparent 55%),linear-gradient(155deg,#d9e3dd,#8a9ea5 65%,#526975)':'none');
+  phone.style.setProperty("--wallpaper-image", wallpaper ? `url(${JSON.stringify(String(wallpaper))})` : appearance.theme==='glass'?'radial-gradient(ellipse at 6% 6%,#fff8e3 0%,transparent 35%),radial-gradient(ellipse at 95% 12%,#f5acc0 0%,transparent 38%),radial-gradient(ellipse at 10% 62%,#8fc4e8 0%,transparent 48%),radial-gradient(ellipse at 88% 84%,#8d9ad6 0%,transparent 44%),linear-gradient(156deg,#d4e8f3 5%,#b8ccd9 48%,#d5c6df 100%)':'none');
   phone.style.setProperty('--wallpaper-veil',1-Math.max(0,Math.min(1,appearance.wallpaperOpacity??1)));
   phone.style.setProperty('--desktop-label-color',appearance.desktopLabelColor||'#222222');
   phone.style.setProperty('--global-text-color',appearance.globalTextColor||'#222222');

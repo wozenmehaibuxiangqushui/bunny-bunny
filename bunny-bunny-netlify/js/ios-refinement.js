@@ -110,10 +110,9 @@ export function setupIosRefinement({store,navigate}){
    else openPicker({target:target.dataset.mediaTarget,personId,conversationId:route.params.conversationId});
  },true);
  let swipe=null;
- screen.addEventListener("pointerdown",e=>{if(screen.dataset.app!=="desktop"&&e.clientX-screen.getBoundingClientRect().left<30&&!e.target.closest("input,textarea,select,[contenteditable=true]"))swipe={x:e.clientX,y:e.clientY}}, {passive:true});
- screen.addEventListener("pointerup",e=>{if(!swipe)return;const dx=e.clientX-swipe.x,dy=Math.abs(e.clientY-swipe.y);swipe=null;if(dx>72&&dy<55){document.querySelector("#back-button").click()}}, {passive:true});
+ screen.addEventListener("pointerdown",e=>{if(screen.dataset.app!=="desktop"&&!document.querySelector('#modal-root')?.classList.contains('open')&&e.clientX-screen.getBoundingClientRect().left<64&&!e.target.closest("input,textarea,select,[contenteditable=true],[data-no-swipe]"))swipe={x:e.clientX,y:e.clientY}}, {passive:true});
+ screen.addEventListener("pointerup",e=>{if(!swipe)return;const dx=e.clientX-swipe.x,dy=Math.abs(e.clientY-swipe.y);swipe=null;if(dx>46&&dx>dy*1.25){(document.querySelector('[data-diary-back]')||document.querySelector("#back-button")).click()}}, {passive:true});
  screen.addEventListener("pointercancel",()=>swipe=null,{passive:true});
  const observer=new MutationObserver(refresh);observer.observe(document.querySelector("#app-screen"),{subtree:true,childList:true,characterData:true});
  setInterval(refresh,30000);refresh();
 }
-

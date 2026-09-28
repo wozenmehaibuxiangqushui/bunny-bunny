@@ -1,21 +1,15 @@
 import { personById } from "../core/store.js";
 import { escapeHtml, initialsAvatar, showToast, updateIsland } from "../core/ui.js";
-
-export function createTogetherRenderer({ store }) {
-  return container => {
-    const state = store.getState();
-    const person = personById(state, "char-jun");
-    container.innerHTML = `<div class="segmented"><button class="active">推荐</button><button>收藏</button><button>共同列表</button></div><div class="section-title"><h3>正在一起看</h3><span>虚拟内容</span></div><section class="card shared-video"><span class="eyebrow">00:18 · DAILY CLIP</span><h3>雨天唱片店的一分钟</h3><p>以模拟视频卡运行；接入真实视频源后才会播放素材。</p><div class="row between"><span class="pill">♡ 2.8k</span><button class="button secondary" data-next>下一个</button></div></section><div class="section-title"><h3>陪伴者</h3><span>同屏上下文</span></div><section class="card row">${initialsAvatar(person, state.chatProfiles[person.id])}<div class="meta"><strong>${escapeHtml(person.name)}</strong><span>“这个角度很像你上次发我的照片。”</span></div><span class="pill">同看中</span></section>`;
-    container.querySelector("[data-next]").addEventListener("click", () => { updateIsland(`${person.name} 和你切到下一条`, true); showToast("已同步切换给陪伴角色"); setTimeout(() => updateIsland("bunny 正在陪你", false), 1600); });
-  };
-}
+import { walletCredit } from '../wallet-v2.js';
 
 export function createFocusRenderer({ store }) {
-  return container => {
-    const person = personById(store.getState(), "char-rin");
-    container.innerHTML = `<section class="card" style="text-align:center;padding:2rem 1rem"><span class="eyebrow">FOCUS WITH ${escapeHtml(person.name)}</span><div style="font-size:4.2rem;letter-spacing:-.09em;margin:1.4rem 0">25:00</div><p style="color:var(--muted)">专注结束后，夏凛会提醒你休息。</p><button class="button" data-start>开始专注</button></section>`;
-    container.querySelector("[data-start]").addEventListener("click", event => { event.currentTarget.textContent = "专注中 · 点击暂停"; updateIsland("专注 25:00", true); showToast("专注计时已开始（演示）"); });
-  };
+  let timer=null,view=null;
+  const current=()=>store.getState().focusClock||{mode:'work',minutes:25,breakMinutes:5,remaining:1500,running:false,endsAt:0,completed:0};
+  const left=clock=>clock.running?Math.max(0,Math.ceil((clock.endsAt-Date.now())/1000)):clock.remaining;
+  const tick=()=>{const clock=current();if(!clock.running)return;const visible=view?.classList.contains('focus-view')&&document.querySelector('#app-screen')?.dataset.app==='focus';if(left(clock)<=0){store.update(s=>{const c=s.focusClock;c.running=false;c.remaining=(c.mode==='work'?c.breakMinutes:c.minutes)*60;if(c.mode==='work')c.completed++;c.mode=c.mode==='work'?'break':'work'});if(clock.mode==='work')walletCredit(store,{amount:1,kind:'focus',title:'完成一个番茄钟',note:'安静做完一件事'});showToast(clock.mode==='work'?'番茄钟完成，休息一下':'休息结束，可以再开始');updateIsland('bunny 正在陪你',false);if(visible)render(view)}else if(visible){const display=view.querySelector('[data-focus-time]');if(display){const sec=left(clock);display.textContent=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`}}};
+  timer=setInterval(tick,1000);
+  function render(container){view=container;tick();const person=personById(store.getState(),'char-rin'),clock=current(),sec=left(clock);container.className='app-view focus-view';container.innerHTML=`<div class="focus-card"><small>BUNNY / POMODORO</small><h1>番茄钟</h1><p>${clock.mode==='work'?'先专心做一件事，其他的等会儿再说。':'现在是休息时间，喝口水吧。'}</p><div class="focus-ring"><strong data-focus-time>${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}</strong><span>${clock.mode==='work'?'专注中':'短休息'}</span></div><div class="focus-controls"><button data-focus-toggle>${clock.running?'暂停':'开始'}</button><button data-focus-reset>重置</button><button data-focus-skip>切换${clock.mode==='work'?'休息':'专注'}</button></div><div class="focus-settings"><label>专注分钟<input data-work-min type="number" min="1" max="120" value="${clock.minutes}"></label><label>休息分钟<input data-break-min type="number" min="1" max="60" value="${clock.breakMinutes}"></label></div><div class="focus-companion">${initialsAvatar(person,store.getState().chatProfiles?.[person.id]||{})}<div><b>${escapeHtml(person.name)}也在忙自己的事</b><small>完成 ${clock.completed} 个番茄 · 每次完成获得 ¥1 小屋零钱</small></div></div></div>`;container.querySelector('[data-focus-toggle]').onclick=()=>{store.update(s=>{const c=s.focusClock||={...clock};if(c.running){c.remaining=left(c);c.running=false}else{c.endsAt=Date.now()+Math.max(1,c.remaining)*1000;c.running=true}});updateIsland(current().running?'专注中 · 番茄钟':'bunny 正在陪你',current().running);render(container)};container.querySelector('[data-focus-reset]').onclick=()=>{store.update(s=>s.focusClock={...clock,remaining:(clock.mode==='work'?clock.minutes:clock.breakMinutes)*60,running:false,endsAt:0});render(container)};container.querySelector('[data-focus-skip]').onclick=()=>{store.update(s=>s.focusClock={...clock,mode:clock.mode==='work'?'break':'work',remaining:(clock.mode==='work'?clock.breakMinutes:clock.minutes)*60,running:false,endsAt:0});render(container)};container.querySelectorAll('[data-work-min],[data-break-min]').forEach(input=>input.onchange=()=>{store.update(s=>{const c=s.focusClock||={...clock};c.minutes=Math.max(1,Math.min(120,Number(container.querySelector('[data-work-min]').value)||25));c.breakMinutes=Math.max(1,Math.min(60,Number(container.querySelector('[data-break-min]').value)||5));if(!c.running)c.remaining=(c.mode==='work'?c.minutes:c.breakMinutes)*60});render(container)})}
+  return render;
 }
 
 export function createWorldRenderer({ store }) {

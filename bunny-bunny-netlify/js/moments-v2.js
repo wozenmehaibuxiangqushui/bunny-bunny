@@ -42,6 +42,7 @@ export function setupMomentsAutomation({store}){
     if(running||document.hidden)return;running=true;
     try{
       const state=ensureAccountState(store.getState()),accountId=state.activeUserAccountId,now=Date.now();
+      const model=state.modelProfiles?.find(p=>p.id===state.activeModelProfileId);if(!accountId||!model?.apiKey||!model?.model)return;
       const thread=(state.moments||[]).find(post=>post.accountId===accountId&&Number(post.replyDueAt||0)>0&&Number(post.replyDueAt)<=now&&(post.comments||[]).length>Number(post.threadProcessedCommentCount||0));
       if(thread){await generateThreadReplies(store,thread.id);return}
       const pending=(state.moments||[]).find(post=>post.accountId===accountId&&post.personId===accountId&&!post.aiInteracted&&Number(post.interactionDueAt||0)<=now);
@@ -50,7 +51,7 @@ export function setupMomentsAutomation({store}){
       const candidates=friendRoster(state,accountId).filter(person=>{ensureDailySchedule(store,person.id);void enrichDailySchedule(store,person.id);return currentSchedule(store,person.id)?.availability!=="sleep"&&Math.random()<postingProbability(person)});
       store.update(s=>{ensureAccountState(s);s.momentsSettings.lastAutoAt[accountId]=now});
       if(candidates.length){await generatePosts(store,accountId,candidates.slice(0,1),false);document.querySelector('#app-screen[data-app=moments] #app-view')?.dispatchEvent(new Event('bunny:moments-refresh'))}
-    }finally{running=false}
+    }catch(error){console.warn("Moments refresh paused",error.message)}finally{running=false}
   };
   setInterval(check,AUTO_CHECK_MS);setTimeout(check,7000);
 }
