@@ -2,7 +2,7 @@
 #phone-root .chat-layout-v3[data-chat-skin] .message-reaction-v3{
   background:transparent!important;border:0!important;box-shadow:none!important;
   min-width:0!important;height:auto!important;padding:0!important;
-  top:-.38rem!important;left:-.36rem!important;right:auto!important;font-size:1.35rem!important;line-height:1!important;
+  top:-.38rem!important;left:auto!important;right:-.36rem!important;font-size:1.35rem!important;line-height:1!important;
   filter:drop-shadow(0 1px 2px #0005)
 }
 #phone-root .chat-layout-v3[data-chat-skin] .message-reaction-v3::after{content:none!important;display:none!important}

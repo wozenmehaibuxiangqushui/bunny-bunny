@@ -67,7 +67,7 @@ export async function generateInnerVoice(store, conversation, person, options = 
   const thought = parseInnerVoice(raw);
   const record = { id: crypto.randomUUID(), scope, anchorMessageId: anchor.id, personId: person.id, thought, createdAt: Date.now(), turnCount: recent.length ? (state.messages[conversation.id] || []).filter(row => row.role === 'user' && !row.recalled).length : 0, topicTokens: topicTokens(state.messages[conversation.id] || []), activity: Boolean(options.activity), seenAt: options.activity ? 0 : Date.now() };
   store.update(next => {
-    next.innerVoiceRecords = [record, ...(next.innerVoiceRecords || []).filter(row => !(row.scope === scope && row.anchorMessageId === anchor.id))].slice(0, 80);
+    next.innerVoiceRecords = [record, ...(next.innerVoiceRecords || []).filter(row => !(row.scope === scope && row.anchorMessageId === anchor.id))];
   });
   return record;
 }

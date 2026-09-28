@@ -12,7 +12,7 @@ const fameRules = [
 ];
 export function inferXFame(person={}) {
   const text=[person.occupation,person.persona,person.personality,person.note].filter(Boolean).join(' ');
-  return fameRules.find(rule=>rule.test.test(text)) || {tier:'ordinary',base:128,verified:false};
+  return fameRules.find(rule=>rule.test.test(text)) || {tier:'ordinary',base:0,verified:false};
 }
 function seedProfile(s,person) {
   const fame=inferXFame(person),name=person.chatName||person.name||'匿名用户';

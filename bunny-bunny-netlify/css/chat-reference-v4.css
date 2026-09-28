@@ -1,0 +1,49 @@
+/* Reference geometry at mobile scale; authored bubble CSS is loaded after these rules. */
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=imessage],[data-chat-skin=line],[data-chat-skin=kakaotalk]) .bubble-v3{font-weight:400!important;line-height:1.45!important;font-size:var(--chat-font-size,15px)}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .message:not(.special-message) .bubble-v3{border-radius:var(--bubble-radius,21px)!important;padding:calc(8px * var(--bubble-scale,1)) calc(13px * var(--bubble-scale,1))!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .message:not(.special-message) .bubble-v3{border-radius:var(--bubble-radius,14px)!important;padding:calc(7px * var(--bubble-scale,1)) calc(11px * var(--bubble-scale,1))!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=line] .message:not(.special-message) .bubble-v3{border-radius:var(--bubble-radius,19px)!important;padding:calc(8px * var(--bubble-scale,1)) calc(13px * var(--bubble-scale,1))!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=line]{--skin-canvas:#8eadd4;--skin-out:#6fe474;--skin-out-ink:#102612}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk]{--skin-canvas:#adc2ce;--skin-out:#fee500;--skin-out-ink:#161b1a}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .message-body-v3{max-width:calc(100% - 53px)!important}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .message.char .message-body-v3{max-width:calc(100% - 91px)!important}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .message-body-v3>time{font-size:10px!important;max-width:42px!important;line-height:1.3!important;bottom:1px;display:flex;flex-direction:column-reverse}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .message.char .message-read{display:none!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .message:not(.group-end) .message-body-v3>time{display:none!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .message-sender-v3{font-weight:400;font-size:12px;padding-bottom:5px}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .message-avatar-v3{width:32px;flex-basis:32px;height:32px;margin-top:0}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .message-avatar-v3 .avatar{border-radius:11px!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=line] .chat-contact-bar{background:transparent!important;border:0!important;height:57px!important;padding:8px 16px!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .chat-contact-bar{background:transparent!important;border:0!important;height:67px!important;padding:10px 13px!important}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .chat-contact-actions{position:static!important;margin-left:auto;display:flex!important;gap:8px}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .chat-contact-actions button{display:grid;place-items:center;flex:0 0 27px;width:27px!important;height:30px!important;min-width:0!important;padding:1px!important;background:transparent!important;border:0!important;box-shadow:none!important;color:#111b24!important}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .chat-contact-actions svg{width:23px;height:23px;stroke-width:1.8;stroke:currentColor;fill:none;stroke-linecap:round;stroke-linejoin:round}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .chat-contact-actions .chat-time,#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .chat-contact-actions [data-start-call=video],#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .chat-contact-actions [data-start-call=voice]{display:none!important}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .chat-name-block{position:static!important;transform:none!important;flex:1;max-width:none!important;background:transparent!important;padding:0!important;min-width:0;text-align:left!important;cursor:pointer}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=line],[data-chat-skin=kakaotalk]) .chat-name-block>span{display:none!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=line] .chat-name-block strong{font-size:18px;font-weight:650}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=line] [data-open-schedule]{order:2}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=line] [data-start-call=voice]{order:1}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=line] .chat-more{order:3}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .chat-contact-actions{background:#e5f5ffe0!important;padding:7px 10px;border:1px solid #e8f6ff!important;border-radius:28px;box-shadow:inset 0 1px #fff,0 1px 2px #0001;backdrop-filter:blur(16px)}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .chat-name-block strong{text-align:center;font-size:17px;font-weight:650}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .chat-contact-bar{height:119px!important;min-height:119px!important;padding:0!important;position:relative;background:transparent!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .chat-contact-avatar{position:absolute!important;top:11px!important;left:calc(50% - 25px)!important;width:50px!important;height:50px!important;padding:0!important;border:0!important;background:transparent!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .chat-contact-avatar .avatar{width:50px!important;height:50px!important;border-radius:50%!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .chat-name-block{position:absolute!important;top:68px!important;left:50%!important;transform:translateX(-50%)!important;max-width:66%!important;padding:7px 12px!important;background:#ffffff60!important;border:1px solid #ffffff70;border-radius:24px;backdrop-filter:blur(18px);cursor:pointer;text-align:center}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .chat-name-block strong{font-size:13px;font-weight:550}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .chat-name-block>span{display:none!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .chat-contact-actions{position:absolute!important;right:18px!important;top:15px!important;margin:0!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .chat-contact-actions>button{display:none!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .chat-contact-actions>[data-start-call=video]{display:grid!important;place-items:center;width:42px!important;height:42px!important;flex-basis:42px;padding:9px!important;background:#ffffff30!important;border:1px solid #d5dee7b0!important;border-radius:50%;box-shadow:none!important;color:inherit!important;backdrop-filter:blur(16px)}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .inner-voice-alert{left:calc(50% + 15px)!important;right:auto!important;top:4px!important;z-index:6}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .composer-shell-v3{background:transparent!important;padding:0 9px 15px!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .composer-v3{background:transparent!important;padding:8px!important;gap:8px!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .composer-v3 textarea{border:1px solid #cbd2d999!important;background:#ffffff50!important;border-radius:26px!important;backdrop-filter:blur(22px);padding:10px 14px!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=imessage] .composer-v3 [data-plus]{background:#ffffff40!important;border:1px solid #d5dee7b0!important;border-radius:50%!important;backdrop-filter:blur(18px)}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .composer-v3{background:#d9eff9c9!important;border:1px solid #ebfaff!important;margin:0 9px 17px!important;border-radius:28px!important}
+#phone-root #app-view .chat-layout-v3[data-chat-skin=kakaotalk] .composer-v3 [data-plus]{background:white!important;border-radius:50%!important}
+#phone-root:has(.chat-layout-v3[data-chat-skin=line]) .system-status-bar{background:#8eadd4!important;color:#111!important}
+#phone-root:has(.chat-layout-v3[data-chat-skin=kakaotalk]) .system-status-bar{background:#adc2ce!important;color:#111!important}
+.chat-search-result{display:block;width:100%;padding:15px 5px;text-align:left;border:0;border-bottom:1px solid #8883;background:transparent;color:inherit}.chat-search-result small{color:#999}.chat-search-result p{font-size:14px;line-height:1.6}
+#phone-root #app-view .chat-layout-v3:is([data-chat-skin=imessage],[data-chat-skin=line],[data-chat-skin=kakaotalk]) .message:not(.special-message) .bubble-v3{font-weight:400!important}

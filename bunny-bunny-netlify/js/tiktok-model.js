@@ -1,3 +1,4 @@
+import { mediaList } from './social-media.js';
 import { ensureAccountState, friendWorldGroup } from './account-system.js';
 import { inferXFame } from './x-model.js';
 
@@ -71,13 +72,13 @@ export function tikPost(state,data){
     baseFavorites:Math.floor(baseline*.009),viewedBy:[],deleted:false,source:data.source||'user'};
   t.posts.push(row);return row;
 }
-export function tikComment(state,{postId,authorId,text,parentId=''}) {
+export function tikComment(state,{postId,authorId,text,parentId='',images=[]}) {
   const t=ensureTikTok(state),post=t.posts.find(p=>p.id===postId&&!p.deleted);
   if(!post||!tikActor(state,authorId,post.groupId)||!tikVisible(state,post,authorId))
     throw Error('评论对象或作者无效');
   if(parentId&&!t.comments.some(c=>c.id===parentId&&c.postId===postId))throw Error('回复的评论不存在');
-  text=clean(text,500);if(!text)throw Error('评论不能为空');
-  const row={id:id(),postId,authorId,text,parentId,createdAt:Date.now(),likes:[],deleted:false};
+  images=mediaList(images);text=clean(text,500);if(!text&&!images.length)throw Error('评论不能为空');
+  const row={id:id(),postId,authorId,text,images,parentId,createdAt:Date.now(),likes:[],deleted:false};
   t.comments.push(row);
   if(authorId!==post.authorId)t.events.push({id:id(),kind:'comment',postId,actorId:authorId,
     targetId:parentId?t.comments.find(c=>c.id===parentId)?.authorId:post.authorId,groupId:post.groupId,

@@ -1,3 +1,4 @@
+import {generateSocialCover} from './social-media.js';
 import { sendToModel } from './integrations/ai-client.js';
 import { compileWorldbook } from './apps/prompt-library.js';
 import { accountFriends, friendWorldGroup } from './account-system.js';
@@ -38,7 +39,7 @@ function xWorldContext(store,groupId) {
     events,actors:[...actors,...network],recent};
 }
 function batchPrompt(countPosts,countComments) {
-  return [
+  return ['最多一条帖子可增加 imagePrompt 字段，描述具体配图画面；没有配图则为空字符串。',
     '你在虚构的 X 社交平台为当前世界写一批真实手机上会刷到的内容。公共发帖只使用提供的世界设定和说话者知道的事实。',
     '严格输出 '+countPosts+' 条主贴和 '+countComments+' 条评论，可增加 0—2 个虚构网友账号。不要为 USER 发言。',
     '作者可以是 actors 中 canPost=true 的 id；新网友用 new:1 或 new:2。每条主贴 key 唯一，例如 p1；评论的 postKey 指向本批主贴 key 或 recent 中公开贴文 id。',
@@ -66,7 +67,7 @@ export async function refreshXFeed(store,{manual=true,groupId}={}) {
     for(const row of validNew)allowed.add(row.key);
     const validPosts=postRows.filter(row=>allowed.has(row?.authorId)&&trim(row.text,220).length>=4);
     if(!validPosts.length)throw Error('模型返回的发帖人不属于当前世界');
-    let result;
+    let result;const imageRows=[];
     store.update(s=>{
       const target=ensureX(s),authorMap=new Map(),postMap=new Map(),created=[],comments=[];
       for(const row of validNew)authorMap.set(row.key,xCreateNetworkNpc(s,row,groupId).id);
@@ -75,7 +76,7 @@ export async function refreshXFeed(store,{manual=true,groupId}={}) {
         if(!xActor(s,authorId,groupId))continue;
         const duplicate=target.posts.some(old=>old.groupId===groupId&&old.authorId===authorId&&old.text===trim(row.text,220));
         if(duplicate)continue;
-        const post=xPost(s,{authorId,text:trim(row.text,220),groupId});created.push(post);
+        const post=xPost(s,{authorId,text:trim(row.text,220),groupId});post.imagePrompt=String(row.imagePrompt||'').slice(0,1200);imageRows.push(post);created.push(post);
         if(row.key)postMap.set(row.key,post.id);
       }
       for(const row of commentRows){
@@ -103,7 +104,7 @@ export async function refreshXFeed(store,{manual=true,groupId}={}) {
       target.generationHistory=target.generationHistory.slice(-80);
       result={posts:created.length,comments:comments.length,shares};
     });
-    return result;
+    await generateSocialCover(store,'x',imageRows);return result;
   } finally {refreshRunning.delete(groupId)}
 }
 export async function generateXPostInteractions(store,postId) {

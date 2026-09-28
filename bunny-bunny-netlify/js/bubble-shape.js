@@ -1,8 +1,24 @@
 // Draw the body and the tail in one path so there is no overlap seam on photos or glass.
 export function bubblePath(width,height,radius,kind,tail){
   const w=Math.max(1,width),h=Math.max(1,height);
-  const preferred=kind==='wechat'?5:kind==='kakaotalk'?14:kind==='line'?18:radius;
+  const preferred=kind==='wechat'?5:radius;
   const r=Math.min(preferred,h/2,w/2);
+  if(kind!=='wechat'){
+    const k=.55228475,c=r*k;
+    let path=`M${r},0 H${w-r} C${w-r+c},0 ${w},${r-c} ${w},${r} V${h-r} C${w},${h-r+c} ${w-r+c},${h} ${w-r},${h} H${r}`;
+    if(tail&&kind==='imessage'){
+      // A continuous concave lower tail. The tip stays level with the capsule.
+      path+=` C${r*.5},${h} 3,${h-2} 2,${h-7} C1,${h+1} -4,${h+4} -8,${h+4} C-2,${h-1} 0,${h-7} 0,${h-Math.min(r,18)} V${r}`;
+    }else{
+      path+=` C${r-c},${h} 0,${h-r+c} 0,${h-r}`;
+      if(tail&&(kind==='line'||kind==='kakaotalk')){
+        const tip=kind==='line'?-8:-6,join=Math.min(r*.48,7);
+        return path+` V${r} C0,${r*.55} -1,5 ${tip},1 C-3,1 1,2 ${join},3 C${r*.62},1 ${r*.8},0 ${r},0 Z`;
+      }
+      path+=` V${r}`;
+    }
+    return path+` C0,${r-c} ${r-c},0 ${r},0 Z`;
+  }
   let d=`M${r},0 H${w-r} Q${w},0 ${w},${r} V${h-r} Q${w},${h} ${w-r},${h} H${r}`;
   if(kind==='imessage'&&tail){
     // The iMessage tail curves below the last capsule in a run.

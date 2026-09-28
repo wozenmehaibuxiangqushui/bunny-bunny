@@ -1,3 +1,4 @@
+import {mountMediaComposer,mountImageSetting,socialImages,hydrateSocial} from './social-media.js';
 import { escapeHtml as esc,openSheet,closeSheet,showToast } from './core/ui.js';
 import { saveMediaBlob,getMediaUrl } from './media-store.js';
 import { switchAccount,friendWorldGroup } from './account-system.js';
@@ -434,7 +435,7 @@ export function createTikTokRenderer({store,navigate}){
       if(previewUrl.startsWith('blob:'))URL.revokeObjectURL(previewUrl);
       previewUrl=URL.createObjectURL(file);render(root)});
     root.querySelector('.tt-edit-form')?.addEventListener('submit',event=>void saveProfile(event));
-    bindSettings(root);
+    bindSettings(root);mountImageSetting(root.querySelector('.tt-settings-form'),store,'tiktok');const createForm=root.querySelector('.tt-create-form');if(createForm)createForm.socialMedia=mountMediaComposer(createForm,store,'tiktok',{max:1});
   }
   function saveDraftFromForm(form){
     if(!form)return;const q=form.elements,row={accountId:me(),groupId:t().groupId,
@@ -447,7 +448,8 @@ export function createTikTokRenderer({store,navigate}){
   async function publish(event){
     event.preventDefault();const form=event.target,q=form.elements,mediaUrl=q.mediaUrl?.value.trim()||'';
     if(mediaUrl&&!/^https?:\/\//i.test(mediaUrl))return showToast('媒体直链需要以 https:// 或 http:// 开头');
-    if(selectedKind!=='story'&&!selectedFile&&!mediaUrl)return showToast('先上传素材或填写直链');
+    if(form.socialMedia?.busy())return showToast('图片还在处理中');
+    if(selectedKind!=='story'&&!selectedFile&&!mediaUrl&&!form.socialMedia?.get().length)return showToast('先上传素材或填写直链');
     let media=null;
     if(selectedFile){
       const max=selectedKind==='video'?80:12;
@@ -457,6 +459,7 @@ export function createTikTokRenderer({store,navigate}){
         media={kind:selectedKind,mediaId:saved.mediaId,name:selectedFile.name}}
       catch(error){return showToast(error.message)}
     }else if(mediaUrl)media={kind:selectedKind,url:mediaUrl,name:q.title.value.trim()};
+    if(!media&&form.socialMedia?.get().length)media={...form.socialMedia.get()[0],kind:'photo'};
     let post;try{store.update(s=>{post=tikPost(s,{authorId:me(),kind:selectedKind,media,
       title:q.title.value,body:q.body?.value||'',caption:q.caption.value,sound:q.sound.value,
       coverColor:q.coverColor.value,visibility:q.visibility.value});
@@ -487,9 +490,9 @@ export function createTikTokRenderer({store,navigate}){
     const comments=rows.filter(c=>!c.parentId||!rows.some(parent=>parent.id===c.parentId)).sort((a,b)=>b.createdAt-a.createdAt).map(c=>commentHtml(c,rows)).join('');
     openSheet(`<div class="tt-comments-sheet"><h3>${rows.length} 条评论</h3><div class="tt-comment-context"><b>${esc(post.title||'这段内容')}</b><span>${esc(post.caption||'')}</span></div>
       <div class="tt-comment-list">${comments||'<p>还没有评论。说点和这段内容有关的话。</p>'}</div>
-      <form class="tt-comment-compose"><input name="text" maxlength="500" placeholder="添加评论…" aria-label="评论内容" required>
+      <form class="tt-comment-compose"><input name="text" maxlength="500" placeholder="添加评论…" aria-label="评论内容">
         <button>发送</button></form></div>`,{onReady(sheet){
-      let parentId='';
+      let parentId='';const media=mountMediaComposer(sheet.querySelector('form'),store,'tiktok');hydrateSocial(sheet);
       sheet.querySelectorAll('[data-tt-reply-comment]').forEach(button=>button.onclick=()=>{
         parentId=button.dataset.ttReplyComment;const author=profile(rows.find(c=>c.id===parentId)?.authorId);
         const input=sheet.querySelector('input[name=text]');input.placeholder='回复 @'+author.handle;input.focus()});
@@ -500,8 +503,8 @@ export function createTikTokRenderer({store,navigate}){
       sheet.querySelectorAll('[data-tt-comment-person]').forEach(button=>button.onclick=()=>{
         profileId=button.dataset.ttCommentPerson;profileTab='posts';closeSheet();go('person')});
       sheet.querySelector('form').onsubmit=event=>{
-        event.preventDefault();const text=event.target.elements.text.value.trim();if(!text)return;
-        let row;try{store.update(s=>{row=tikComment(s,{postId,authorId:me(),text,parentId})});
+        event.preventDefault();const text=event.target.elements.text.value.trim();if(media.busy()||(!text&&!media.get().length))return;
+        let row;try{store.update(s=>{row=tikComment(s,{postId,authorId:me(),text,images:media.get(),parentId})});
           closeSheet();openComments(postId);if(modelConfigured()&&post.authorId!==me())
             void replyToTikTokComment(store,row.id).then(reply=>{if(reply){closeSheet();openComments(postId)}})
               .catch(error=>showToast(error.message))
@@ -512,7 +515,7 @@ export function createTikTokRenderer({store,navigate}){
   function commentHtml(c,rows,depth=0){
     const p=profile(c.authorId),children=rows.filter(row=>row.parentId===c.id).sort((a,b)=>a.createdAt-b.createdAt);
     return `<div class="tt-comment ${depth?'tt-comment-child':''}"><button data-tt-comment-person="${c.authorId}" aria-label="查看${esc(p.name)}的主页">${avatar(c.authorId)}</button>
-      <div class="tt-comment-body"><b>${esc(p.name)}</b><p>${esc(c.text)}</p><small>${when(c.createdAt)} ·
+      <div class="tt-comment-body"><b>${esc(p.name)}</b><p>${esc(c.text)}</p>${socialImages(c.images)}<small>${when(c.createdAt)} ·
         <button data-tt-reply-comment="${c.id}">回复</button></small>
         ${children.map(child=>commentHtml(child,rows,depth+1)).join('')}</div>
       <button class="tt-comment-like ${(c.likes||[]).includes(me())?'selected':''}" data-tt-like-comment="${c.id}" aria-label="赞这条评论">${icon('heart')}<small>${c.likes?.length||''}</small></button></div>`;

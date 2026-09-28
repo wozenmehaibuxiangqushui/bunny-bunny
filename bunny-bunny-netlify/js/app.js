@@ -1,3 +1,4 @@
+import { renderFirstIdentity } from './empty-start.js';
 import { setupDeviceShell } from './device-shell.js';
 import { createStore } from "./core/store.js";
 import { createXRenderer } from './x-app.js';
@@ -5,7 +6,7 @@ import { setupXAutomation } from './x-engine.js';
 import { createTikTokRenderer } from './tiktok-app.js';
 import { createForumRenderer } from './forum-app.js';
 import { setupTikTokAutomation } from './tiktok-engine.js';
-import { registerRoute, navigate } from "./core/router.js";
+import { registerRoute as registerRawRoute, navigate } from "./core/router.js";
 import { createDesktopRenderer } from "./apps/desktop-v2.js";
 import { createChatRenderers } from "./apps/chat-v2.js";
 import { createConversationV3Renderer } from "./chat-v3.js";
@@ -41,7 +42,8 @@ import { createGroupCallRenderer } from './group-call.js';
 import { ensureWorldEngine, tickWorld } from './world-engine.js';
 import { deliverWorldJobs } from './group-model.js';
 import { createDiaryRenderer, setupDiaryAutomation } from './character-diary.js';
-import { createGamesRenderer, createIslandRenderer } from './island-app.js';
+import { createIslandRenderer } from './island-app.js';
+import {createGamesRenderer} from './games-hub.js';
 
 const store = createStore();
 const previewSkin = new URLSearchParams(location.search).get('preview-skin');
@@ -57,6 +59,12 @@ await hydrateMediaState(store.getState());
 playLaunchAnimation();
 registerPwa();
 const context = { store, navigate };
+function registerRoute(name, renderer){registerRawRoute(name,(container,params)=>{
+  const state=store.getState();
+  if(!state.people.some(p=>p.type==='user')&&!['desktop','phone-settings','api','data-settings','worldbook','presets','bridge','mcp'].includes(name))return renderFirstIdentity(container,context,name);
+  if(['conversation','call'].includes(name)&&!state.conversations.some(c=>c.id===params.id))return navigate('chat');
+  return renderer(container,params);
+});}
 setupXAutomation(context);
 setupTikTokAutomation(context);
 const chats = createChatRenderers(context);

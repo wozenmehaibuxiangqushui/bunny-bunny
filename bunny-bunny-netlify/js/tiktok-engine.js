@@ -1,3 +1,4 @@
+import {generateSocialCover} from './social-media.js';
 import { sendToModel } from './integrations/ai-client.js';
 import { compileWorldbook } from './apps/prompt-library.js';
 import { accountFriends, friendWorldGroup } from './account-system.js';
@@ -42,7 +43,7 @@ function context(store,groupId){
     customRules:cut(setting.rules,2400),actors:[...actors,...network],library,recent};
 }
 function batchPrompt(posts,comments){
-  return [
+  return ['最多一条帖子可增加 imagePrompt 字段，描述具体配图画面；没有配图则为空字符串。',
     '你在虚构 TikTok 短视频社区里为当前世界写一批自然的内容。只写角色知道的公共事实，USER 的行动和台词由 USER 自己决定。',
     `严格生成 ${posts} 条作品和 ${comments} 条评论。作品可以是用户素材视频/照片，也可以是明确标注的图文卡；没有素材时不能假装有真实视频画面。`,
     '每条作品有短标题、具体画面或卡片文字、随手写的 caption、一个音频名。语气允许停顿、吐槽、错字、松弛感；别轮流写同一种鸡汤。',
@@ -74,7 +75,7 @@ export async function refreshTikTok(store,{manual=true,groupId}={}){
     const candidates=(Array.isArray(answer.posts)?answer.posts:[]).slice(0,postsWanted)
       .filter(row=>allowed.has(row?.authorId)&&cut(row?.title,100)&&cut(row?.caption,2200));
     if(!candidates.length)throw Error('模型没有生成当前世界可用的作品');
-    let result;
+    let result;const imageRows=[];
     store.update(s=>{
       const db=ensureTikTok(s),authors=new Map(),postIds=new Map(),created=[],replies=[];
       for(const row of newcomers)authors.set(row.key,tikCreateNpc(s,row,groupId).id);
@@ -87,7 +88,7 @@ export async function refreshTikTok(store,{manual=true,groupId}={}){
         if(db.posts.some(p=>p.groupId===groupId&&p.authorId===authorId&&p.title===title&&p.caption===caption))continue;
         const post=tikPost(s,{authorId,groupId,kind,media,title,body:cut(row.body,420),
           caption,sound:cut(row.sound,80),coverColor:row.coverColor,source:'model'});
-        created.push(post);if(row.key)postIds.set(row.key,post.id);
+        post.imagePrompt=String(row.imagePrompt||'').slice(0,1200);imageRows.push(post);created.push(post);if(row.key)postIds.set(row.key,post.id);
       }
       for(const row of (Array.isArray(answer.comments)?answer.comments:[]).slice(0,commentsWanted)){
         const postId=postIds.get(row?.postKey)||row?.postKey,post=db.posts.find(p=>p.id===postId&&p.groupId===groupId);
@@ -116,7 +117,7 @@ export async function refreshTikTok(store,{manual=true,groupId}={}){
       db.generationHistory=db.generationHistory.slice(-80);
       result={posts:created.length,comments:replies.length,shares};
     });
-    return result;
+    await generateSocialCover(store,'tiktok',imageRows);return result;
   }finally{running.delete('refresh:'+groupId)}
 }
 export async function respondToTikTokPost(store,postId){
